@@ -4,7 +4,7 @@ Trusted Distributed Network
 [中文版](./README_zh.md)
 
 ### Required Infrastructure
-- [P2P Network](https://github.com/placefortea/teatree)
+- [P2P & RPC Network](https://github.com/placefortea/teatree)
 - [Distributed Stroage](https://github.com/placefortea/black_tea)
 - [Composite Architecture](./architecture.md)
   - Support different data structures
