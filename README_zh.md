@@ -4,7 +4,7 @@
 ### 需要的基础架构
 - [P2P & RPC 网络](https://github.com/placefortea/teatree)
 - [分布式存储](https://github.com/placefortea/black_tea)
-- 复合型架构
+- [复合型架构](./architecture.md)
   - 支持不同的数据结构
   - 支持不同的共识算法
   - 支持不同的许可机制
