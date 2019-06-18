@@ -2,7 +2,7 @@
 
 - Start Date: 2019-06-03
 - RFC PR #1
-- Rust Issue #1
+- TDN Issue #1
 
 Summary
 =======
