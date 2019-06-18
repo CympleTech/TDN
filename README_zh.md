@@ -25,6 +25,13 @@ Detailed Design 详细设计
 - 应用间能够相互沟通
 - 信任可以传递和积累
 
+![TDN Image 1](./assets/TDN_1.jpg)
+
+![TDN Image 2](./assets/TDN_2.jpg)
+
+![TDN Image 3](./assets/TDN_3.jpg)
+
+
 #### P2P & RPC Network 网络模块和基础设计
 **Teatree** - [Code](https://github.com/placefortea/teatree) - [Design](https://github.com/placefortea/teatree/issues/1)
 

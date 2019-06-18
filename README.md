@@ -25,6 +25,12 @@ Detailed Design
 - Applications can communicate with others
 - Trust can be passed on and accumulated
 
+![TDN Image 1](./assets/TDN_1.jpg)
+
+![TDN Image 2](./assets/TDN_2.jpg)
+
+![TDN Image 3](./assets/TDN_3.jpg)
+
 #### P2P & RPC Network
 **Teatree** - [Code](https://github.com/placefortea/teatree) - [Design](https://github.com/placefortea/teatree/issues/1)
 
