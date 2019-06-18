@@ -25,19 +25,19 @@ Detailed Design 详细设计
 - 应用间能够相互沟通
 - 信任可以传递和积累
 
-### P2P & RPC Network 网络模块和基础设计
+#### P2P & RPC Network 网络模块和基础设计
 **Teatree** - [Code](https://github.com/placefortea/teatree) - [Design](https://github.com/placefortea/teatree/issues/1)
 
-### Distributed Strorage 分布式存储
+#### Distributed Strorage 分布式存储
 **Black Tea** - [Code](https://github.com/placefortea/black_tea) - [Design](https://github.com/placefortea/black_tea/issues/1)
 
-### Virtual Computing Machine 虚拟机
+#### Virtual Computing Machine 虚拟机
 Not yet
 
-### Distributed Computing 分布式计算
+#### Distributed Computing 分布式计算
 Not yet
 
-### Privacy Data & Privacy Computing 隐私数据和隐私计算
+#### Privacy Data & Privacy Computing 隐私数据和隐私计算
 Not yet
 
 #### Auxiliary library 辅助库

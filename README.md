@@ -1,8 +1,8 @@
 [English](./README.md) / [中文](./README_zh.md)
 
 - Start Date: 2019-06-03
-- RFC PR #: 1
-- Rust Issue #: 1
+- RFC PR #1
+- Rust Issue #1
 
 Summary
 =======
@@ -25,19 +25,19 @@ Detailed Design
 - Applications can communicate with others
 - Trust can be passed on and accumulated
 
-### P2P & RPC Network
+#### P2P & RPC Network
 **Teatree** - [Code](https://github.com/placefortea/teatree) - [Design](https://github.com/placefortea/teatree/issues/1)
 
-### Distributed Strorage
+#### Distributed Strorage
 **Black Tea** - [Code](https://github.com/placefortea/black_tea) - [Design](https://github.com/placefortea/black_tea/issues/1)
 
-### Virtual Computing Machine
+#### Virtual Computing Machine
 Not yet
 
-### Distributed Computing
+#### Distributed Computing
 Not yet
 
-### Privacy Data & Privacy Computing
+#### Privacy Data & Privacy Computing
 Not yet
 
 #### Auxiliary library
