@@ -1,4 +1,4 @@
-[English](./README.md) [中文](./README_zh.md)
+[English](./README.md) / [中文](./README_zh.md)
 
 - Start Date: 2019-06-03
 - RFC PR #: 1

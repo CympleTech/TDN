@@ -1,8 +1,8 @@
-[English](./README.md) [中文](./README_zh.md)
+[English](./README.md) / [中文](./README_zh.md)
 
 - Start Date: 2019-06-03
-- RFC PR #: 1
-- Rust Issue #: 1
+- RFC PR #1
+- Rust Issue #1
 
 Summary 摘要
 =======
