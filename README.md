@@ -70,3 +70,7 @@ This project is licensed under either of
    http://opensource.org/licenses/MIT)
 
 at your option.
+
+## Communication
+- **TDN** - Telegram Group: https://t.me/placefortea
+- **TDN中文** - QQ群: 757610599
