@@ -49,9 +49,9 @@ In Teatree, we encapsulate the details of the underlying network transmission, a
 Developers can customize the processing logic for different access requests. In addition, we will gradually implement virtual machine libraries, distributed computing libraries, private data access and privacy calculation libraries to help developers build their own fast and efficient. application.
 
 
-![TDN Image 1](./assets/TDN_1.jpg)
+![TDN Image 1](../assets/TDN_1.jpg)
 
-![TDN Image 2](./assets/TDN_2.jpg)
+![TDN Image 2](../assets/TDN_2.jpg)
 
 
 Drawbacks
