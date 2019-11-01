@@ -1,0 +1,13 @@
+[package]
+name = "tdn_pbft"
+version = "0.1.0"
+authors = ["Sun <huachuang20@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+teatree = { path = "../teatree", features = ["dev"] }
+
+serde = "1.0"
+serde_derive = "1.0"
+bincode = "1.0"
+time = "0.1"

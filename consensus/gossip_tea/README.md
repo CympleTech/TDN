@@ -1,7 +1,7 @@
-# TDN - Trusted Distributed Network
-*Blockchain infrastructure framework for security and trusted distributed interactive.*
+# Gossip_tea
+Experiment Gossip &amp; consensus.
 
-(WIP)
+`cargo run --example test`
 
 ## License
 

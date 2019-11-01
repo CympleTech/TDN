@@ -1,0 +1,38 @@
+[package]
+name = "tdn_core"
+version = "0.0.4"
+authors = ["Sun <huachuang20@gmail.com>"]
+edition = "2018"
+readme = "README.md"
+description = "the tree for all tea to mix. (Distributed and Blockchain Infrastructure)"
+repository = "https://github.com/placefortea/TDN/core"
+keywords = ["distributed", "blockchain", "infrastructure", "tea"]
+license = "MIT/Apache-2.0"
+
+[features]
+dev = []
+
+[dependencies]
+toml = "0.5"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+bincode = "1.0"
+byteorder = "1"
+bytes = "0.4"
+
+actix = "0.8"
+actix_derive = "0.4"
+tokio = "0.1"
+futures = "0.1"
+
+rand = "0.6"
+sha3 = "^0.7"
+ed25519-dalek = { version="1.0.0-pre.0", features = ["serde"]}
+
+jsonrpc-parse = "0.1.2"
+dirs = "1.0"
+failure = "0.1"
+time = "0.1"
+
+sled = "0.24"

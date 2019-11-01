@@ -1,0 +1,10 @@
+[package]
+name = "tdn_gossip"
+version = "0.1.0"
+authors = ["sun"]
+edition = "2018"
+
+[dependencies]
+serde = "1"
+serde_derive = "1"
+teatree = { git="https://github.com/placefortea/teatree" }

@@ -1,0 +1,15 @@
+[package]
+name = "tdn_keystore"
+version = "0.1.0"
+authors = ["sun"]
+edition = "2018"
+
+[dependencies]
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+bincode = "1.0"
+rcmixed = "0.0.2"
+
+teatree = { git = "https://github.com/placefortea/teatree", features = ["dev"] }
+

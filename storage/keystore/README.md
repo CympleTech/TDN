@@ -1,7 +1,7 @@
-# TDN - Trusted Distributed Network
-*Blockchain infrastructure framework for security and trusted distributed interactive.*
+# keystore_tea
+Private Key &amp; Account security store
 
-(WIP)
+**Cryptography building in [simple pgp](https://github.com/rust-cc/simple_pgp)**
 
 ## License
 
@@ -13,3 +13,4 @@ This project is licensed under either of
    http://opensource.org/licenses/MIT)
 
 at your option.
+

@@ -1,0 +1,24 @@
+[package]
+name = "tdn_ds"
+version = "0.1.0"
+authors = ["Sun <huachuang20@gmail.com>"]
+edition = "2018"
+readme = "README.md"
+description = "Distributed Storage Overture for TDN"
+repository = "https://github.com/placefortea/TDN/storage/distribute"
+keywords = ["distributed", "blockchain", "infrastructure", "storage", "tea"]
+license = "MIT/Apache-2.0"
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"
+
+[dependencies]
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+bincode = "1"
+futures = "0.1"
+rckad = "0.0.3"
+teatree = { path="../teatree", features=["dev"] }
+

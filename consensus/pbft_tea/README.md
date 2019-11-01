@@ -1,7 +1,9 @@
-# TDN - Trusted Distributed Network
-*Blockchain infrastructure framework for security and trusted distributed interactive.*
+# PBFT Tea
+[![Latest Version](https://img.shields.io/badge/crates.io-v0.0.0-green.svg)](https://crates.io/crates/teatree)
 
-(WIP)
+*PBFT Consensus.*
+
+**(WIP) NOT USE UNTIL v0.1**
 
 ## License
 
