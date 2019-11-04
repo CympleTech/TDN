@@ -1,5 +1,5 @@
+use core::storage::Entity;
 use serde_derive::{Deserialize, Serialize};
-use teatree::storage::Entity;
 
 use crate::message::ID;
 

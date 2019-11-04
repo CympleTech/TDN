@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::mem::transmute;
 use std::time::Duration;
 
-use teatree::actor::prelude::*;
-use teatree::crypto::keypair::PublicKey;
-use teatree::primitives::types::EventID;
-use teatree::traits::propose::Peer;
-use teatree::traits::sample::peer::NetworkPeer;
-use teatree::{system_init, system_run};
+use core::actor::prelude::*;
+use core::crypto::keypair::PublicKey;
+use core::primitives::types::EventID;
+use core::traits::propose::Peer;
+use core::traits::sample::peer::NetworkPeer;
+use core::{system_init, system_run};
 
 use gossip_tea::*;
 

@@ -3,11 +3,11 @@ use rcmixed::traits::PublicKeyAlgorithm;
 use serde_derive::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
-use teatree::actor::prelude::Addr;
-use teatree::primitives::functions::get_default_storage_path;
-use teatree::primitives::types::GroupID;
-use teatree::storage::{DiskDatabase, DiskStorageActor, Entity, EntityWrite};
-use teatree::traits::propose::Peer;
+use core::actor::prelude::Addr;
+use core::primitives::functions::get_default_storage_path;
+use core::primitives::types::GroupID;
+use core::storage::{DiskDatabase, DiskStorageActor, Entity, EntityWrite};
+use core::traits::propose::Peer;
 
 pub struct KeyStore<P: 'static + Peer> {
     pk: P::PublicKey,

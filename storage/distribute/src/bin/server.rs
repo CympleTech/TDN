@@ -1,10 +1,10 @@
 use std::net::SocketAddr;
 
-use teatree::actor::prelude::Actor;
-use teatree::crypto::keypair::PrivateKey;
-use teatree::primitives::types::GroupID;
-use teatree::Configure;
-use teatree::{network_start, system_init, system_run};
+use core::actor::prelude::Actor;
+use core::crypto::keypair::PrivateKey;
+use core::primitives::types::GroupID;
+use core::Configure;
+use core::{network_start, system_init, system_run};
 
 use black_tea::DSActor;
 

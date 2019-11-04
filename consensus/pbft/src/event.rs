@@ -1,10 +1,10 @@
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-use teatree::primitives::types::EventID;
-use teatree::traits::propose::Event as EventTrait;
-use teatree::traits::propose::Message as MessageTrait;
-use teatree::traits::propose::Peer as PeerTrait;
+use core::primitives::types::EventID;
+use core::traits::propose::Event as EventTrait;
+use core::traits::propose::Message as MessageTrait;
+use core::traits::propose::Peer as PeerTrait;
 
 use crate::block::Block;
 use crate::message::Message;

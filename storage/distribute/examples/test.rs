@@ -1,8 +1,8 @@
-use teatree::actor::prelude::*;
-use teatree::crypto::hash::H256;
-use teatree::crypto::keypair::PrivateKey;
-use teatree::primitives::types::GroupID;
-use teatree::{network_start, system_init, system_run};
+use core::actor::prelude::*;
+use core::crypto::hash::H256;
+use core::crypto::keypair::PrivateKey;
+use core::primitives::types::GroupID;
+use core::{network_start, system_init, system_run};
 
 use black_tea::{DSActor, Read, ReadResult, Write, WriteResult};
 

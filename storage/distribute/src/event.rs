@@ -1,9 +1,9 @@
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-use teatree::crypto::keypair::{PrivateKey, PublicKey, Signature};
-use teatree::primitives::types::EventID;
-use teatree::traits::propose::Event as EventTrait;
+use core::crypto::keypair::{PrivateKey, PublicKey, Signature};
+use core::primitives::types::EventID;
+use core::traits::propose::Event as EventTrait;
 
 use crate::message::ID;
 
@@ -56,7 +56,8 @@ impl Event {
 
     pub fn new_drop(id: ID, pk: &PublicKey, psk: &PrivateKey) -> Self {
         //let signature = psk.sign()
-        Event::new(EventType::Drop(pk.clone(), Default::default(), id), pk, psk) //TODO Drop Signature
+        Event::new(EventType::Drop(pk.clone(), Default::default(), id), pk, psk)
+        //TODO Drop Signature
     }
 
     pub fn new_read_result(

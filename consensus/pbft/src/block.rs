@@ -3,10 +3,10 @@ use std::fmt::{Debug, Formatter, Result};
 use std::slice::Iter;
 use time::Timespec;
 
-//use teatree::crypto::hash::H256;
-use teatree::primitives::types::EventID;
-use teatree::traits::propose::Message as MessageTrait;
-use teatree::traits::propose::Peer as PeerTrait;
+//use core::crypto::hash::H256;
+use core::primitives::types::EventID;
+use core::traits::propose::Message as MessageTrait;
+use core::traits::propose::Peer as PeerTrait;
 
 use super::event::Event;
 

@@ -1,12 +1,12 @@
 [package]
 name = "tdn_permission"
 version = "0.0.1"
-authors = ["sun <huachuang20@gmail.com>"]
+authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
 readme = "README.md"
-description = "Permissioned library for TDN"
-repository = "https://github.com/placefortea/TDN/permission"
-keywords = ["distributed", "blockchain", "infrastructure", "tea", "permissioned", "permissionless"]
+description = "Trusted Distributed Network. (Another Blockchain infrastructure framework)."
+repository = "https://github.com/cypherlink/TDN/permission"
+keywords = ["distributed", "blockchain", "infrastructure", "framework"]
 license = "MIT/Apache-2.0"
 
 [dependencies]
@@ -15,4 +15,4 @@ serde_derive = "1.0"
 serde_json = "1.0"
 bincode = "1.0"
 
-teatree = { git = "https://github.com/placefortea/teatree", features = ["dev"] }
+core = { path = "../core", features = ["dev"] }

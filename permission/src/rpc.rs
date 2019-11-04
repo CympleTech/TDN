@@ -1,5 +1,5 @@
-use teatree::primitives::types::RPCParams;
-use teatree::traits::propose::Peer;
+use core::primitives::types::RPCParams;
+use core::traits::propose::Peer;
 
 use super::certificate::Certificate;
 

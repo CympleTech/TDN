@@ -1,8 +1,8 @@
 #![feature(vec_remove_item)]
 
-use teatree::actor::prelude::{Actor, Addr};
-use teatree::traits::propose::Message;
-use teatree::traits::propose::Peer;
+use core::actor::prelude::{Actor, Addr};
+use core::traits::propose::Message;
+use core::traits::propose::Peer;
 
 mod actor;
 mod block;

@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
-use teatree::crypto::hash::H256;
-use teatree::traits::propose::Peer;
+
+use core::crypto::hash::H256;
+use core::traits::propose::Peer;
 
 use crate::block::BlockID;
 

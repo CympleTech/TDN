@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use teatree::actor::prelude::*;
-use teatree::primitives::types::EventID;
-use teatree::traits::propose::Peer;
+use core::actor::prelude::*;
+use core::primitives::types::EventID;
+use core::traits::propose::Peer;
 
 use crate::message::{Gossip, GossipConfirm, GossipMessage, GossipNew, GossipP2P, GossipPeerLeave};
 

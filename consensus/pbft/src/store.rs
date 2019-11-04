@@ -1,8 +1,8 @@
 use serde_derive::{Deserialize, Serialize};
 
-use teatree::primitives::types::EventID;
-use teatree::storage::Entity;
-use teatree::traits::propose::{Event as EventTrait, Message as MessageTrait, Peer};
+use core::primitives::types::EventID;
+use core::storage::Entity;
+use core::traits::propose::{Event as EventTrait, Message as MessageTrait, Peer};
 
 use super::block::{Block, BlockID};
 use super::event::Event;

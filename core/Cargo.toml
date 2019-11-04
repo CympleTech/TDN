@@ -1,11 +1,11 @@
 [package]
-name = "tdn_core"
-version = "0.0.4"
-authors = ["Sun <huachuang20@gmail.com>"]
+name = "core"
+version = "0.0.1"
+authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
 readme = "README.md"
-description = "the tree for all tea to mix. (Distributed and Blockchain Infrastructure)"
-repository = "https://github.com/placefortea/TDN/core"
+description = "the core for all TDN to mix. (Distributed and Blockchain Infrastructure)"
+repository = "https://github.com/cypherlink/TDN/core"
 keywords = ["distributed", "blockchain", "infrastructure", "tea"]
 license = "MIT/Apache-2.0"
 

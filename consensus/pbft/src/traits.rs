@@ -1,6 +1,6 @@
-use teatree::actor::prelude::{Actor, ActorContext, Context, Handler, Message, ToEnvelope};
-use teatree::traits::propose::Message as MessageTrait;
-use teatree::traits::propose::Peer;
+use core::actor::prelude::{Actor, ActorContext, Context, Handler, Message, ToEnvelope};
+use core::traits::propose::Message as MessageTrait;
+use core::traits::propose::Peer;
 
 use crate::block::Block;
 use crate::event::Event;

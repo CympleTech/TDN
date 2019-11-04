@@ -1,5 +1,5 @@
-use teatree::actor::prelude::{Message, Recipient};
-use teatree::crypto::hash::H256;
+use core::actor::prelude::{Message, Recipient};
+use core::crypto::hash::H256;
 
 pub type ID = H256;
 

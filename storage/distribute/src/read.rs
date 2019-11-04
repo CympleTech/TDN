@@ -1,11 +1,11 @@
 use serde_json::json;
 
-use teatree::actor::prelude::*;
-use teatree::crypto::keypair::{PrivateKey, PublicKey};
-use teatree::primitives::types::{GroupID, PeerAddr};
-use teatree::traits::message::bridge_message::{EventMessage, LocalResponseMessage};
+use core::actor::prelude::*;
+use core::crypto::keypair::{PrivateKey, PublicKey};
+use core::primitives::types::{GroupID, PeerAddr};
+use core::traits::message::bridge_message::{EventMessage, LocalResponseMessage};
 
-use teatree::NetworkBridgeActor;
+use core::NetworkBridgeActor;
 
 use crate::actor::DSActor;
 use crate::event::Event;

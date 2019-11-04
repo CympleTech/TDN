@@ -1,25 +1,18 @@
 [package]
-name = "tdn"
+name = "tdn_pbft"
 version = "0.0.1"
 authors = ["Contact <contact@cypherlink.io>"]
-edition = "2018"
 readme = "README.md"
 description = "Trusted Distributed Network. (Another Blockchain infrastructure framework)."
-repository = "https://github.com/cypherlink/TDN"
+repository = "https://github.com/cypherlink/TDN/consensus/pbft"
 keywords = ["distributed", "blockchain", "infrastructure", "framework"]
 license = "MIT/Apache-2.0"
-
-[workspace]
-members = [
-    "core",
-    "crypto",
-    "p2p",
-    "rpc",
-    "permission",
-    "storage/distribute",
-    "storage/keystore",
-    "consensus/gossip",
-    "consensus/pbft",
-]
+edition = "2018"
 
 [dependencies]
+serde = "1.0"
+serde_derive = "1.0"
+bincode = "1.0"
+time = "0.1"
+
+core = { path = "../../core", features = ["dev"] }

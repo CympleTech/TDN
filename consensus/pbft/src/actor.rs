@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use std::time::Duration as StdDuration;
 use time::{Duration, Timespec};
 
-use teatree::actor::prelude::*;
-//use teatree::crypto::hash::H256;
-use teatree::primitives::functions::get_default_storage_path;
-use teatree::primitives::functions::{try_resend_times, DEFAULT_TIMES};
-use teatree::primitives::types::EventID;
-use teatree::storage::{DiskDatabase, DiskStorageActor, EntityRead, EntityWrite};
-use teatree::traits::propose::Event as EventTrait;
-use teatree::traits::propose::Message as MessageTrait;
-use teatree::traits::propose::Peer;
+use core::actor::prelude::*;
+//use core::crypto::hash::H256;
+use core::primitives::functions::get_default_storage_path;
+use core::primitives::functions::{try_resend_times, DEFAULT_TIMES};
+use core::primitives::types::EventID;
+use core::storage::{DiskDatabase, DiskStorageActor, EntityRead, EntityWrite};
+use core::traits::propose::Event as EventTrait;
+use core::traits::propose::Message as MessageTrait;
+use core::traits::propose::Peer;
 
 use crate::block::{Block, BlockID};
 use crate::event::Event;

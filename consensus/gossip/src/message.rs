@@ -1,8 +1,8 @@
 use serde_derive::{Deserialize, Serialize};
 
-use teatree::actor::prelude::*;
-use teatree::primitives::types::EventID;
-use teatree::traits::propose::Peer;
+use core::actor::prelude::*;
+use core::primitives::types::EventID;
+use core::traits::propose::Peer;
 
 use crate::actor::SeeMap;
 

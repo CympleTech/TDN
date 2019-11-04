@@ -1,7 +1,12 @@
 [package]
 name = "tdn_keystore"
 version = "0.1.0"
-authors = ["sun"]
+authors = ["Contact <contact@cypherlink.io>"]
+readme = "README.md"
+description = "Trusted Distributed Network. (Another Blockchain infrastructure framework)."
+repository = "https://github.com/cypherlink/TDN/storage/keystore"
+keywords = ["distributed", "blockchain", "infrastructure", "framework"]
+license = "MIT/Apache-2.0"
 edition = "2018"
 
 [dependencies]
@@ -11,5 +16,5 @@ serde_json = "1.0"
 bincode = "1.0"
 rcmixed = "0.0.2"
 
-teatree = { git = "https://github.com/placefortea/teatree", features = ["dev"] }
+core = { path = "../../core", features = ["dev"] }
 

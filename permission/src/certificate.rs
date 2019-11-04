@@ -1,8 +1,8 @@
 use serde_derive::{Deserialize, Serialize};
 use serde_json::json;
 
-use teatree::primitives::types::RPCParams;
-use teatree::traits::propose::Peer;
+use core::primitives::types::RPCParams;
+use core::traits::propose::Peer;
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Certificate<P: Peer> {

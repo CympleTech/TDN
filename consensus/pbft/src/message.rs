@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 
-use teatree::traits::propose::Message as MessageTrait;
-use teatree::traits::propose::Peer as PeerTrait;
+use core::traits::propose::Message as MessageTrait;
+use core::traits::propose::Peer as PeerTrait;
 
 use crate::block::{Block, BlockID};
 

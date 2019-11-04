@@ -1,12 +1,12 @@
 use serde_derive::{Deserialize, Serialize};
 use std::collections::hash_map::Iter;
 use std::collections::HashMap;
-use teatree::actor::prelude::Addr;
 
-use teatree::primitives::functions::get_default_storage_path;
-use teatree::primitives::types::{GroupID, PeerAddr};
-use teatree::storage::{DiskDatabase, DiskStorageActor, Entity, EntityWrite};
-use teatree::traits::propose::{Group as GroupTrait, Peer};
+use core::actor::prelude::Addr;
+use core::primitives::functions::get_default_storage_path;
+use core::primitives::types::{GroupID, PeerAddr};
+use core::storage::{DiskDatabase, DiskStorageActor, Entity, EntityWrite};
+use core::traits::propose::{Group as GroupTrait, Peer};
 
 use super::certificate::Certificate;
 
