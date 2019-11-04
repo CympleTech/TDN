@@ -23,3 +23,12 @@ members = [
 ]
 
 [dependencies]
+core = { path = "./core" }
+tdn_crypto = { path = "./crypto" }
+tdn_p2p = { path = "./p2p" }
+tdn_rpc = { path = "./rpc" }
+tdn_permission = { path = "./permission" }
+tdn_ds = { path = "./storage/distribute" }
+tdn_keystore = { path  = "./storage/keystore" }
+tdn_gossip = { path = "./consensus/gossip" }
+tdn_pbft = { path = "./consensus/pbft" }

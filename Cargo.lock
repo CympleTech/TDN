@@ -462,10 +462,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crypto"
-version = "0.0.1"
-
-[[package]]
 name = "curve25519-dalek"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1533,6 +1529,21 @@ dependencies = [
 
 [[package]]
 name = "tdn"
+version = "0.0.1"
+dependencies = [
+ "core 0.0.1",
+ "tdn_crypto 0.0.1",
+ "tdn_ds 0.1.0",
+ "tdn_gossip 0.0.1",
+ "tdn_keystore 0.1.0",
+ "tdn_p2p 0.0.1",
+ "tdn_pbft 0.0.1",
+ "tdn_permission 0.0.1",
+ "tdn_rpc 0.0.1",
+]
+
+[[package]]
+name = "tdn_crypto"
 version = "0.0.1"
 
 [[package]]

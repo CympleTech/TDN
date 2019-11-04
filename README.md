@@ -1,7 +1,9 @@
 # TDN - Trusted Distributed Network
 *Blockchain infrastructure framework for security and trusted distributed interactive.*
 
-(WIP)
+(WIP) Refactoring to version-2.
+
+you can use `Teatree` and `TDN-Example` repository that is version-1.
 
 ## License
 
