@@ -25,10 +25,7 @@ actix = "0.8"
 actix_derive = "0.4"
 tokio = "0.1"
 futures = "0.1"
-
-rand = "0.6"
-sha3 = "^0.7"
-ed25519-dalek = { version="1.0.0-pre.0", features = ["serde"]}
+rand = "0.7"
 
 jsonrpc-parse = "0.1.2"
 dirs = "1.0"
@@ -36,3 +33,5 @@ failure = "0.1"
 time = "0.1"
 
 sled = "0.24"
+
+tdn_crypto = { path = "../crypto" }

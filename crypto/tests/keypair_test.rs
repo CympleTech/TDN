@@ -1,8 +1,8 @@
-extern crate crypto;
+extern crate tdn_crypto;
 
 #[cfg(test)]
 mod tests {
-    use crypto::keypair::*;
+    use tdn_crypto::keypair::*;
 
     #[test]
     fn test_generate_private_key() {

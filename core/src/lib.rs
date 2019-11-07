@@ -2,11 +2,12 @@
 
 use std::net::SocketAddr;
 
+use tdn_crypto as crypto;
+
 mod config;
 mod network_bridge;
 
 pub mod actor;
-pub mod crypto;
 pub mod p2p;
 pub mod primitives;
 pub mod rpc;

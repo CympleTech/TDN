@@ -1,9 +1,9 @@
-extern crate crypto;
+extern crate tdn_crypto;
 
 #[allow(non_snake_case)]
 #[cfg(test)]
 mod tests {
-    use crypto::hash::*;
+    use tdn_crypto::hash::*;
 
     #[test]
     fn test_H256() {
