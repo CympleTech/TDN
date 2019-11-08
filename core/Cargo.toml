@@ -21,6 +21,10 @@ bincode = "1.0"
 byteorder = "1"
 bytes = "0.4"
 
+# async runtime and channel
+async_std = "0.99"
+crossbeam = "0.7"
+
 actix = "0.8"
 actix_derive = "0.4"
 tokio = "0.1"

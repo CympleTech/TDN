@@ -1,5 +1,6 @@
 pub use core;
 pub use tdn_crypto as crypto;
+pub use tdn_database as database;
 pub use tdn_ds as ds;
 pub use tdn_gossip as gossip;
 pub use tdn_keystore as keystore;

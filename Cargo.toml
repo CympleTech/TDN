@@ -16,6 +16,7 @@ members = [
     "p2p",
     "rpc",
     "permission",
+    "storage/database",
     "storage/distribute",
     "storage/keystore",
     "consensus/gossip",
@@ -28,6 +29,7 @@ tdn_crypto = { path = "./crypto" }
 tdn_p2p = { path = "./p2p" }
 tdn_rpc = { path = "./rpc" }
 tdn_permission = { path = "./permission" }
+tdn_database = { path = "./storage/database" }
 tdn_ds = { path = "./storage/distribute" }
 tdn_keystore = { path  = "./storage/keystore" }
 tdn_gossip = { path = "./consensus/gossip" }

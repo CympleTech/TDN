@@ -1,5 +1,9 @@
 #![feature(vec_drain_as_slice)]
 
+// Unify crate to prevent conflict
+pub use async_std;
+pub use crossbeam;
+
 use std::net::SocketAddr;
 
 use tdn_crypto as crypto;
