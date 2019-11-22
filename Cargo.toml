@@ -9,28 +9,27 @@ repository = "https://github.com/cypherlink/TDN"
 keywords = ["distributed", "blockchain", "infrastructure", "framework"]
 license = "MIT/Apache-2.0"
 
-[workspace]
-members = [
-    "core",
-    "crypto",
-    "p2p",
-    "rpc",
-    "permission",
-    "storage/database",
-    "storage/distribute",
-    "storage/keystore",
-    "consensus/gossip",
-    "consensus/pbft",
-]
+[features]
+core = []
+# default = ["tdn_permission"]
+# full = ["tdn_permission", "tdn_pbft"]
 
 [dependencies]
-core = { path = "./core" }
-tdn_crypto = { path = "./crypto" }
-tdn_p2p = { path = "./p2p" }
-tdn_rpc = { path = "./rpc" }
-tdn_permission = { path = "./permission" }
-tdn_database = { path = "./storage/database" }
-tdn_ds = { path = "./storage/distribute" }
-tdn_keystore = { path  = "./storage/keystore" }
-tdn_gossip = { path = "./consensus/gossip" }
-tdn_pbft = { path = "./consensus/pbft" }
+async-std = { version = "1", features = ["unstable"] }
+# toml = "0.5"
+# serde = "1.0"
+# serde_derive = "1.0"
+# serde_json = "1.0"
+# bincode = "1.0"
+# byteorder = "1"
+# bytes = "0.4"
+# async_std = "1"
+# rand = "0.7"
+# jsonrpc-parse = "0.1.2"
+# dirs = "1.0"
+# failure = "0.1"
+# time = "0.1"
+# sled = "0.24"
+
+# chamomile = { path = "../chamomile" }
+# tdn_permission = { path= "../tdn_permission", optional = true }
