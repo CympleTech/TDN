@@ -5,18 +5,29 @@ use async_std::task;
 
 use crate::{Message, new_channel};
 
+pub struct RpcConfig {
+    pub addr: SocketAddr,
+}
+
+impl RpcConfig {
+    pub fn default(addr: SocketAddr) -> Self {
+        Self { addr }
+    }
+}
+
 pub(crate) struct JsonRpc {
     out_send: Sender<Message>,
+    config: RpcConfig,
 }
 
 impl JsonRpc {
-    pub fn new(out_send: Sender<Message>) -> Self {
+    pub fn new(out_send: Sender<Message>, config: RpcConfig) -> Self {
         // TODO set layer config
 
-        Self { out_send }
+        Self { out_send, config }
     }
 
-    pub async fn start(&self) -> Result<Sender<Message>> {
+    pub async fn start(&mut self) -> Result<Sender<Message>> {
         let (send, recv) = new_channel();
 
         // start json rpc server

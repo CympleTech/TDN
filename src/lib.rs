@@ -6,18 +6,17 @@ use async_std::task;
 mod p2p;
 mod layer;
 mod jsonrpc;
+mod config;
+mod group;
 
-use p2p::P2pServer;
-use layer::LayerServer;
-use jsonrpc::JsonRpc;
+use p2p::{P2pConfig, P2pServer};
+use layer::{LayerConfig, LayerServer};
+use jsonrpc::{JsonRpc, RpcConfig};
+
+pub use group::{GroupId, Group};
+pub use p2p::PeerId;
 
 pub const MAX_MESSAGE_CAPACITY: usize = 1024;
-
-#[derive(Debug)]
-pub struct PeerId;
-
-#[derive(Debug)]
-pub struct GroupId;
 
 #[derive(Debug)]
 pub struct PeerInfo;
@@ -33,29 +32,65 @@ pub enum Message {
     Rpc(Vec<u8>)
 }
 
+pub struct Config {
+    p2p: P2pConfig,
+    layer: LayerConfig,
+    rpc: RpcConfig,
+}
+
+impl Config {
+    pub fn default(p2p_addr: SocketAddr, layer_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
+        Config {
+            p2p: P2pConfig::default(p2p_addr),
+            layer: LayerConfig::default(layer_addr),
+            rpc: RpcConfig::default(rpc_addr),
+        }
+    }
+}
+
 pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
     channel::<Message>(MAX_MESSAGE_CAPACITY)
 }
 
-pub async fn start(out_send: Sender<Message>) -> Result<Sender<Message>> {
+pub async fn start<G: 'static + Group>(out_send: Sender<Message>, group: G) -> Result<Sender<Message>> {
     let (send, recv) = new_channel();
 
-    task::spawn(start_main(out_send, recv));
+    // TODO load config from configuare file
+    let p2p_addr: SocketAddr = "0.0.0.0:8000".parse().unwrap();
+    let layer_addr: SocketAddr = "0.0.0.0:8001".parse().unwrap();
+    let rpc_addr: SocketAddr = "0.0.0.0:8002".parse().unwrap();
+
+    let config = Config::default(p2p_addr, layer_addr, rpc_addr);
+
+    task::spawn(start_main(out_send, recv, config, group));
 
     Ok(send)
 }
 
-async fn start_main(out_send: Sender<Message>, self_recv: Receiver<Message>) -> Result<()> {
+pub async fn start_with_config<G: 'static + Group>(out_send: Sender<Message>, group: G, config: Config) -> Result<Sender<Message>> {
+    let (send, recv) = new_channel();
+
+    task::spawn(start_main(out_send, recv, config, group));
+
+    Ok(send)
+}
+
+async fn start_main<G: 'static + Group>(out_send: Sender<Message>, self_recv: Receiver<Message>, config: Config, group: G) -> Result<()> {
+    let (p2p_config, layer_config, rpc_config) = (config.p2p, config.layer, config.rpc);
+
+    // permission mode: Group
+    // let group = xxx;
+
     // start p2p
-    let p2p = P2pServer::new(out_send.clone());
+    let mut p2p = P2pServer::new(out_send.clone(), group, p2p_config);
     let p2p_sender = p2p.start().await?;
 
     // start layer_rpc
-    let layer = LayerServer::new(out_send.clone());
+    let mut layer = LayerServer::new(out_send.clone(), layer_config);
     let layer_sender = layer.start().await?;
 
     // start inner json_rpc
-    let rpc = JsonRpc::new(out_send.clone());
+    let mut rpc = JsonRpc::new(out_send.clone(), rpc_config);
     let rpc_sender = rpc.start().await?;
 
     while let Some(message) = self_recv.recv().await {
