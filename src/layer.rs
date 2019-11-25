@@ -27,18 +27,17 @@ impl LayerConfig {
 }
 
 pub(crate) struct LayerServer {
-    out_send: Sender<Message>,
     config: LayerConfig
 }
 
 impl LayerServer {
-    pub fn new(out_send: Sender<Message>, config: LayerConfig) -> Self {
+    pub fn new(config: LayerConfig) -> Self {
         // TODO set layer config
 
-        Self { out_send, config }
+        Self { config }
     }
 
-    pub async fn start(&mut self) -> Result<Sender<Message>> {
+    pub async fn start(server: LayerServer, out_send: Sender<Message>) -> Result<Sender<Message>> {
         let (send, recv) = new_channel();
 
         // start cap rpc server

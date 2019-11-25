@@ -82,16 +82,13 @@ async fn start_main<G: 'static + Group>(out_send: Sender<Message>, self_recv: Re
     // let group = xxx;
 
     // start p2p
-    let mut p2p = P2pServer::new(out_send.clone(), group, p2p_config);
-    let p2p_sender = p2p.start().await?;
+    let p2p_sender = P2pServer::start(P2pServer::new(group, p2p_config), out_send.clone()).await?;
 
     // start layer_rpc
-    let mut layer = LayerServer::new(out_send.clone(), layer_config);
-    let layer_sender = layer.start().await?;
+    let layer_sender = LayerServer::start(LayerServer::new(layer_config), out_send.clone()).await?;
 
     // start inner json_rpc
-    let mut rpc = JsonRpc::new(out_send.clone(), rpc_config);
-    let rpc_sender = rpc.start().await?;
+    let rpc_sender = JsonRpc::start(JsonRpc::new(rpc_config), out_send).await?;
 
     while let Some(message) = self_recv.recv().await {
         let sender = match message {

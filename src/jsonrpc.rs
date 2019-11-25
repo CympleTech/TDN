@@ -16,18 +16,17 @@ impl RpcConfig {
 }
 
 pub(crate) struct JsonRpc {
-    out_send: Sender<Message>,
     config: RpcConfig,
 }
 
 impl JsonRpc {
-    pub fn new(out_send: Sender<Message>, config: RpcConfig) -> Self {
+    pub fn new( config: RpcConfig) -> Self {
         // TODO set layer config
 
-        Self { out_send, config }
+        Self { config }
     }
 
-    pub async fn start(&mut self) -> Result<Sender<Message>> {
+    pub async fn start(server: JsonRpc, out_send: Sender<Message>) -> Result<Sender<Message>> {
         let (send, recv) = new_channel();
 
         // start json rpc server
