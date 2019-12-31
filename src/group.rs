@@ -5,7 +5,7 @@ use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 use crate::error::Error;
-use crate::p2p::PeerId;
+use crate::p2p::PeerId as PeerAddr;
 
 #[derive(Copy, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct GroupId(pub [u8; 32]);
@@ -72,23 +72,23 @@ pub trait Group: Send {
     fn id(&self) -> &GroupId;
 
     /// directly add a peer to group.
-    fn add(&mut self, peer_id: &PeerId);
+    fn add(&mut self, peer_id: &PeerAddr);
 
     /// join: when peer join will call, happen before call consensus's peer_join,
     /// it has default implement if you want to handle it in consensus
-    fn join(&mut self, _peer_id: PeerId, _data: Self::JoinType) -> bool {
+    fn join(&mut self, _peer_id: PeerAddr, _data: Self::JoinType) -> bool {
         true
     }
 
     /// leave: when peer leave will call, happen before call consensus's peer_leave,
     /// it has default implement if you want to handle it in consensus
-    fn leave(&mut self, _peer_id: &PeerId) -> bool {
+    fn leave(&mut self, _peer_id: &PeerAddr) -> bool {
         true
     }
 
     /// verify: check peer is verified by group permission,
     /// it has default implement if you want to handle it in consensus
-    fn verify(&self, _peer_id: &PeerId) -> bool {
+    fn verify(&self, _peer_id: &PeerAddr) -> bool {
         true
     }
 }

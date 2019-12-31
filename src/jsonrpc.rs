@@ -9,12 +9,6 @@ pub struct RpcConfig {
     pub addr: SocketAddr,
 }
 
-impl RpcConfig {
-    pub fn default(addr: SocketAddr) -> Self {
-        Self { addr }
-    }
-}
-
 pub(crate) async fn start(config: RpcConfig, send: Sender<Message>) -> Result<Sender<Message>> {
     let (out_send, out_recv) = new_channel();
 

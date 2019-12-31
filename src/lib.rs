@@ -5,50 +5,35 @@ use futures::join;
 use std::net::SocketAddr;
 
 mod config;
-mod error;
 mod group;
 mod jsonrpc;
 mod layer;
 mod p2p;
 
-use jsonrpc::{start as rpc_start, RpcConfig};
-use layer::{start as layer_start, LayerConfig};
-use p2p::{start as p2p_start, P2pConfig};
+pub mod error;
+pub mod primitive;
 
-pub use error::Error;
+use jsonrpc::start as rpc_start;
+use layer::start as layer_start;
+use p2p::start as p2p_start;
+use primitive::MAX_MESSAGE_CAPACITY;
+
+pub use config::Config;
 pub use group::{Group, GroupId};
-pub use p2p::PeerId;
-
-pub const MAX_MESSAGE_CAPACITY: usize = 1024;
+pub use p2p::PeerId as PeerAddr;
 
 #[derive(Debug)]
 pub struct PeerInfo;
 
 #[derive(Debug)]
 pub enum Message {
-    PeerJoin(GroupId, PeerId, PeerInfo, Option<SocketAddr>),
-    PeerLeave(GroupId, PeerId),
-    Event(GroupId, PeerId, Vec<u8>),
-    Upper(GroupId, PeerId, Vec<u8>),
-    Lower(GroupId, PeerId, Vec<u8>),
-    Permission(GroupId, PeerId, Option<SocketAddr>),
+    PeerJoin(GroupId, PeerAddr, PeerInfo, Option<SocketAddr>),
+    PeerLeave(GroupId, PeerAddr),
+    Event(GroupId, PeerAddr, Vec<u8>),
+    Upper(GroupId, PeerAddr, Vec<u8>),
+    Lower(GroupId, PeerAddr, Vec<u8>),
+    Permission(GroupId, PeerAddr, Option<SocketAddr>),
     Rpc(Vec<u8>),
-}
-
-pub struct Config {
-    p2p: P2pConfig,
-    layer: LayerConfig,
-    rpc: RpcConfig,
-}
-
-impl Config {
-    pub fn default(p2p_addr: SocketAddr, layer_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
-        Config {
-            p2p: P2pConfig::default(p2p_addr),
-            layer: LayerConfig::default(layer_addr),
-            rpc: RpcConfig::default(rpc_addr),
-        }
-    }
 }
 
 pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
@@ -61,12 +46,7 @@ pub async fn start<G: 'static + Group>(
 ) -> Result<Sender<Message>> {
     let (send, recv) = new_channel();
 
-    // TODO load config from configuare file
-    let p2p_addr: SocketAddr = "0.0.0.0:8000".parse().unwrap();
-    let layer_addr: SocketAddr = "0.0.0.0:8001".parse().unwrap();
-    let rpc_addr: SocketAddr = "0.0.0.0:8002".parse().unwrap();
-
-    let config = Config::default(p2p_addr, layer_addr, rpc_addr);
+    let config = Config::load();
 
     task::spawn(start_main(out_send, recv, config, group));
 
@@ -91,7 +71,7 @@ async fn start_main<G: 'static + Group>(
     config: Config,
     group: G,
 ) -> Result<()> {
-    let (p2p_config, layer_config, rpc_config) = (config.p2p, config.layer, config.rpc);
+    let (p2p_config, layer_config, rpc_config) = config.split();
 
     // start p2p
     // start layer_rpc

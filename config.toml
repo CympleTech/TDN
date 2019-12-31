@@ -1,0 +1,60 @@
+## P2P listen address, default is 0.0.0.0:7364,  uncomment below to change.
+p2p_addr = "0.0.0.0:7364"
+
+## P2P transport include: tcp, udp, udt, rtp, default is udp.
+p2p_default_transport = "tcp"
+
+## P2P bootstrap seed IPs.
+p2p_bootstrap = []
+
+## P2P Blacklist(IP),  uncomment below to change.
+## Example: p2p_black_list = ["1.1.1.1:7000", "192.168.0.1.:7000"]
+#p2p_black_list = []
+
+## P2P Whitelist(ID),  uncomment below to change.
+## Example: p2p_white_peer_list = [
+##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
+##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
+##          ]
+#p2p_white_peer_list = []
+
+## P2P Blocklist (ID),  uncomment below to change.
+## Example: p2p_black_peer_list = [
+##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
+##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
+##          ]
+#p2p_black_peer_list = []
+
+## Layer listen address, default is 0.0.0.0:7000,  uncomment below to change.
+#layer_addr = "0.0.0.0:7000"
+
+## Layer define if others can use it as upper layer. if false, only whitelist can use. default is true.
+#layer_lower = true
+
+## Layer define upper layer's seed IPs.
+layer_upper = []
+
+## Layer Whitelist(IP),  uncomment below to change.
+## Example: layer_white_list = ["1.1.1.1:7000", "192.168.0.1.:7000"]
+#layer_white_list = []
+
+# Layer blacklist(IP),  uncomment below to change.
+# Example: layer_black_list = ["1.1.1.1:7000", "192.168.0.1.:7000"]
+#layer_black_list = []
+
+## Layer whitelist(Group),  uncomment below to change.
+## Example: layer_white_group_list = [
+##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
+##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
+##          ]
+#layer_white_group_list = []
+
+## Layer blacklist(Group),  uncomment below to change.
+## Example: layer_black_group_list = [
+##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
+##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
+##          ]
+#layer_black_group_list = []
+
+## RPC listen address, default is 127.0.0.1:8000, uncomment below to change.
+#rpc_addr = "127.0.0.1:8000",

@@ -28,18 +28,6 @@ pub struct LayerConfig {
 }
 
 impl LayerConfig {
-    pub fn default(addr: SocketAddr) -> Self {
-        Self {
-            addr,
-            lower: true, // TODO default false
-            upper: vec![],
-            white_list: vec![],
-            black_list: vec![],
-            white_group_list: vec![],
-            black_group_list: vec![],
-        }
-    }
-
     pub fn is_close(&self) -> bool {
         self.upper.is_empty()
             && self.lower
@@ -83,14 +71,17 @@ async fn run_listen(
     // link to uppers
     for (addr, gid) in config.upper {
         uppers.insert(gid, vec![]);
-        // TODO link
+        // TODO link and join bytes.
+        trans_send
+            .send(EndpointMessage::Connect(addr, vec![]))
+            .await;
     }
 
     loop {
         select! {
             msg = trans_recv.next().fuse() => match msg {
                 Some(msg) => {
-                    println!("recv from transport: {:?}", msg);
+                    println!("recv from lower: {:?}", msg);
                     //send.send(msg).await;
                 },
                 None => break,
