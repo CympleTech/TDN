@@ -3,8 +3,6 @@
 
 (WIP) Refactoring to version-2.
 
-you can use `Teatree` and `TDN-Example` repository that is version-1.
-
 ### Features
 - Support different data structures
 - Support different consensus algorithms
