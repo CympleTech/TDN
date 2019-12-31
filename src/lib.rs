@@ -5,6 +5,7 @@ use futures::join;
 use std::net::SocketAddr;
 
 mod config;
+mod error;
 mod group;
 mod jsonrpc;
 mod layer;
@@ -14,6 +15,7 @@ use jsonrpc::{start as rpc_start, RpcConfig};
 use layer::{start as layer_start, LayerConfig};
 use p2p::{start as p2p_start, P2pConfig};
 
+pub use error::Error;
 pub use group::{Group, GroupId};
 pub use p2p::PeerId;
 
