@@ -9,27 +9,10 @@ repository = "https://github.com/cypherlink/TDN"
 keywords = ["distributed", "blockchain", "infrastructure", "framework"]
 license = "MIT/Apache-2.0"
 
-[features]
-core = []
-# default = ["tdn_permission"]
-# full = ["tdn_permission", "tdn_pbft"]
-
 [dependencies]
 async-std = { version = "1", features = ["unstable"] }
 serde = "1"
 serde_derive = "1"
-# serde_json = "1"
-# bincode = "1"
-# toml = "0.5"
-# byteorder = "1"
-# bytes = "0.4"
-# async_std = "1"
-# rand = "0.7"
-# jsonrpc-parse = "0.1.2"
-# dirs = "1.0"
-# failure = "0.1"
-# time = "0.1"
-# sled = "0.24"
 
 chamomile = { path = "../chamomile" } # Dev
 
