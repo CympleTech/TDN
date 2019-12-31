@@ -11,6 +11,7 @@ license = "MIT/Apache-2.0"
 
 [dependencies]
 async-std = { version = "1", features = ["unstable"] }
+futures = "0.3"
 serde = "1"
 serde_derive = "1"
 

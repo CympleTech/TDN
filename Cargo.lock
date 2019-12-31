@@ -954,14 +954,15 @@ version = "0.0.1"
 dependencies = [
  "async-std 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chamomile 0.1.0",
+ "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "tdn_permission 0.1.0",
+ "tdn_permission 0.0.1",
 ]
 
 [[package]]
 name = "tdn_permission"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "tdn 0.0.1",
 ]

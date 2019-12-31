@@ -1,9 +1,9 @@
-use std::net::SocketAddr;
-use async_std::sync::{channel, Sender, Receiver};
 use async_std::io::Result;
+use async_std::sync::{Receiver, Sender};
 use async_std::task;
+use std::net::SocketAddr;
 
-use crate::{Message, new_channel};
+use crate::{new_channel, Message};
 
 pub struct RpcConfig {
     pub addr: SocketAddr,
@@ -15,24 +15,12 @@ impl RpcConfig {
     }
 }
 
-pub(crate) struct JsonRpc {
-    config: RpcConfig,
-}
+pub(crate) async fn start(config: RpcConfig, send: Sender<Message>) -> Result<Sender<Message>> {
+    let (out_send, out_recv) = new_channel();
 
-impl JsonRpc {
-    pub fn new( config: RpcConfig) -> Self {
-        // TODO set layer config
+    // start json rpc server
 
-        Self { config }
-    }
+    // start listen self recv
 
-    pub async fn start(server: JsonRpc, out_send: Sender<Message>) -> Result<Sender<Message>> {
-        let (send, recv) = new_channel();
-
-        // start json rpc server
-
-        // start listen self recv
-
-        Ok(send)
-    }
+    Ok(out_send)
 }

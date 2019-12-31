@@ -1,68 +1,65 @@
-use std::net::SocketAddr;
-use async_std::sync::{Sender, Receiver, Arc, Mutex};
-use async_std::io::Result;
-use async_std::task;
+use async_std::{
+    io::Result,
+    prelude::*,
+    sync::{Receiver, Sender},
+    task,
+};
+use futures::{select, FutureExt};
 
-use chamomile::{start, new_channel as p2p_new_channel, Message as P2pMessage};
 pub use chamomile::Config as P2pConfig;
 pub use chamomile::PeerId;
+use chamomile::{new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage};
 
 use crate::group::Group;
-use crate::{Message, new_channel};
+use crate::{new_channel, Message};
 
-pub(crate) struct P2pServer<G: 'static + Group> {
+pub(crate) async fn start<G: 'static + Group>(
     group: G,
     config: P2pConfig,
+    send: Sender<Message>,
+) -> Result<Sender<Message>> {
+    let (out_send, out_recv) = new_channel();
+    let (p2p_send, p2p_recv) = p2p_new_channel();
+
+    // start chamomile
+    let p2p_send = p2p_start(p2p_send, config).await?;
+
+    task::spawn(run_listen(group, send, p2p_send, p2p_recv, out_recv));
+
+    Ok(out_send)
 }
 
-impl<G: 'static + Group> P2pServer<G> {
-    pub fn new(group: G, config: P2pConfig) -> Self {
-        Self { group, config }
-    }
-
-    pub async fn start(server: P2pServer<G>, out_send: Sender<Message>) -> Result<Sender<Message>> {
-        let (send, recv) = new_channel();
-        let (self_send, self_recv) = p2p_new_channel();
-
-        // start chamomile
-        let p2p_send = start(self_send, server.config.clone()).await?;
-
-        let m1 = Arc::new(Mutex::new(server));
-        let m2 = m1.clone();
-
-        // start listen self recv
-        task::spawn(run_listen_p2p(m1, out_send.clone(), p2p_send.clone(), self_recv));
-
-        // start listen outside recv
-        task::spawn(run_listen_outside(m2, out_send, p2p_send, recv));
-
-        Ok(send)
-    }
-}
-
-
-async fn run_listen_p2p<G: Group>(
-    server: Arc<Mutex<P2pServer<G>>>,
-    out_send: Sender<Message>,
-    send: Sender<P2pMessage>,
-    recv: Receiver<P2pMessage>
+async fn run_listen(
+    group: impl Group,
+    send: Sender<Message>,
+    p2p_send: Sender<P2pMessage>,
+    mut p2p_recv: Receiver<P2pMessage>,
+    mut out_recv: Receiver<Message>,
 ) -> Result<()> {
-    while let Some(message) = recv.recv().await {
-        println!("recv from p2p: {:?}", message);
-        send.send(message).await;
+    loop {
+        select! {
+            msg = p2p_recv.next().fuse() => match msg {
+                Some(msg) => {
+                    println!("recv from p2p: {:?}", msg);
+                    //send.send(msg).await;
+                },
+                None => break,
+            },
+            msg = out_recv.next().fuse() => match msg {
+                Some(msg) => {
+                    println!("recv from outside: {:?}", msg);
+                    //p2p_send.send(msg).await;
+                },
+                None => break,
+            },
+        }
     }
-    Ok(())
-}
 
-async fn run_listen_outside<G: Group>(
-    server: Arc<Mutex<P2pServer<G>>>,
-    out_send: Sender<Message>,
-    send: Sender<P2pMessage>,
-    recv: Receiver<Message>
-) -> Result<()> {
-    while let Some(message) = recv.recv().await {
-        println!("recv from outisade: {:?}", message);
-        //send.send(message).await;
-    }
+    drop(group);
+    drop(send);
+    drop(p2p_send);
+    drop(p2p_recv);
+    drop(out_recv);
+
     Ok(())
 }
