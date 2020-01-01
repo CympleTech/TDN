@@ -5,6 +5,7 @@ use async_std::{
     task,
 };
 use futures::{select, FutureExt};
+use serde::Deserialize;
 
 pub use chamomile::Config as P2pConfig;
 pub use chamomile::PeerId;
@@ -29,8 +30,8 @@ pub(crate) async fn start<G: 'static + Group>(
     Ok(out_send)
 }
 
-async fn run_listen(
-    group: impl Group,
+async fn run_listen<G: Group>(
+    mut group: G,
     send: Sender<Message>,
     p2p_send: Sender<P2pMessage>,
     mut p2p_recv: Receiver<P2pMessage>,
@@ -41,6 +42,22 @@ async fn run_listen(
             msg = p2p_recv.next().fuse() => match msg {
                 Some(msg) => {
                     println!("recv from p2p: {:?}", msg);
+                    match msg {
+                        P2pMessage::PeerJoin(peer_addr, bytes) => {
+                            let join_type_result = bincode::deserialize::<G::JoinType>(&bytes);
+                            if join_type_result.is_ok()  {
+                                let (is_ok, result) = group.join(peer_addr, join_type_result.unwrap());
+                                let result_data = bincode::serialize(&result);
+                                if is_ok && result_data.is_ok() {
+                                    p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, true, result_data.unwrap())).await;
+                                    continue;
+                                }
+                            }
+
+                            p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, false, vec![])).await;
+                        }
+                        _ => {}
+                    }
                     //send.send(msg).await;
                 },
                 None => break,

@@ -66,7 +66,8 @@ impl Debug for GroupId {
 /// you can customize the implementation of these methods,
 /// you can set the permission or size of the group
 pub trait Group: Send {
-    type JoinType: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned;
+    type JoinType: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned = ();
+    type JoinResult: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned = ();
 
     /// id: it will return group's id
     fn id(&self) -> &GroupId;
@@ -76,8 +77,8 @@ pub trait Group: Send {
 
     /// join: when peer join will call, happen before call consensus's peer_join,
     /// it has default implement if you want to handle it in consensus
-    fn join(&mut self, _peer_id: PeerAddr, _data: Self::JoinType) -> bool {
-        true
+    fn join(&mut self, _peer_id: PeerAddr, _data: Self::JoinType) -> (bool, Self::JoinResult) {
+        (true, Default::default())
     }
 
     /// leave: when peer leave will call, happen before call consensus's peer_leave,

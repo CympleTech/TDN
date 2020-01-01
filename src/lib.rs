@@ -1,3 +1,6 @@
+#![recursion_limit = "1024"]
+#![feature(associated_type_defaults)]
+
 use async_std::io::Result;
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;

@@ -16,6 +16,7 @@ use crate::primitive::{
 
 pub struct Config {
     pub p2p_addr: SocketAddr,
+    pub p2p_join_data: Vec<u8>,
     pub p2p_transport: String,
     pub p2p_white_list: Vec<SocketAddr>,
     pub p2p_black_list: Vec<SocketAddr>,
@@ -37,6 +38,7 @@ impl Config {
     pub fn split(self) -> (P2pConfig, LayerConfig, RpcConfig) {
         let Config {
             p2p_addr,
+            p2p_join_data,
             p2p_transport,
             p2p_white_list,
             p2p_black_list,
@@ -56,6 +58,7 @@ impl Config {
 
         let p2p_config = P2pConfig {
             addr: p2p_addr,
+            join_data: p2p_join_data,
             transport: p2p_transport,
             white_list: p2p_white_list,
             black_list: p2p_black_list,
@@ -83,6 +86,7 @@ impl Config {
     pub fn with_addr(p2p_addr: SocketAddr, layer_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
         Config {
             p2p_addr: p2p_addr,
+            p2p_join_data: vec![],
             p2p_transport: P2P_TRANSPORT.to_owned(),
             p2p_white_list: vec![],
             p2p_black_list: vec![],
@@ -132,6 +136,7 @@ impl Config {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfig {
     pub p2p_addr: Option<SocketAddr>,
+    pub p2p_join_data: Option<String>,
     pub p2p_default_transport: Option<String>,
     pub p2p_bootstrap: Vec<SocketAddr>,
     pub p2p_black_list: Option<Vec<SocketAddr>>,
@@ -153,6 +158,21 @@ impl RawConfig {
     fn parse(self) -> Config {
         Config {
             p2p_addr: self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),
+            p2p_join_data: self
+                .p2p_join_data
+                .map(|s| {
+                    let mut value: Vec<u8> = vec![];
+
+                    for i in 0..(s.len() / 2) {
+                        let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16);
+                        if res.is_err() {
+                            return vec![];
+                        }
+                        value.push(res.unwrap());
+                    }
+                    value
+                })
+                .unwrap_or(vec![]),
             p2p_transport: self
                 .p2p_default_transport
                 .unwrap_or(P2P_TRANSPORT.to_owned()),
