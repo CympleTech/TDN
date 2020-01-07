@@ -43,12 +43,12 @@ async fn run_listen(
                 Some(msg) => {
                     println!("recv from p2p: {:?}", msg);
                     match msg {
-                        P2pMessage::PeerJoin(peer_addr, addr, bytes) => {
-                            send.send(Message::PeerJoin(peer_addr, addr, bytes)).await;
-                            // TODO Debug
-                            p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, true, vec![])).await;
-                            // p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, false, vec![])).await;
-                        }
+                        P2pMessage::PeerJoin(peer_addr, addr, data) => {
+                            send.send(Message::PeerJoin(peer_addr, addr, data)).await;
+                        },
+                        P2pMessage::PeerJoinResult(peer_addr, is_ok, result) => {
+                            send.send(Message::PeerJoinResult(peer_addr, is_ok, result)).await;
+                        },
                         _ => {}
                     }
                     //send.send(msg).await;
@@ -58,7 +58,15 @@ async fn run_listen(
             msg = out_recv.next().fuse() => match msg {
                 Some(msg) => {
                     println!("recv from outside: {:?}", msg);
-                    //p2p_send.send(msg).await;
+                    match msg {
+                        Message::PeerJoinResult(peer_addr, is_ok, result) => {
+                            p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, result)).await;
+                        },
+                        Message::PeerJoin(peer_addr, addr, data) => {
+                            p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;
+                        }
+                        _ => {}
+                    }
                 },
                 None => break,
             },

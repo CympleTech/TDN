@@ -1,6 +1,9 @@
 #![recursion_limit = "1024"]
 #![feature(associated_type_defaults)]
 
+// pub async std to others
+pub use async_std;
+
 use async_std::io::Result;
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
