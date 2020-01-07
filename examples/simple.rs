@@ -13,6 +13,9 @@ fn main() {
                 Message::PeerJoin(peer, addr, data) => {
                     group.join(peer, addr, data, send.clone()).await;
                 }
+                Message::PeerJoinResult(peer, is_ok, result) => {
+                    group.join_result(peer, is_ok, result);
+                }
                 Message::PeerLeave(peer) => {
                     group.leave(&peer);
                 }

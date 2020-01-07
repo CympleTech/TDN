@@ -21,7 +21,6 @@ pub(crate) async fn start(
     let (out_send, out_recv) = new_channel();
     let (p2p_send, p2p_recv) = p2p_new_channel();
 
-    println!("config join data: {:?}", config.join_data);
     // start chamomile
     let p2p_send = p2p_start(p2p_send, config).await?;
 
@@ -37,11 +36,13 @@ async fn run_listen(
     mut p2p_recv: Receiver<P2pMessage>,
     mut out_recv: Receiver<Message>,
 ) -> Result<()> {
+    println!("DEBUG: Group: {:?} is running", gid.short_show());
+
     loop {
         select! {
             msg = p2p_recv.next().fuse() => match msg {
                 Some(msg) => {
-                    println!("recv from p2p: {:?}", msg);
+                    println!("DEBUG: recv from p2p: {:?}", msg);
                     match msg {
                         P2pMessage::PeerJoin(peer_addr, addr, data) => {
                             send.send(Message::PeerJoin(peer_addr, addr, data)).await;
@@ -49,15 +50,20 @@ async fn run_listen(
                         P2pMessage::PeerJoinResult(peer_addr, is_ok, result) => {
                             send.send(Message::PeerJoinResult(peer_addr, is_ok, result)).await;
                         },
-                        _ => {}
+                        P2pMessage::PeerLeave(peer_addr) => {
+                            send.send(Message::PeerLeave(peer_addr)).await;
+                        }
+                        P2pMessage::Data(peer_addr, data) => {
+                            send.send(Message::Event(peer_addr, data)).await;
+                        }
+                        _ => {} // others not handle
                     }
-                    //send.send(msg).await;
                 },
                 None => break,
             },
             msg = out_recv.next().fuse() => match msg {
                 Some(msg) => {
-                    println!("recv from outside: {:?}", msg);
+                    println!("DEBUG: recv from outside: {:?}", msg);
                     match msg {
                         Message::PeerJoinResult(peer_addr, is_ok, result) => {
                             p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, result)).await;
@@ -65,7 +71,13 @@ async fn run_listen(
                         Message::PeerJoin(peer_addr, addr, data) => {
                             p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;
                         }
-                        _ => {}
+                        Message::PeerLeave(peer_addr) => {
+                            p2p_send.send(P2pMessage::PeerLeave(peer_addr)).await;
+                        }
+                        Message::Event(peer_addr, data) => {
+                            p2p_send.send(P2pMessage::Data(peer_addr, data)).await;
+                        }
+                        _ => {} // others not handle
                     }
                 },
                 None => break,
