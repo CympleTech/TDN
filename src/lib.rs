@@ -8,6 +8,7 @@ use async_std::io::Result;
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
 use futures::join;
+use std::collections::HashMap;
 use std::net::SocketAddr;
 
 mod config;
@@ -48,26 +49,26 @@ pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
     channel::<Message>(MAX_MESSAGE_CAPACITY)
 }
 
-// pub async fn multi_start(
-//     groups: Vec<(GroupId, Sender<Message<impl Group>>)>,
-// ) -> Result<Vec<Sender<Box<dyn Group>>>> {
-//     for (gid, out_send) in groups {
-//         let (send, recv) = new_channel();
+pub async fn multiple_start(
+    groups: HashMap<GroupId, (Config, Sender<Message>)>,
+) -> Result<HashMap<GroupId, Sender<Message>>> {
+    let mut result = HashMap::new();
+    for (gid, (config, out_send)) in groups {
+        let (send, recv) = new_channel();
 
-//         let config = Config::load();
+        start_main(gid, out_send, recv, config).await?;
 
-//         task::spawn(start_main(gid, out_send, recv, config));
-
-//         Ok(send)
-//     }
-// }
+        result.insert(gid, send);
+    }
+    Ok(result)
+}
 
 pub async fn start(gid: GroupId, out_send: Sender<Message>) -> Result<Sender<Message>> {
     let (send, recv) = new_channel();
 
     let config = Config::load();
 
-    task::spawn(start_main(gid, out_send, recv, config));
+    start_main(gid, out_send, recv, config).await?;
 
     Ok(send)
 }
@@ -79,7 +80,7 @@ pub async fn start_with_config(
 ) -> Result<Sender<Message>> {
     let (send, recv) = new_channel();
 
-    task::spawn(start_main(gid, out_send, recv, config));
+    start_main(gid, out_send, recv, config).await?;
 
     Ok(send)
 }
@@ -103,20 +104,22 @@ async fn start_main(
     let (p2p_sender, layer_sender, rpc_sender) =
         (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
 
-    while let Some(message) = self_recv.recv().await {
-        let sender = match message {
-            Message::PeerJoin { .. }
-            | Message::PeerJoinResult { .. }
-            | Message::PeerLeave { .. }
-            | Message::Event { .. } => &p2p_sender,
-            Message::Upper { .. }
-            | Message::Lower { .. }
-            | Message::Permission { .. }
-            | Message::PermissionResult { .. } => &layer_sender,
-            Message::Rpc { .. } => &rpc_sender,
-        };
-        sender.send(message).await;
-    }
+    task::spawn(async move {
+        while let Some(message) = self_recv.recv().await {
+            let sender = match message {
+                Message::PeerJoin { .. }
+                | Message::PeerJoinResult { .. }
+                | Message::PeerLeave { .. }
+                | Message::Event { .. } => &p2p_sender,
+                Message::Upper { .. }
+                | Message::Lower { .. }
+                | Message::Permission { .. }
+                | Message::PermissionResult { .. } => &layer_sender,
+                Message::Rpc { .. } => &rpc_sender,
+            };
+            sender.send(message).await;
+        }
+    });
 
     Ok(())
 }
