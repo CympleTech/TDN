@@ -40,8 +40,6 @@ pub enum Message {
     Event(PeerAddr, Vec<u8>),
     Upper(GroupId, Vec<u8>),
     Lower(GroupId, Vec<u8>),
-    Permission(GroupId, PeerAddr, SocketAddr),
-    PermissionResult(GroupId, PeerAddr, bool),
     Rpc(Vec<u8>),
 }
 
@@ -111,10 +109,7 @@ async fn start_main(
                 | Message::PeerJoinResult { .. }
                 | Message::PeerLeave { .. }
                 | Message::Event { .. } => &p2p_sender,
-                Message::Upper { .. }
-                | Message::Lower { .. }
-                | Message::Permission { .. }
-                | Message::PermissionResult { .. } => &layer_sender,
+                Message::Upper { .. } | Message::Lower { .. } => &layer_sender,
                 Message::Rpc { .. } => &rpc_sender,
             };
             sender.send(message).await;

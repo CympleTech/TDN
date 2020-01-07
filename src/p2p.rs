@@ -21,6 +21,12 @@ pub(crate) async fn start(
     let (out_send, out_recv) = new_channel();
     let (p2p_send, p2p_recv) = p2p_new_channel();
 
+    println!(
+        "DEBUG: Group: {:?} is running, P2P listening: {}",
+        gid.short_show(),
+        config.addr
+    );
+
     // start chamomile
     let p2p_send = p2p_start(p2p_send, config).await?;
 
@@ -30,14 +36,12 @@ pub(crate) async fn start(
 }
 
 async fn run_listen(
-    gid: GroupId,
+    _gid: GroupId,
     send: Sender<Message>,
     p2p_send: Sender<P2pMessage>,
     mut p2p_recv: Receiver<P2pMessage>,
     mut out_recv: Receiver<Message>,
 ) -> Result<()> {
-    println!("DEBUG: Group: {:?} is running", gid.short_show());
-
     loop {
         select! {
             msg = p2p_recv.next().fuse() => match msg {
