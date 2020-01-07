@@ -1,6 +1,9 @@
 ## P2P listen address, default is 0.0.0.0:7364,  uncomment below to change.
 p2p_addr = "0.0.0.0:7364"
 
+## P2P when peer join, defined data.
+#p2p_join_data = "8247"
+
 ## P2P transport include: tcp, udp, udt, rtp, default is udp.
 p2p_default_transport = "tcp"
 

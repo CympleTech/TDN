@@ -5,33 +5,33 @@ use async_std::{
     task,
 };
 use futures::{select, FutureExt};
-use serde::Deserialize;
 
 pub use chamomile::Config as P2pConfig;
 pub use chamomile::PeerId;
 use chamomile::{new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage};
 
-use crate::group::Group;
+use crate::group::GroupId;
 use crate::{new_channel, Message};
 
-pub(crate) async fn start<G: 'static + Group>(
-    group: G,
+pub(crate) async fn start(
+    gid: GroupId,
     config: P2pConfig,
     send: Sender<Message>,
 ) -> Result<Sender<Message>> {
     let (out_send, out_recv) = new_channel();
     let (p2p_send, p2p_recv) = p2p_new_channel();
 
+    println!("config join data: {:?}", config.join_data);
     // start chamomile
     let p2p_send = p2p_start(p2p_send, config).await?;
 
-    task::spawn(run_listen(group, send, p2p_send, p2p_recv, out_recv));
+    task::spawn(run_listen(gid, send, p2p_send, p2p_recv, out_recv));
 
     Ok(out_send)
 }
 
-async fn run_listen<G: Group>(
-    mut group: G,
+async fn run_listen(
+    gid: GroupId,
     send: Sender<Message>,
     p2p_send: Sender<P2pMessage>,
     mut p2p_recv: Receiver<P2pMessage>,
@@ -43,18 +43,11 @@ async fn run_listen<G: Group>(
                 Some(msg) => {
                     println!("recv from p2p: {:?}", msg);
                     match msg {
-                        P2pMessage::PeerJoin(peer_addr, bytes) => {
-                            let join_type_result = bincode::deserialize::<G::JoinType>(&bytes);
-                            if join_type_result.is_ok()  {
-                                let (is_ok, result) = group.join(peer_addr, join_type_result.unwrap());
-                                let result_data = bincode::serialize(&result);
-                                if is_ok && result_data.is_ok() {
-                                    p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, true, result_data.unwrap())).await;
-                                    continue;
-                                }
-                            }
-
-                            p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, false, vec![])).await;
+                        P2pMessage::PeerJoin(peer_addr, addr, bytes) => {
+                            send.send(Message::PeerJoin(peer_addr, addr, bytes)).await;
+                            // TODO Debug
+                            p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, true, vec![])).await;
+                            // p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, false, vec![])).await;
                         }
                         _ => {}
                     }
@@ -72,7 +65,6 @@ async fn run_listen<G: Group>(
         }
     }
 
-    drop(group);
     drop(send);
     drop(p2p_send);
     drop(p2p_recv);

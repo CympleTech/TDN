@@ -65,31 +65,8 @@ impl Debug for GroupId {
 /// This is the interface of the group in the entire network,
 /// you can customize the implementation of these methods,
 /// you can set the permission or size of the group
-pub trait Group: Send {
+pub trait Group: Send + Debug {
     type JoinType: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned = ();
-    type JoinResult: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned = ();
-
-    /// id: it will return group's id
-    fn id(&self) -> &GroupId;
-
-    /// directly add a peer to group.
-    fn add(&mut self, peer_id: &PeerAddr);
-
-    /// join: when peer join will call, happen before call consensus's peer_join,
-    /// it has default implement if you want to handle it in consensus
-    fn join(&mut self, _peer_id: PeerAddr, _data: Self::JoinType) -> (bool, Self::JoinResult) {
-        (true, Default::default())
-    }
-
-    /// leave: when peer leave will call, happen before call consensus's peer_leave,
-    /// it has default implement if you want to handle it in consensus
-    fn leave(&mut self, _peer_id: &PeerAddr) -> bool {
-        true
-    }
-
-    /// verify: check peer is verified by group permission,
-    /// it has default implement if you want to handle it in consensus
-    fn verify(&self, _peer_id: &PeerAddr) -> bool {
-        true
-    }
+    type JoinResultType: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned = ();
+    type LowerType: Clone + Send + Default + Debug + SerializeOwned + DeserializeOwned = Vec<u8>;
 }

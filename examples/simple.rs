@@ -5,9 +5,8 @@ use tdn_permission::PermissionlessGroup;
 fn main() {
     task::block_on(async {
         let (out_send, out_recv) = new_channel();
-        let send = start(out_send, PermissionlessGroup::default())
-            .await
-            .unwrap();
+        let group = PermissionlessGroup::default();
+        let send = start(*group.id(), out_send).await.unwrap();
 
         while let Some(message) = out_recv.recv().await {
             println!("recv: {:?}", message);
