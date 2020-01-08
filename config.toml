@@ -34,8 +34,13 @@ p2p_bootstrap = []
 ## Layer define if others can use it as upper layer. if false, only whitelist can use. default is true.
 #layer_lower = true
 
-## Layer define upper layer's seed IPs.
+## Layer define upper layer's seeds (IP, GroupId).
+## Example: layer_upper = [       
+##              { addr = "0.0.0.0:7000", group_id = "0000000000000000000000000000000000000000000000000000000000000000" },
+##              { addr = "0.0.0.0:7001", group_id = "1111111111111111111111111111111111111111111111111111111111111111" },
+##          ]
 layer_upper = []
+
 
 ## Layer Whitelist(IP),  uncomment below to change.
 ## Example: layer_white_list = ["1.1.1.1:7000", "192.168.0.1.:7000"]

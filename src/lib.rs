@@ -96,7 +96,7 @@ async fn start_main(
     // start inner json_rpc
     let (p2p_sender_result, layer_sender_result, rpc_sender_result) = join!(
         p2p_start(gid, p2p_config, out_send.clone()),
-        layer_start(layer_config, out_send.clone()),
+        layer_start(gid, layer_config, out_send.clone()),
         rpc_start(rpc_config, out_send)
     );
     let (p2p_sender, layer_sender, rpc_sender) =

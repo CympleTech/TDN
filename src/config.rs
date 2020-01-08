@@ -134,6 +134,12 @@ impl Config {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct RawUpper {
+    addr: SocketAddr,
+    group_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfig {
     pub p2p_addr: Option<SocketAddr>,
     pub p2p_join_data: Option<String>,
@@ -145,7 +151,7 @@ pub struct RawConfig {
 
     pub layer_addr: Option<SocketAddr>,
     pub layer_lower: Option<bool>,
-    pub layer_upper: Option<Vec<(SocketAddr, String)>>,
+    pub layer_upper: Option<Vec<RawUpper>>,
     pub layer_white_list: Option<Vec<SocketAddr>>,
     pub layer_black_list: Option<Vec<SocketAddr>>,
     pub layer_white_group_list: Option<Vec<String>>,
@@ -204,10 +210,11 @@ impl RawConfig {
                 .layer_upper
                 .map(|ss| {
                     ss.iter()
-                        .map(|(a, s)| {
+                        .map(|RawUpper { addr, group_id }| {
                             (
-                                *a,
-                                GroupId::from_hex(s).expect("invalid group id in layer upper"),
+                                *addr,
+                                GroupId::from_hex(group_id)
+                                    .expect("invalid group id in layer upper"),
                             )
                         })
                         .collect()
