@@ -262,6 +262,8 @@ async fn process_stream(
         writer.write_all(&remote_public_bytes[..]).await?;
     }
 
+    // TODO Security DH exchange.
+
     let (self_send, mut self_recv) = channel::<StreamMessage>(MAX_MESSAGE_CAPACITY);
     let uid = rand::random::<u32>();
 
