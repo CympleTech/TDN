@@ -7,10 +7,9 @@ use async_std::{
 use futures::{select, FutureExt};
 
 pub use chamomile::Config as P2pConfig;
-pub use chamomile::PeerId;
 use chamomile::{new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage};
 
-use crate::group::GroupId;
+use crate::primitive::GroupId;
 use crate::{new_channel, Message};
 
 pub(crate) async fn start(

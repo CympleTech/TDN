@@ -6,12 +6,11 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::net::SocketAddr;
 
-use crate::group::GroupId;
 use crate::jsonrpc::RpcConfig;
 use crate::layer::LayerConfig;
 use crate::p2p::P2pConfig;
 use crate::primitive::{
-    CONFIG_FILE_NAME, LAYER_ADDR, LAYER_LOWER_DEFAULT, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
+    GroupId, CONFIG_FILE_NAME, LAYER_ADDR, LAYER_LOWER_DEFAULT, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
 };
 
 pub struct Config {

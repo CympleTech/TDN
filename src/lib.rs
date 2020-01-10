@@ -1,36 +1,41 @@
 #![recursion_limit = "1024"]
 #![feature(associated_type_defaults)]
 
-// pub async std to others
-pub use async_std;
-
-use async_std::io::Result;
-use async_std::sync::{channel, Receiver, Sender};
-use async_std::task;
+use async_std::{
+    io::Result,
+    sync::{channel, Receiver, Sender},
+    task,
+};
 use futures::join;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 
 mod config;
-mod group;
 mod jsonrpc;
 mod layer;
 mod p2p;
 
+// public mod
+pub use async_std; // pub async std to others
 pub mod error;
 pub mod primitive;
+pub mod traits;
 
+// public struct
+pub mod prelude {
+    pub use super::config::Config;
+    pub use super::primitive::GroupId;
+    pub use super::primitive::PeerAddr;
+    pub use super::Message;
+
+    // TODO ADD start function
+}
+
+use config::Config;
 use jsonrpc::start as rpc_start;
 use layer::start as layer_start;
 use p2p::start as p2p_start;
-use primitive::MAX_MESSAGE_CAPACITY;
-
-pub use config::Config;
-pub use group::{Group, GroupId};
-pub use p2p::PeerId as PeerAddr;
-
-#[derive(Debug)]
-pub struct PeerInfo;
+use primitive::{GroupId, PeerAddr, MAX_MESSAGE_CAPACITY};
 
 #[derive(Debug)]
 pub enum Message {

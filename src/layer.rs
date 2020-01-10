@@ -12,8 +12,7 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use crate::group::GroupId;
-use crate::primitive::MAX_MESSAGE_CAPACITY;
+use crate::primitive::{GroupId, MAX_MESSAGE_CAPACITY};
 use crate::{new_channel, Message};
 
 // if lower is ture, check black_list -> permissionless
