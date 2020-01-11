@@ -26,6 +26,7 @@ pub mod prelude {
     pub use super::config::Config;
     pub use super::primitive::GroupId;
     pub use super::primitive::PeerAddr;
+    pub use super::primitive::RpcParam;
     pub use super::Message;
 
     // TODO ADD start function
@@ -35,7 +36,7 @@ use config::Config;
 use jsonrpc::start as rpc_start;
 use layer::start as layer_start;
 use p2p::start as p2p_start;
-use primitive::{GroupId, PeerAddr, MAX_MESSAGE_CAPACITY};
+use primitive::{GroupId, PeerAddr, RpcParam, MAX_MESSAGE_CAPACITY};
 
 #[derive(Debug)]
 pub enum Message {
@@ -45,7 +46,7 @@ pub enum Message {
     Event(PeerAddr, Vec<u8>),
     Upper(GroupId, Vec<u8>),
     Lower(GroupId, Vec<u8>),
-    Rpc(Vec<u8>),
+    Rpc(RpcParam),
 }
 
 pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {

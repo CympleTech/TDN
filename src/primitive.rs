@@ -28,6 +28,10 @@ pub const MAX_MESSAGE_CAPACITY: usize = 1024;
 /// Configure file name
 pub const CONFIG_FILE_NAME: &str = "config.toml";
 
+// Type: RPC Param
+pub type RpcParam = jsonrpc_core::Params;
+pub type RpcValue = jsonrpc_core::Value;
+
 /// Type: PeerAddr
 pub type PeerAddr = PeerId;
 

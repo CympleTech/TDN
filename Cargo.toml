@@ -19,6 +19,11 @@ toml = "0.5"
 sha3 = "0.8"
 rand = "0.7"
 
+# JSONRPC
+tide = "0.5"
+mime = "0.3"
+jsonrpc-core = "14"
+
 chamomile = { path = "../chamomile" } # Dev
 
 [dev-dependencies]
