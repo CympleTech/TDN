@@ -19,6 +19,10 @@ fn main() {
                 Message::PeerLeave(peer) => {
                     group.leave(&peer);
                 }
+                Message::Rpc(uid, params) => {
+                    // echo
+                    send.send(Message::Rpc(uid, params)).await;
+                }
                 _ => {
                     println!("recv: {:?}", message);
                 }

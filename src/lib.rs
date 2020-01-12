@@ -46,7 +46,7 @@ pub enum Message {
     Event(PeerAddr, Vec<u8>),
     Upper(GroupId, Vec<u8>),
     Lower(GroupId, Vec<u8>),
-    Rpc(RpcParam),
+    Rpc(u64, RpcParam),
 }
 
 pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
