@@ -1,7 +1,8 @@
 # TDN - Trusted Distributed Network
 *Blockchain infrastructure framework for security and trusted distributed interactive.*
 
-(WIP) Refactoring to version-2.
+## Example
+- `cargo run --example simple` Congratulation, you are running a trusted distributed network :)
 
 ### Features
 - Support different data structures

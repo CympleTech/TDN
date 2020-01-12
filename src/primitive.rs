@@ -1,6 +1,4 @@
 use chamomile::PeerId;
-use serde::de::DeserializeOwned;
-use serde::ser::Serialize as SerializeOwned;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use sha3::{Digest, Sha3_256};
