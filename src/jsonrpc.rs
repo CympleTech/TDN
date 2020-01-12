@@ -4,6 +4,7 @@ use async_std::{
     sync::{channel, Arc, Receiver, Sender},
     task,
 };
+use futures::future::LocalBoxFuture;
 use futures::{select, FutureExt};
 use serde_json::json;
 use std::collections::HashMap;
@@ -237,17 +238,13 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 /// ``` rust
 /// struct State(u32); // Global State share in all rpc request.
 ///
-/// let mut rpc_handler = RpcHandler::new(State(32));
-/// rpc_handler.add_method("echo", handle_echo);
-///
-/// async fn handle_echo(
-///     params: RpcParam,
-///     state: Arc<State>,
-/// ) -> std::result::Result<RpcParam, RpcError> {
-///     println!("{}", state.0);
-///     Ok(RpcParam)
-///     //Err(RpcError::InvalidRequest)
-/// }
+/// let mut rpc_handler = RpcHandler::new(State(1));
+/// rpc_handler.add_method("echo", |params, state| {
+///        Box::pin(async move {
+///            assert_eq!(1, state.0);
+///            Ok(params)
+///    })
+/// });
 ///
 /// // when match Message
 /// match msg {
@@ -257,30 +254,25 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 ///     _ => {}
 /// }
 /// ````
-pub struct RpcHandler<
-    S: 'static + Send + Sync,
-    F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
-    FN: 'static + Fn(RpcParam, Arc<S>) -> F,
-> {
+
+type RpcResult = std::result::Result<RpcParam, RpcError>;
+type RpcFut = LocalBoxFuture<'static, RpcResult>;
+
+pub struct RpcHandler<S: 'static + Send + Sync> {
     state: Arc<S>,
-    fns: HashMap<String, FN>,
+    fns: HashMap<String, Box<dyn Fn(RpcParam, Arc<S>) -> RpcFut>>,
 }
 
-impl<
-        S: 'static + Send + Sync,
-        F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
-        FN: 'static + Fn(RpcParam, Arc<S>) -> F,
-    > RpcHandler<S, F, FN>
-{
-    pub fn new(state: S) -> RpcHandler<S, F, FN> {
+impl<S: 'static + Send + Sync> RpcHandler<S> {
+    pub fn new(state: S) -> RpcHandler<S> {
         Self {
             state: Arc::new(state),
             fns: HashMap::new(),
         }
     }
 
-    pub fn add_method(&mut self, name: &str, f: FN) {
-        self.fns.insert(name.to_owned(), f);
+    pub fn add_method<F: 'static + Fn(RpcParam, Arc<S>) -> RpcFut>(&mut self, name: &str, f: F) {
+        self.fns.insert(name.to_owned(), Box::new(f));
     }
 
     pub async fn handle(&self, mut param: RpcParam) -> RpcParam {

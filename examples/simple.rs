@@ -1,12 +1,9 @@
-use async_std::task;
+use async_std::{sync::Arc, task};
 use tdn::prelude::*;
 use tdn::{new_channel, start};
 use tdn_permission::PermissionlessGroup;
 
-async fn handle_echo(params: RpcParam) -> std::result::Result<RpcParam, RpcError> {
-    Ok(params)
-    //Err(RpcError::InvalidRequest)
-}
+struct State(u32);
 
 fn main() {
     task::block_on(async {
@@ -14,8 +11,20 @@ fn main() {
         let mut group = PermissionlessGroup::default();
         let send = start(*group.id(), out_send).await.unwrap();
 
-        let mut rpc_handler = RpcHandler::new();
-        rpc_handler.add_method("echo", handle_echo);
+        let mut rpc_handler = RpcHandler::new(State(1));
+        rpc_handler.add_method("echo", |params, state| {
+            Box::pin(async move {
+                assert_eq!(1, state.0);
+                Ok(params)
+            })
+        });
+
+        rpc_handler.add_method("say_hello", |_params, state| {
+            Box::pin(async move {
+                assert_eq!(1, state.0);
+                Ok(RpcParam::String("Hello".to_owned()))
+            })
+        });
 
         while let Some(message) = out_recv.recv().await {
             match message {
