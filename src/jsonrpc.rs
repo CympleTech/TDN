@@ -91,7 +91,7 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
     app.at("/").post(|mut req: tide::Request<State>| {
         async move {
             let body: String = req.body_string().await.unwrap();
-            let res = tide::Response::new(200).set_mime(mime::APPLICATION_JSON);
+            let res = tide::Response::new(200);
 
             match parse_jsonrpc(body) {
                 Ok((rpc_param, id)) => {
@@ -110,11 +110,16 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
                                 _ => Default::default(),
                             };
                             res.body_string(param.to_string())
+                                .set_mime(mime::APPLICATION_JSON)
                         }
-                        None => res.body_string(Default::default()),
+                        None => res
+                            .body_string(Default::default())
+                            .set_mime(mime::APPLICATION_JSON),
                     }
                 }
-                Err(err) => res.body_string(err.json().to_string()),
+                Err((err, id)) => res
+                    .body_string(err.json(id).to_string())
+                    .set_mime(mime::APPLICATION_JSON),
             }
         }
     });
@@ -127,14 +132,14 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
 #[derive(Debug, Clone)]
 pub enum RpcError {
     ParseError,
-    MethodNotFound(u64, String),
-    InvalidRequest(u64),
-    InvalidVersion(u64),
-    InvalidResponse(u64),
+    InvalidRequest,
+    InvalidVersion,
+    InvalidResponse,
+    MethodNotFound(String),
 }
 
 impl RpcError {
-    pub fn json(&self) -> RpcParam {
+    pub fn json(&self, id: u64) -> RpcParam {
         match self {
             RpcError::ParseError => json!({
                 "jsonrpc": "2.0",
@@ -143,7 +148,7 @@ impl RpcError {
                     "message": "Parse error"
                 }
             }),
-            RpcError::MethodNotFound(id, method) => json!({
+            RpcError::MethodNotFound(method) => json!({
                 "jsonrpc": "2.0",
                 "id": id,
                 "error": {
@@ -151,7 +156,7 @@ impl RpcError {
                     "message": format!("Method {} not found", method)
                 }
             }),
-            RpcError::InvalidRequest(id) => json!({
+            RpcError::InvalidRequest => json!({
                 "jsonrpc": "2.0",
                 "id": id,
                 "error": {
@@ -159,7 +164,7 @@ impl RpcError {
                     "message": "Invalid Request"
                 }
             }),
-            RpcError::InvalidVersion(id) => json!({
+            RpcError::InvalidVersion => json!({
                 "jsonrpc": "2.0",
                 "id": id,
                 "error": {
@@ -167,7 +172,7 @@ impl RpcError {
                     "message": "Unsupported JSON-RPC protocol version"
                 }
             }),
-            RpcError::InvalidResponse(id) => json!({
+            RpcError::InvalidResponse => json!({
                 "jsonrpc": "2.0",
                 "id": id,
                 "error": {
@@ -179,7 +184,7 @@ impl RpcError {
     }
 }
 
-fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), RpcError> {
+fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (RpcError, u64)> {
     match serde_json::from_str::<RpcParam>(&json_string) {
         Ok(mut value) => {
             let id_res = value
@@ -191,18 +196,18 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), Rp
                 .flatten();
 
             if id_res.is_none() {
-                return Err(RpcError::ParseError);
+                return Err((RpcError::ParseError, 0));
             }
             let id = id_res.unwrap();
             *value.get_mut("id").unwrap() = id.into();
 
             // check if json is response
             if value.get("result").is_some() || value.get("error").is_some() {
-                return Err(RpcError::InvalidResponse(id));
+                return Err((RpcError::InvalidResponse, id));
             }
 
-            if value.get("method").is_none() {
-                return Err(RpcError::InvalidRequest(id));
+            if value.get("method").is_none() || value.get("method").unwrap().as_str().is_none() {
+                return Err((RpcError::InvalidRequest, id));
             }
 
             let jsonrpc = value
@@ -215,11 +220,56 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), Rp
                 .flatten();
 
             if jsonrpc.is_none() {
-                return Err(RpcError::InvalidVersion(id));
+                return Err((RpcError::InvalidVersion, id));
             }
 
             Ok((value, rand::random::<u64>()))
         }
-        Err(_e) => Err(RpcError::ParseError),
+        Err(_e) => Err((RpcError::ParseError, 0)),
+    }
+}
+
+pub struct RpcHandler<
+    F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
+    FN: 'static + Fn(RpcParam) -> F,
+> {
+    fns: HashMap<String, FN>,
+}
+
+impl<
+        F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
+        FN: 'static + Fn(RpcParam) -> F,
+    > RpcHandler<F, FN>
+{
+    pub fn new() -> RpcHandler<F, FN> {
+        Self {
+            fns: HashMap::new(),
+        }
+    }
+
+    pub fn add_method(&mut self, name: &str, f: FN) {
+        self.fns.insert(name.to_owned(), f);
+    }
+
+    pub async fn handle(&mut self, mut param: RpcParam) -> RpcParam {
+        let id = param["id"].take().as_u64().unwrap();
+        let method_s = param["method"].take();
+        let method = method_s.as_str().unwrap();
+        let params = param["params"].take();
+
+        match self.fns.get(method) {
+            Some(f) => {
+                let res = f(params).await;
+                match res {
+                    Ok(params) => json!({
+                        "jsonrpc": "2.0",
+                        "id": id,
+                        "result": params,
+                    }),
+                    Err(err) => err.json(id),
+                }
+            }
+            None => RpcError::MethodNotFound(method.to_owned()).json(id),
+        }
     }
 }
