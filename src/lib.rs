@@ -55,37 +55,35 @@ pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
 }
 
 pub async fn multiple_start(
-    groups: HashMap<GroupId, (Config, Sender<Message>)>,
+    groups: Vec<(Config, Sender<Message>)>,
 ) -> Result<HashMap<GroupId, Sender<Message>>> {
     let mut result = HashMap::new();
-    for (gid, (config, out_send)) in groups {
+    for (config, out_send) in groups {
         let (send, recv) = new_channel();
-
+        let gid = config.group_id;
         start_main(gid, out_send, recv, config).await?;
-
         result.insert(gid, send);
     }
     Ok(result)
 }
 
-pub async fn start(gid: GroupId, out_send: Sender<Message>) -> Result<Sender<Message>> {
+pub async fn start(out_send: Sender<Message>) -> Result<Sender<Message>> {
     let (send, recv) = new_channel();
 
     let config = Config::load();
 
-    start_main(gid, out_send, recv, config).await?;
+    start_main(config.group_id, out_send, recv, config).await?;
 
     Ok(send)
 }
 
 pub async fn start_with_config(
-    gid: GroupId,
     out_send: Sender<Message>,
     config: Config,
 ) -> Result<Sender<Message>> {
     let (send, recv) = new_channel();
 
-    start_main(gid, out_send, recv, config).await?;
+    start_main(config.group_id, out_send, recv, config).await?;
 
     Ok(send)
 }

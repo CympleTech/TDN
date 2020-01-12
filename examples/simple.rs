@@ -1,4 +1,4 @@
-use async_std::{sync::Arc, task};
+use async_std::task;
 use tdn::prelude::*;
 use tdn::{new_channel, start};
 use tdn_permission::PermissionlessGroup;
@@ -9,7 +9,7 @@ fn main() {
     task::block_on(async {
         let (out_send, out_recv) = new_channel();
         let mut group = PermissionlessGroup::default();
-        let send = start(*group.id(), out_send).await.unwrap();
+        let send = start(out_send).await.unwrap();
 
         let mut rpc_handler = RpcHandler::new(State(1));
         rpc_handler.add_method("echo", |params, state| {

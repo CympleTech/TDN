@@ -14,6 +14,8 @@ use crate::primitive::{
 };
 
 pub struct Config {
+    pub group_id: GroupId,
+
     pub p2p_addr: SocketAddr,
     pub p2p_join_data: Vec<u8>,
     pub p2p_transport: String,
@@ -36,6 +38,8 @@ pub struct Config {
 impl Config {
     pub fn split(self) -> (P2pConfig, LayerConfig, RpcConfig) {
         let Config {
+            group_id: _,
+
             p2p_addr,
             p2p_join_data,
             p2p_transport,
@@ -84,6 +88,7 @@ impl Config {
 impl Config {
     pub fn with_addr(p2p_addr: SocketAddr, layer_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
         Config {
+            group_id: GroupId::default(),
             p2p_addr: p2p_addr,
             p2p_join_data: vec![],
             p2p_transport: P2P_TRANSPORT.to_owned(),
@@ -140,6 +145,9 @@ pub struct RawUpper {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfig {
+    pub group_id: Option<String>,
+    pub group_symbol: Option<String>,
+
     pub p2p_addr: Option<SocketAddr>,
     pub p2p_join_data: Option<String>,
     pub p2p_default_transport: Option<String>,
@@ -162,6 +170,36 @@ pub struct RawConfig {
 impl RawConfig {
     fn parse(self) -> Config {
         Config {
+            group_id: self
+                .group_id
+                .map(|s| {
+                    if s.len() != 64 {
+                        None
+                    } else {
+                        let mut value = [0u8; 32];
+                        let mut is_ok = true;
+
+                        for i in 0..32 {
+                            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16);
+                            if res.is_err() {
+                                is_ok = false;
+                                break;
+                            }
+                            value[i] = res.unwrap()
+                        }
+                        if is_ok {
+                            Some(GroupId(value))
+                        } else {
+                            None
+                        }
+                    }
+                })
+                .flatten()
+                .unwrap_or(
+                    self.group_symbol
+                        .map(|s| GroupId::from_symbol(s))
+                        .unwrap_or(GroupId::default()),
+                ),
             p2p_addr: self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),
             p2p_join_data: self
                 .p2p_join_data
