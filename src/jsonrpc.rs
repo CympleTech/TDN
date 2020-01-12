@@ -235,10 +235,16 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 
 /// Helpe better handle rpc. Example.
 /// ``` rust
-/// let mut rpc_handler = RpcHandler::new();
+/// struct State(u32); // Global State share in all rpc request.
+///
+/// let mut rpc_handler = RpcHandler::new(State(32));
 /// rpc_handler.add_method("echo", handle_echo);
 ///
-/// async fn handle_echo(params: RpcParam) -> std::result::Result<RpcParam, RpcError> {
+/// async fn handle_echo(
+///     params: RpcParam,
+///     state: Arc<State>,
+/// ) -> std::result::Result<RpcParam, RpcError> {
+///     println!("{}", state.0);
 ///     Ok(RpcParam)
 ///     //Err(RpcError::InvalidRequest)
 /// }
@@ -252,19 +258,23 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 /// }
 /// ````
 pub struct RpcHandler<
+    S: 'static + Send + Sync,
     F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
-    FN: 'static + Fn(RpcParam) -> F,
+    FN: 'static + Fn(RpcParam, Arc<S>) -> F,
 > {
+    state: Arc<S>,
     fns: HashMap<String, FN>,
 }
 
 impl<
+        S: 'static + Send + Sync,
         F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
-        FN: 'static + Fn(RpcParam) -> F,
-    > RpcHandler<F, FN>
+        FN: 'static + Fn(RpcParam, Arc<S>) -> F,
+    > RpcHandler<S, F, FN>
 {
-    pub fn new() -> RpcHandler<F, FN> {
+    pub fn new(state: S) -> RpcHandler<S, F, FN> {
         Self {
+            state: Arc::new(state),
             fns: HashMap::new(),
         }
     }
@@ -273,7 +283,7 @@ impl<
         self.fns.insert(name.to_owned(), f);
     }
 
-    pub async fn handle(&mut self, mut param: RpcParam) -> RpcParam {
+    pub async fn handle(&self, mut param: RpcParam) -> RpcParam {
         let id = param["id"].take().as_u64().unwrap();
         let method_s = param["method"].take();
         let method = method_s.as_str().unwrap();
@@ -281,7 +291,7 @@ impl<
 
         match self.fns.get(method) {
             Some(f) => {
-                let res = f(params).await;
+                let res = f(params, self.state.clone()).await;
                 match res {
                     Ok(params) => json!({
                         "jsonrpc": "2.0",
