@@ -2,6 +2,7 @@ use chamomile::PeerId;
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize as SerializeOwned;
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
@@ -29,8 +30,7 @@ pub const MAX_MESSAGE_CAPACITY: usize = 1024;
 pub const CONFIG_FILE_NAME: &str = "config.toml";
 
 // Type: RPC Param
-pub type RpcParam = jsonrpc_core::Params;
-pub type RpcValue = jsonrpc_core::Value;
+pub type RpcParam = Value;
 
 /// Type: PeerAddr
 pub type PeerAddr = PeerId;

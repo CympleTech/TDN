@@ -1,10 +1,11 @@
 use async_std::io::Result;
 use async_std::sync::{Arc, Receiver, Sender};
 use async_std::task;
-use jsonrpc_core::IoHandler;
+use serde_derive::{Deserialize, Serialize};
+use serde_json::json;
 use std::net::SocketAddr;
 
-use crate::primitive::{RpcParam, RpcValue};
+use crate::primitive::RpcParam;
 use crate::{new_channel, Message};
 
 pub struct RpcConfig {
@@ -38,35 +39,126 @@ async fn listen(send: Sender<Message>, out_recv: Receiver<Message>) -> Result<()
 async fn server(send: Sender<Message>, config: RpcConfig) -> Result<()> {
     let mut app = tide::new();
 
-    let mut io: IoHandler = IoHandler::default();
-    io.add_method("hello", |_params: RpcParam| {
-        Ok(RpcValue::String("hello".into()))
-    });
-
-    let _send = send; // global in tide
-    let _io = Arc::new(io); // TODO global with tide
+    let _send = send; // TODO global in tide
 
     app.at("/").post(|mut req: tide::Request<()>| {
-        let mut io: IoHandler = IoHandler::default();
-        io.add_method("hello", |params: RpcParam| {
-            println!("{:?}", params);
-            Ok(RpcValue::String("hello".into()))
-        });
-
         async move {
             let body: String = req.body_string().await.unwrap();
+            let res: RpcParam = match parse_jsonrpc(body) {
+                Ok(_rpc_param) => {
+                    println!("TODO");
+                    let _res = "";
+                    Default::default()
+                }
+                Err(err) => err.json(),
+            };
+
             tide::Response::new(200)
                 .set_mime(mime::APPLICATION_JSON)
-                .body_string(
-                io.handle_request_sync(&body).unwrap_or(
-                    r#"{"error": {"code": -32600, "message": "Invalid JSONRPC Request"}, "jsonrpc": "2.0"}"#
-                        .to_owned(),
-                ),
-            )
+                .body_string(res.to_string())
         }
     });
 
     task::spawn(app.listen(config.addr));
 
     Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub enum RpcError {
+    ParseError,
+    MethodNotFound(u64, String),
+    InvalidRequest(u64),
+    InvalidVersion(u64),
+    InvalidResponse(u64),
+}
+
+impl RpcError {
+    pub fn json(&self) -> RpcParam {
+        match self {
+            RpcError::ParseError => json!({
+                "jsonrpc": "2.0",
+                "error": {
+                    "code": -32700,
+                    "message": "Parse error"
+                }
+            }),
+            RpcError::MethodNotFound(id, method) => json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {
+                    "code": -32601,
+                    "message": format!("Method {} not found", method)
+                }
+            }),
+            RpcError::InvalidRequest(id) => json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {
+                    "code": -32600,
+                    "message": "Invalid Request"
+                }
+            }),
+            RpcError::InvalidVersion(id) => json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {
+                    "code": -32600,
+                    "message": "Unsupported JSON-RPC protocol version"
+                }
+            }),
+            RpcError::InvalidResponse(id) => json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {
+                    "code": -32600,
+                    "message": "Invalid Response"
+                }
+            }),
+        }
+    }
+}
+
+fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, RpcError> {
+    match serde_json::from_str::<RpcParam>(&json_string) {
+        Ok(value) => {
+            let id_res = value
+                .get("id")
+                .map(|id| {
+                    id.as_u64()
+                        .or(id.as_str().map(|sid| sid.parse::<u64>().ok()).flatten())
+                })
+                .flatten();
+
+            if id_res.is_none() {
+                return Err(RpcError::ParseError);
+            }
+            let id = id_res.unwrap();
+
+            // check if json is response
+            if value.get("result").is_some() || value.get("error").is_some() {
+                return Err(RpcError::InvalidResponse(id));
+            }
+
+            if value.get("method").is_none() {
+                return Err(RpcError::InvalidRequest(id));
+            }
+
+            let jsonrpc = value
+                .get("jsonrpc")
+                .map(|v| {
+                    v.as_str()
+                        .map(|s| if s == "2.0" { Some(2) } else { None })
+                        .flatten()
+                })
+                .flatten();
+
+            if jsonrpc.is_none() {
+                return Err(RpcError::InvalidVersion(id));
+            }
+
+            Ok(value)
+        }
+        Err(_e) => Err(RpcError::ParseError),
+    }
 }
