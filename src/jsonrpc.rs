@@ -229,6 +229,24 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
     }
 }
 
+/// Helpe better handle rpc. Example.
+/// ``` rust
+/// let mut rpc_handler = RpcHandler::new();
+/// rpc_handler.add_method("echo", handle_echo);
+///
+/// async fn handle_echo(params: RpcParam) -> std::result::Result<RpcParam, RpcError> {
+///     Ok(RpcParam)
+///     //Err(RpcError::InvalidRequest)
+/// }
+///
+/// // when match Message
+/// match msg {
+///     Message::Rpc(uid, params) => Message::Rpc(uid, params) => {
+///         send.send(Message::Rpc(uid, rpc_handler.handle(params).await)).await;
+///     }
+///     _ => {}
+/// }
+/// ````
 pub struct RpcHandler<
     F: 'static + Future<Output = std::result::Result<RpcParam, RpcError>> + Send,
     FN: 'static + Fn(RpcParam) -> F,
