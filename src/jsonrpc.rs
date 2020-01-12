@@ -50,10 +50,14 @@ async fn listen(
                 msg = out_recv.next().fuse() => match msg {
                     Some(msg) => {
                         match msg {
-                            Message::Rpc(id, params) => {
-                                let s = connections.remove(&id);
-                                if s.is_some() {
-                                    s.unwrap().send(RpcMessage::Response(params)).await;
+                            Message::Rpc(id, params, is_ws) => {
+                                if is_ws {
+                                    // TODO websocket
+                                } else {
+                                    let s = connections.remove(&id);
+                                    if s.is_some() {
+                                        s.unwrap().send(RpcMessage::Response(params)).await;
+                                    }
                                 }
                             }
                             _ => {} // others not handle
@@ -66,7 +70,7 @@ async fn listen(
                         match msg {
                             RpcMessage::Request(id, params, sender) => {
                                 connections.insert(id, sender);
-                                send.send(Message::Rpc(id, params)).await;
+                                send.send(Message::Rpc(id, params, false)).await;
                             }
                             _ => {} // others not handle
                         }
@@ -254,14 +258,13 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 ///     _ => {}
 /// }
 /// ````
-
-type RpcResult = std::result::Result<RpcParam, RpcError>;
-type RpcFut = LocalBoxFuture<'static, RpcResult>;
-
 pub struct RpcHandler<S: 'static + Send + Sync> {
     state: Arc<S>,
     fns: HashMap<String, Box<dyn Fn(RpcParam, Arc<S>) -> RpcFut>>,
 }
+
+type RpcResult = std::result::Result<RpcParam, RpcError>;
+type RpcFut = LocalBoxFuture<'static, RpcResult>;
 
 impl<S: 'static + Send + Sync> RpcHandler<S> {
     pub fn new(state: S) -> RpcHandler<S> {

@@ -37,8 +37,8 @@ fn main() {
                 Message::PeerLeave(peer) => {
                     group.leave(&peer);
                 }
-                Message::Rpc(uid, params) => {
-                    send.send(Message::Rpc(uid, rpc_handler.handle(params).await))
+                Message::Rpc(uid, params, _is_ws) => {
+                    send.send(Message::Rpc(uid, rpc_handler.handle(params).await, false))
                         .await;
                 }
                 _ => {
