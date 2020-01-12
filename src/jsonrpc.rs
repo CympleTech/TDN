@@ -210,6 +210,10 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
                 return Err((RpcError::InvalidRequest, id));
             }
 
+            if value.get("params").is_none() {
+                value["params"] = RpcParam::Array(vec![]);
+            }
+
             let jsonrpc = value
                 .get("jsonrpc")
                 .map(|v| {
