@@ -24,6 +24,7 @@ pub mod traits;
 // public struct
 pub mod prelude {
     pub use super::config::Config;
+    pub use super::jsonrpc::RpcError;
     pub use super::primitive::GroupId;
     pub use super::primitive::PeerAddr;
     pub use super::primitive::RpcParam;
