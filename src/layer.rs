@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 use crate::primitive::{GroupId, MAX_MESSAGE_CAPACITY};
-use crate::{new_channel, Message};
+use crate::{new_channel, LayerMessage, Message};
 
 // if lower is ture, check black_list -> permissionless
 // if lower if false, check white_list -> permissioned
@@ -137,10 +137,10 @@ async fn run_receiver(
                 Some(msg) => {
                     println!("recv from outside: {:?}", msg);
                     match msg {
-                        Message::Upper(gid, data) => {
+                        Message::Layer(LayerMessage::Upper(gid, data)) => {
 
                         }
-                        Message::Lower(gid, data) => {}
+                        Message::Layer(LayerMessage::Lower(gid, data)) => {}
                         _ => {}
                     }
                 }
@@ -288,9 +288,9 @@ async fn process_stream(
                         }
 
                         let message = if is_upper {
-                            Message::Upper(gid, read_bytes.clone())
+                            Message::Layer(LayerMessage::Upper(gid, read_bytes.clone()))
                         } else {
-                            Message::Lower(gid, read_bytes.clone())
+                            Message::Layer(LayerMessage::Lower(gid, read_bytes.clone()))
                         };
                         sender.send(message).await;
                         break;

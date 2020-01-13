@@ -28,13 +28,13 @@ fn main() {
 
         while let Some(message) = out_recv.recv().await {
             match message {
-                Message::PeerJoin(peer, addr, data) => {
+                Message::Group(GroupMessage::PeerJoin(peer, addr, data)) => {
                     group.join(peer, addr, data, send.clone()).await;
                 }
-                Message::PeerJoinResult(peer, is_ok, result) => {
+                Message::Group(GroupMessage::PeerJoinResult(peer, is_ok, result)) => {
                     group.join_result(peer, is_ok, result);
                 }
-                Message::PeerLeave(peer) => {
+                Message::Group(GroupMessage::PeerLeave(peer)) => {
                     group.leave(&peer);
                 }
                 Message::Rpc(uid, params, _is_ws) => {

@@ -28,6 +28,8 @@ pub mod prelude {
     pub use super::primitive::GroupId;
     pub use super::primitive::PeerAddr;
     pub use super::primitive::RpcParam;
+    pub use super::GroupMessage;
+    pub use super::LayerMessage;
     pub use super::Message;
 
     // TODO ADD start function
@@ -40,13 +42,25 @@ use p2p::start as p2p_start;
 use primitive::{GroupId, PeerAddr, RpcParam, MAX_MESSAGE_CAPACITY};
 
 #[derive(Debug)]
-pub enum Message {
+pub enum GroupMessage {
     PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
     PeerJoinResult(PeerAddr, bool, Vec<u8>),
     PeerLeave(PeerAddr),
     Event(PeerAddr, Vec<u8>),
+}
+
+#[derive(Debug)]
+pub enum LayerMessage {
     Upper(GroupId, Vec<u8>),
     Lower(GroupId, Vec<u8>),
+    LayerJoin(GroupId, PeerAddr, SocketAddr, Vec<u8>),
+    LayerJoinResult(GroupId, PeerAddr, bool, Vec<u8>),
+}
+
+#[derive(Debug)]
+pub enum Message {
+    Group(GroupMessage),
+    Layer(LayerMessage),
     Rpc(u64, RpcParam, bool),
 }
 
@@ -110,11 +124,8 @@ async fn start_main(
     task::spawn(async move {
         while let Some(message) = self_recv.recv().await {
             let sender = match message {
-                Message::PeerJoin { .. }
-                | Message::PeerJoinResult { .. }
-                | Message::PeerLeave { .. }
-                | Message::Event { .. } => &p2p_sender,
-                Message::Upper { .. } | Message::Lower { .. } => &layer_sender,
+                Message::Group { .. } => &p2p_sender,
+                Message::Layer { .. } => &layer_sender,
                 Message::Rpc { .. } => &rpc_sender,
             };
             sender.send(message).await;

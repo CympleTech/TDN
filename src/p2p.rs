@@ -10,7 +10,7 @@ pub use chamomile::Config as P2pConfig;
 use chamomile::{new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage};
 
 use crate::primitive::GroupId;
-use crate::{new_channel, Message};
+use crate::{new_channel, GroupMessage, Message};
 
 pub(crate) async fn start(
     gid: GroupId,
@@ -48,16 +48,16 @@ async fn run_listen(
                     println!("DEBUG: recv from p2p: {:?}", msg);
                     match msg {
                         P2pMessage::PeerJoin(peer_addr, addr, data) => {
-                            send.send(Message::PeerJoin(peer_addr, addr, data)).await;
+                            send.send(Message::Group(GroupMessage::PeerJoin(peer_addr, addr, data))).await;
                         },
                         P2pMessage::PeerJoinResult(peer_addr, is_ok, result) => {
-                            send.send(Message::PeerJoinResult(peer_addr, is_ok, result)).await;
+                            send.send(Message::Group(GroupMessage::PeerJoinResult(peer_addr, is_ok, result))).await;
                         },
                         P2pMessage::PeerLeave(peer_addr) => {
-                            send.send(Message::PeerLeave(peer_addr)).await;
+                            send.send(Message::Group(GroupMessage::PeerLeave(peer_addr))).await;
                         }
                         P2pMessage::Data(peer_addr, data) => {
-                            send.send(Message::Event(peer_addr, data)).await;
+                            send.send(Message::Group(GroupMessage::Event(peer_addr, data))).await;
                         }
                         _ => {} // others not handle
                     }
@@ -68,16 +68,16 @@ async fn run_listen(
                 Some(msg) => {
                     println!("DEBUG: recv from outside: {:?}", msg);
                     match msg {
-                        Message::PeerJoinResult(peer_addr, is_ok, result) => {
+                        Message::Group(GroupMessage::PeerJoinResult(peer_addr, is_ok, result)) => {
                             p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, result)).await;
                         },
-                        Message::PeerJoin(peer_addr, addr, data) => {
+                        Message::Group(GroupMessage::PeerJoin(peer_addr, addr, data)) => {
                             p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;
                         }
-                        Message::PeerLeave(peer_addr) => {
+                        Message::Group(GroupMessage::PeerLeave(peer_addr)) => {
                             p2p_send.send(P2pMessage::PeerLeave(peer_addr)).await;
                         }
-                        Message::Event(peer_addr, data) => {
+                        Message::Group(GroupMessage::Event(peer_addr, data)) => {
                             p2p_send.send(P2pMessage::Data(peer_addr, data)).await;
                         }
                         _ => {} // others not handle
