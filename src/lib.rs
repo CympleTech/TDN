@@ -53,8 +53,8 @@ pub enum GroupMessage {
 pub enum LayerMessage {
     Upper(GroupId, Vec<u8>),
     Lower(GroupId, Vec<u8>),
-    LayerJoin(GroupId, PeerAddr, SocketAddr, Vec<u8>),
-    LayerJoinResult(GroupId, PeerAddr, bool, Vec<u8>),
+    LayerJoin(GroupId, u32, SocketAddr, Vec<u8>),
+    LayerJoinResult(GroupId, u32, bool),
 }
 
 #[derive(Debug)]

@@ -68,17 +68,21 @@ async fn run_listen(
                 Some(msg) => {
                     println!("DEBUG: recv from outside: {:?}", msg);
                     match msg {
-                        Message::Group(GroupMessage::PeerJoinResult(peer_addr, is_ok, result)) => {
-                            p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, result)).await;
-                        },
-                        Message::Group(GroupMessage::PeerJoin(peer_addr, addr, data)) => {
-                            p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;
-                        }
-                        Message::Group(GroupMessage::PeerLeave(peer_addr)) => {
-                            p2p_send.send(P2pMessage::PeerLeave(peer_addr)).await;
-                        }
-                        Message::Group(GroupMessage::Event(peer_addr, data)) => {
-                            p2p_send.send(P2pMessage::Data(peer_addr, data)).await;
+                        Message::Group(message) => {
+                            match message {
+                                GroupMessage::PeerJoinResult(peer_addr, is_ok, result) => {
+                                    p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, result)).await;
+                                },
+                                GroupMessage::PeerJoin(peer_addr, addr, data) => {
+                                    p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;
+                                }
+                                GroupMessage::PeerLeave(peer_addr) => {
+                                    p2p_send.send(P2pMessage::PeerLeave(peer_addr)).await;
+                                }
+                                GroupMessage::Event(peer_addr, data) => {
+                                    p2p_send.send(P2pMessage::Data(peer_addr, data)).await;
+                                }
+                            }
                         }
                         _ => {} // others not handle
                     }

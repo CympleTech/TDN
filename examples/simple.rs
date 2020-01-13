@@ -28,21 +28,39 @@ fn main() {
 
         while let Some(message) = out_recv.recv().await {
             match message {
-                Message::Group(GroupMessage::PeerJoin(peer, addr, data)) => {
-                    group.join(peer, addr, data, send.clone()).await;
-                }
-                Message::Group(GroupMessage::PeerJoinResult(peer, is_ok, result)) => {
-                    group.join_result(peer, is_ok, result);
-                }
-                Message::Group(GroupMessage::PeerLeave(peer)) => {
-                    group.leave(&peer);
-                }
+                Message::Group(msg) => match msg {
+                    GroupMessage::PeerJoin(peer, addr, data) => {
+                        group.join(peer, addr, data, send.clone()).await;
+                    }
+                    GroupMessage::PeerJoinResult(peer, is_ok, result) => {
+                        group.join_result(peer, is_ok, result);
+                    }
+                    GroupMessage::PeerLeave(peer) => {
+                        group.leave(&peer);
+                    }
+                    _ => {}
+                },
+                Message::Layer(msg) => match msg {
+                    LayerMessage::LayerJoin(gid, uid, addr, join_data) => {
+                        println!(
+                            "Layer Join: {}, Addr: {}, join addr: {:?}",
+                            gid.short_show(),
+                            addr,
+                            join_data
+                        );
+                        send.send(Message::Layer(LayerMessage::LayerJoinResult(
+                            gid, uid, true,
+                        )))
+                        .await;
+                    }
+                    LayerMessage::LayerJoinResult(gid, _uid, is_ok) => {
+                        println!("Layer: {}, Join Result: {}", gid.short_show(), is_ok);
+                    }
+                    _ => {}
+                },
                 Message::Rpc(uid, params, _is_ws) => {
                     send.send(Message::Rpc(uid, rpc_handler.handle(params).await, false))
                         .await;
-                }
-                _ => {
-                    println!("recv: {:?}", message);
                 }
             }
         }

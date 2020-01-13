@@ -4,13 +4,13 @@ use serde::Serialize as SeSerialize;
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::prelude::*;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 
 use crate::jsonrpc::RpcConfig;
 use crate::layer::LayerConfig;
 use crate::p2p::P2pConfig;
 use crate::primitive::{
-    GroupId, CONFIG_FILE_NAME, LAYER_ADDR, LAYER_LOWER_DEFAULT, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
+    GroupId, CONFIG_FILE_NAME, LAYER_ADDR, LAYER_PUBLIC_DEFAULT, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
 };
 
 pub struct Config {
@@ -20,15 +20,15 @@ pub struct Config {
     pub p2p_join_data: Vec<u8>,
     pub p2p_transport: String,
     pub p2p_white_list: Vec<SocketAddr>,
-    pub p2p_black_list: Vec<SocketAddr>,
+    pub p2p_black_list: Vec<IpAddr>,
     pub p2p_white_peer_list: Vec<PeerAddr>,
     pub p2p_black_peer_list: Vec<PeerAddr>,
 
     pub layer_addr: SocketAddr,
-    pub layer_lower: bool,
+    pub layer_public: bool,
     pub layer_upper: Vec<(SocketAddr, GroupId)>,
-    pub layer_white_list: Vec<SocketAddr>,
-    pub layer_black_list: Vec<SocketAddr>,
+    pub layer_white_list: Vec<IpAddr>,
+    pub layer_black_list: Vec<IpAddr>,
     pub layer_white_group_list: Vec<GroupId>,
     pub layer_black_group_list: Vec<GroupId>,
 
@@ -49,7 +49,7 @@ impl Config {
             p2p_black_peer_list,
 
             layer_addr,
-            layer_lower,
+            layer_public,
             layer_upper,
             layer_white_list,
             layer_black_list,
@@ -71,7 +71,7 @@ impl Config {
 
         let layer_config = LayerConfig {
             addr: layer_addr,
-            lower: layer_lower,
+            public: layer_public,
             upper: layer_upper,
             white_list: layer_white_list,
             black_list: layer_black_list,
@@ -98,7 +98,7 @@ impl Config {
             p2p_black_peer_list: vec![],
 
             layer_addr: layer_addr,
-            layer_lower: LAYER_LOWER_DEFAULT,
+            layer_public: LAYER_PUBLIC_DEFAULT,
             layer_upper: vec![],
             layer_white_list: vec![],
             layer_black_list: vec![],
@@ -152,15 +152,15 @@ pub struct RawConfig {
     pub p2p_join_data: Option<String>,
     pub p2p_default_transport: Option<String>,
     pub p2p_bootstrap: Vec<SocketAddr>,
-    pub p2p_black_list: Option<Vec<SocketAddr>>,
+    pub p2p_black_list: Option<Vec<IpAddr>>,
     pub p2p_white_peer_list: Option<Vec<String>>,
     pub p2p_black_peer_list: Option<Vec<String>>,
 
     pub layer_addr: Option<SocketAddr>,
-    pub layer_lower: Option<bool>,
+    pub layer_public: Option<bool>,
     pub layer_upper: Option<Vec<RawUpper>>,
-    pub layer_white_list: Option<Vec<SocketAddr>>,
-    pub layer_black_list: Option<Vec<SocketAddr>>,
+    pub layer_white_list: Option<Vec<IpAddr>>,
+    pub layer_black_list: Option<Vec<IpAddr>>,
     pub layer_white_group_list: Option<Vec<String>>,
     pub layer_black_group_list: Option<Vec<String>>,
 
@@ -242,7 +242,7 @@ impl RawConfig {
                 })
                 .unwrap_or(vec![]),
             layer_addr: self.layer_addr.unwrap_or(LAYER_ADDR.parse().unwrap()),
-            layer_lower: self.layer_lower.unwrap_or(LAYER_LOWER_DEFAULT),
+            layer_public: self.layer_public.unwrap_or(LAYER_PUBLIC_DEFAULT),
             layer_upper: self
                 .layer_upper
                 .map(|ss| {

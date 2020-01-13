@@ -16,7 +16,7 @@ pub const P2P_TRANSPORT: &str = "udp";
 pub const LAYER_ADDR: &str = "0.0.0.0:7000";
 
 /// Layer default lower on-off (whether public).
-pub const LAYER_LOWER_DEFAULT: bool = false;
+pub const LAYER_PUBLIC_DEFAULT: bool = true;
 
 /// RPC default binding addr.
 pub const RPC_ADDR: &str = "127.0.0.1:8000";
