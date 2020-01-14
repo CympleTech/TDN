@@ -19,6 +19,7 @@ mod p2p;
 pub use async_std; // pub async std to others
 pub mod error;
 pub mod primitive;
+pub mod storage;
 pub mod traits;
 
 // public struct

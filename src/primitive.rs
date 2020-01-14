@@ -1,8 +1,10 @@
 use chamomile::PeerId;
+use lazy_static::lazy_static;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::path::PathBuf;
 
 use crate::error::Error;
 
@@ -26,6 +28,27 @@ pub const MAX_MESSAGE_CAPACITY: usize = 1024;
 
 /// Configure file name
 pub const CONFIG_FILE_NAME: &str = "config.toml";
+
+pub const DEFAULT_STORAGE_DIR_NAME: &str = ".tdn";
+
+lazy_static! {
+    pub static ref DEFAULT_STORAGE_DIR: PathBuf = {
+        #[cfg(feature = "dev")]
+        let mut path = PathBuf::from("./");
+
+        #[cfg(not(feature = "dev"))]
+        let mut path = if dirs::home_dir().is_some() {
+            dirs::home_dir().unwrap()
+        } else {
+            PathBuf::from("./")
+        };
+
+        path.push(DEFAULT_STORAGE_DIR_NAME);
+        let _ = std::fs::create_dir_all(&path)
+            .expect(&format!("Cannot Build Storage Path: {:?}", path));
+        path
+    };
+}
 
 // Type: RPC Param
 pub type RpcParam = Value;

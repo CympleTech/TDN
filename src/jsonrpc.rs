@@ -240,6 +240,9 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 
 /// Helpe better handle rpc. Example.
 /// ``` rust
+/// use tdn::prelude::{RpcParam, RpcHandler};
+/// use serde_json::json;
+///
 /// struct State(u32); // Global State share in all rpc request.
 ///
 /// let mut rpc_handler = RpcHandler::new(State(1));
@@ -250,13 +253,18 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 ///    })
 /// });
 ///
+/// let params = json!({"method": "echo", "params": [""]});
+/// async {
+///     rpc_handler.handle(params).await;
+/// };
+///
 /// // when match Message
-/// match msg {
-///     Message::Rpc(uid, params) => Message::Rpc(uid, params) => {
-///         send.send(Message::Rpc(uid, rpc_handler.handle(params).await)).await;
-///     }
-///     _ => {}
-/// }
+/// //match msg {
+/// //    Message::Rpc(uid, params) => Message::Rpc(uid, params) => {
+/// //        send.send(Message::Rpc(uid, rpc_handler.handle(params).await)).await;
+/// //    }
+/// //    _ => {}
+/// //}
 /// ````
 pub struct RpcHandler<S: 'static + Send + Sync> {
     state: Arc<S>,

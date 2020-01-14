@@ -12,4 +12,6 @@ pub trait Peer {
     ) -> Result<Self::Signature, Box<dyn std::error::Error>>;
 
     fn verify(pk: &Self::PublicKey, msg: &Vec<u8>, sign: &Self::Signature) -> bool;
+
+    fn hex_public_key(pk: &Self::PublicKey) -> String;
 }
