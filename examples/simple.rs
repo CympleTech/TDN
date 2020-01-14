@@ -15,7 +15,7 @@ fn main() {
         rpc_handler.add_method("echo", |params, state| {
             Box::pin(async move {
                 assert_eq!(1, state.0);
-                Ok(params)
+                Ok(RpcParam::Array(params))
             })
         });
 

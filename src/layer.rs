@@ -207,6 +207,7 @@ async fn run_receiver(
                                                         StreamMessage::Close(gid, uid, true)
                                                     ).await;
                                                 } else {
+                                                    sender.send(StreamMessage::Ok).await;
                                                     layer_buffer_insert(&mut lowers, gid, uid, sender);
                                                 }
                                                 _ => {}
@@ -249,6 +250,8 @@ async fn run_receiver(
                                 }
                             } else {
                                 if is_white {
+                                    sender.send(StreamMessage::Ok).await;
+
                                     &mut lowers
                                 } else {
                                     if config.public {
@@ -310,6 +313,8 @@ async fn process_stream(
     let (mut reader, mut writer) = &mut (&stream, &stream);
 
     let remote_public_bytes = remote_public.to_bytes();
+
+    // if is to upper, send self-info first.
     if is_upper {
         println!("DEBUG: send remote by self");
         let len = remote_public_bytes.len() as u32;
@@ -352,14 +357,6 @@ async fn process_stream(
     }
 
     let RemotePublic(gid, _bytes) = result.unwrap();
-
-    // if verify ok, send self public info.
-    if !is_upper {
-        println!("DEBUG: send remote after verify");
-        let len = remote_public_bytes.len() as u32;
-        writer.write(&(len.to_be_bytes())).await?;
-        writer.write_all(&remote_public_bytes[..]).await?;
-    }
 
     // TODO Security DH exchange.
 
@@ -407,6 +404,12 @@ async fn process_stream(
                             writer.write(&(len.to_be_bytes())).await?;
                             writer.write_all(&bytes[..]).await?;
                         }
+                        StreamMessage::Ok => {
+                            println!("DEBUG: send remote after verify");
+                            let len = remote_public_bytes.len() as u32;
+                            writer.write(&(len.to_be_bytes())).await?;
+                            writer.write_all(&remote_public_bytes[..]).await?;
+                        }
                         _ => break,
                     }
                 },
@@ -428,6 +431,7 @@ enum StreamMessage {
     Open(GroupId, u32, SocketAddr, Sender<StreamMessage>, bool),
     Close(GroupId, u32, bool),
     Data(Vec<u8>),
+    Ok,
 }
 
 // Rtemote Public Info, include local transport and public key bytes.

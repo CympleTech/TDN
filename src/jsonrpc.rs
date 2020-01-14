@@ -246,7 +246,7 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 /// rpc_handler.add_method("echo", |params, state| {
 ///        Box::pin(async move {
 ///            assert_eq!(1, state.0);
-///            Ok(params)
+///            Ok(RpcParam::Array(params))
 ///    })
 /// });
 ///
@@ -260,7 +260,7 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 /// ````
 pub struct RpcHandler<S: 'static + Send + Sync> {
     state: Arc<S>,
-    fns: HashMap<String, Box<dyn Fn(RpcParam, Arc<S>) -> RpcFut>>,
+    fns: HashMap<String, Box<dyn Fn(Vec<RpcParam>, Arc<S>) -> RpcFut>>,
 }
 
 type RpcResult = std::result::Result<RpcParam, RpcError>;
@@ -274,7 +274,11 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         }
     }
 
-    pub fn add_method<F: 'static + Fn(RpcParam, Arc<S>) -> RpcFut>(&mut self, name: &str, f: F) {
+    pub fn add_method<F: 'static + Fn(Vec<RpcParam>, Arc<S>) -> RpcFut>(
+        &mut self,
+        name: &str,
+        f: F,
+    ) {
         self.fns.insert(name.to_owned(), Box::new(f));
     }
 
@@ -282,21 +286,23 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         let id = param["id"].take().as_u64().unwrap();
         let method_s = param["method"].take();
         let method = method_s.as_str().unwrap();
-        let params = param["params"].take();
-
-        match self.fns.get(method) {
-            Some(f) => {
-                let res = f(params, self.state.clone()).await;
-                match res {
-                    Ok(params) => json!({
-                        "jsonrpc": "2.0",
-                        "id": id,
-                        "result": params,
-                    }),
-                    Err(err) => err.json(id),
+        if let RpcParam::Array(params) = param["params"].take() {
+            match self.fns.get(method) {
+                Some(f) => {
+                    let res = f(params, self.state.clone()).await;
+                    match res {
+                        Ok(params) => json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": params,
+                        }),
+                        Err(err) => err.json(id),
+                    }
                 }
+                None => RpcError::MethodNotFound(method.to_owned()).json(id),
             }
-            None => RpcError::MethodNotFound(method.to_owned()).json(id),
+        } else {
+            RpcError::InvalidRequest.json(id)
         }
     }
 }
