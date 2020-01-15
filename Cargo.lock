@@ -164,6 +164,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "block-modes"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "block-cipher-trait 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "block-padding 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "block-padding"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -230,6 +239,7 @@ dependencies = [
  "async-std 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-trait 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "block-modes 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "ed25519-dalek 1.0.0-pre.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1600,6 +1610,7 @@ dependencies = [
 "checksum blake2b_simd 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)" = "d8fb2d74254a3a0b5cac33ac9f8ed0e44aa50378d9dbb2e5d83bd21ed1dc2c8a"
 "checksum block-buffer 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c0940dc441f31689269e10ac70eb1002a3a1d3ad1390e030043662eb7fe4688b"
 "checksum block-cipher-trait 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1c924d49bd09e7c06003acda26cd9742e796e34282ec6c1189404dee0c1f4774"
+"checksum block-modes 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "31aa8410095e39fdb732909fb5730a48d5bd7c2e3cd76bd1b07b3dbea130c529"
 "checksum block-padding 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "fa79dedbb091f449f1f39e53edf88d5dbe95f895dae6135a8d7b881fb5af73f5"
 "checksum broadcaster 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "07a1446420a56f1030271649ba0da46d23239b3a68c73591cea5247f15a788a0"
 "checksum byte-tools 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"

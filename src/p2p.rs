@@ -45,7 +45,6 @@ async fn run_listen(
         select! {
             msg = p2p_recv.next().fuse() => match msg {
                 Some(msg) => {
-                    println!("DEBUG: recv from p2p: {:?}", msg);
                     match msg {
                         P2pMessage::PeerJoin(peer_addr, addr, data) => {
                             send.send(Message::Group(GroupMessage::PeerJoin(peer_addr, addr, data))).await;
@@ -57,6 +56,7 @@ async fn run_listen(
                             send.send(Message::Group(GroupMessage::PeerLeave(peer_addr))).await;
                         }
                         P2pMessage::Data(peer_addr, data) => {
+                            println!("DEBUG: P2P Event Length: {}", data.len());
                             send.send(Message::Group(GroupMessage::Event(peer_addr, data))).await;
                         }
                         _ => {} // others not handle
@@ -66,7 +66,6 @@ async fn run_listen(
             },
             msg = out_recv.next().fuse() => match msg {
                 Some(msg) => {
-                    println!("DEBUG: recv from outside: {:?}", msg);
                     match msg {
                         Message::Group(message) => {
                             match message {
@@ -80,6 +79,7 @@ async fn run_listen(
                                     p2p_send.send(P2pMessage::PeerLeave(peer_addr)).await;
                                 }
                                 GroupMessage::Event(peer_addr, data) => {
+                                    println!("DEBUG: Outside Event Length: {}", data.len());
                                     p2p_send.send(P2pMessage::Data(peer_addr, data)).await;
                                 }
                             }
