@@ -75,4 +75,9 @@ layer_upper = []
 #layer_black_group_list = []
 
 ## RPC listen address, default is 127.0.0.1:8000, uncomment below to change.
-#rpc_addr = "127.0.0.1:8000",
+## Example: rpc_addr = "127.0.0.1:8000"
+rpc_addr = "127.0.0.1:8000"
+
+## RPC Service index html body. if has, set path, if not, comment it.
+## Example: rpc_index = "/var/www/html/index.html"
+rpc_index = "/home/sun/Public/html/index.html"

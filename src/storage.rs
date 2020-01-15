@@ -24,23 +24,8 @@ pub async fn read_string_local_file(name: &str) -> Result<String> {
     fs::read_to_string(path).await
 }
 
-pub async fn read_absolute_file(mut path: PathBuf, name: &str) -> Result<Vec<u8>> {
-    path.push(name);
-    fs::read(path).await
-}
-
-pub async fn read_string_absolute_file(mut path: PathBuf, name: &str) -> Result<String> {
-    path.push(name);
-    fs::read_to_string(path).await
-}
-
 pub async fn write_local_file(name: &str, data: &[u8]) -> Result<()> {
     let mut path = DEFAULT_STORAGE_DIR.clone();
-    path.push(name);
-    fs::write(path, data).await
-}
-
-pub async fn write_absolute_file(mut path: PathBuf, name: &str, data: &[u8]) -> Result<()> {
     path.push(name);
     fs::write(path, data).await
 }
@@ -51,8 +36,19 @@ pub async fn remove_local_file(name: &str) -> Result<()> {
     fs::remove_file(path).await
 }
 
-pub async fn remove_absolute_file(mut path: PathBuf, name: &str) -> Result<()> {
-    path.push(name);
+pub async fn read_absolute_file(path: &PathBuf) -> Result<Vec<u8>> {
+    fs::read(path).await
+}
+
+pub async fn read_string_absolute_file(path: &PathBuf) -> Result<String> {
+    fs::read_to_string(path).await
+}
+
+pub async fn write_absolute_file(path: &PathBuf, data: &[u8]) -> Result<()> {
+    fs::write(path, data).await
+}
+
+pub async fn remove_absolute_file(path: &PathBuf) -> Result<()> {
     fs::remove_file(path).await
 }
 
@@ -75,19 +71,15 @@ fn test_local_file() {
 fn test_absolute_file() {
     let name = "test.file";
     let data = "A".to_owned();
-    let path = PathBuf::from("../");
+    let mut path = PathBuf::from("../");
+    path.push(name);
     async_std::task::block_on(async {
-        write_absolute_file(path.clone(), name, data.as_bytes())
-            .await
-            .unwrap();
+        write_absolute_file(&path, data.as_bytes()).await.unwrap();
         assert_eq!(
-            read_absolute_file(path.clone(), name).await.ok(),
+            read_absolute_file(&path).await.ok(),
             Some(data.as_bytes().to_vec())
         );
-        assert_eq!(
-            read_string_absolute_file(path.clone(), name).await.ok(),
-            Some(data)
-        );
-        remove_absolute_file(path, name).await.unwrap();
+        assert_eq!(read_string_absolute_file(&path).await.ok(), Some(data));
+        remove_absolute_file(&path).await.unwrap();
     });
 }

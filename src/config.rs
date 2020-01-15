@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::prelude::*;
 use std::net::{IpAddr, SocketAddr};
+use std::path::PathBuf;
 
 use crate::jsonrpc::RpcConfig;
 use crate::layer::LayerConfig;
@@ -33,6 +34,7 @@ pub struct Config {
     pub layer_black_group_list: Vec<GroupId>,
 
     pub rpc_addr: SocketAddr,
+    pub rpc_index: Option<PathBuf>,
 }
 
 impl Config {
@@ -57,6 +59,7 @@ impl Config {
             layer_black_group_list,
 
             rpc_addr,
+            rpc_index,
         } = self;
 
         let p2p_config = P2pConfig {
@@ -79,7 +82,10 @@ impl Config {
             black_group_list: layer_black_group_list,
         };
 
-        let rpc_config = RpcConfig { addr: rpc_addr };
+        let rpc_config = RpcConfig {
+            addr: rpc_addr,
+            index: rpc_index,
+        };
 
         (p2p_config, layer_config, rpc_config)
     }
@@ -106,6 +112,7 @@ impl Config {
             layer_black_group_list: vec![],
 
             rpc_addr: rpc_addr,
+            rpc_index: None,
         }
     }
 
@@ -165,6 +172,7 @@ pub struct RawConfig {
     pub layer_black_group_list: Option<Vec<String>>,
 
     pub rpc_addr: Option<SocketAddr>,
+    pub rpc_index: Option<PathBuf>,
 }
 
 impl RawConfig {
@@ -283,6 +291,7 @@ impl RawConfig {
                 .unwrap_or(vec![]),
 
             rpc_addr: self.rpc_addr.unwrap_or(RPC_ADDR.parse().unwrap()),
+            rpc_index: self.rpc_index,
         }
     }
 }

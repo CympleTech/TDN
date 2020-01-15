@@ -9,12 +9,15 @@ use futures::{select, FutureExt};
 use serde_json::json;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use crate::primitive::{RpcParam, MAX_MESSAGE_CAPACITY};
+use crate::storage::read_string_absolute_file;
 use crate::{new_channel, Message};
 
 pub struct RpcConfig {
     pub addr: SocketAddr,
+    pub index: Option<PathBuf>,
 }
 
 enum RpcMessage {
@@ -84,14 +87,36 @@ async fn listen(
 }
 
 struct State {
-    send: Arc<Sender<RpcMessage>>,
+    send: Arc<(Sender<RpcMessage>, Option<String>)>,
 }
 
 async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
-    let state = State {
-        send: Arc::new(send),
+    let index_body = if config.index.is_some() {
+        let path = config.index.unwrap();
+        read_string_absolute_file(&path).await.ok()
+    } else {
+        None
     };
+
+    let state = State {
+        send: Arc::new((send, index_body)),
+    };
+
     let mut app = tide::with_state(state);
+
+    app.at("/").get(|req: tide::Request<State>| {
+        async move {
+            let index_body = req.state().send.1.clone();
+            if index_body.is_some() {
+                tide::Response::new(200)
+                    .body_string(index_body.unwrap())
+                    .set_mime(mime::TEXT_HTML)
+            } else {
+                tide::Response::new(404)
+                    .body_string("Not Found Index Page. --- Power By TDN".to_owned())
+            }
+        }
+    });
 
     app.at("/").post(|mut req: tide::Request<State>| {
         async move {
@@ -101,7 +126,7 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
             match parse_jsonrpc(body) {
                 Ok((rpc_param, id)) => {
                     let (s_send, s_recv) = rpc_channel();
-                    let sender = req.state().send.clone();
+                    let sender = req.state().send.0.clone();
                     sender
                         .send(RpcMessage::Request(id, rpc_param, s_send.clone()))
                         .await;
