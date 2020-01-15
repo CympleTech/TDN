@@ -87,26 +87,25 @@ async fn listen(
 }
 
 struct State {
-    send: Arc<(Sender<RpcMessage>, Option<String>)>,
+    send: Arc<(Sender<RpcMessage>, Option<PathBuf>)>,
 }
 
 async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
-    let index_body = if config.index.is_some() {
-        let path = config.index.unwrap();
-        read_string_absolute_file(&path).await.ok()
-    } else {
-        None
-    };
-
     let state = State {
-        send: Arc::new((send, index_body)),
+        send: Arc::new((send, config.index)),
     };
 
     let mut app = tide::with_state(state);
 
     app.at("/").get(|req: tide::Request<State>| {
         async move {
-            let index_body = req.state().send.1.clone();
+            let index_body = if req.state().send.1.is_some() {
+                let path = req.state().send.1.clone().unwrap();
+                read_string_absolute_file(&path).await.ok()
+            } else {
+                None
+            };
+
             if index_body.is_some() {
                 tide::Response::new(200)
                     .body_string(index_body.unwrap())
