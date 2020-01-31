@@ -54,8 +54,12 @@ pub enum GroupMessage {
 pub enum LayerMessage {
     Upper(GroupId, Vec<u8>),
     Lower(GroupId, Vec<u8>),
-    LayerJoin(GroupId, u32, SocketAddr, Vec<u8>),
-    LayerJoinResult(GroupId, u32, bool),
+    UpperJoin(GroupId), // start a upper layer service in layer listen. outside -> tdn
+    UpperJoinResult(GroupId, bool), // start a upper layer result. tdn -> outside
+    UpperLeave(GroupId), // remove a upper layer service in layer listen. outside -> tdn
+    UpperLeaveResult(GroupId, bool), // remove a upper layer result. tdn -> outside
+    LowerJoin(GroupId, u32, SocketAddr, Vec<u8>), // request for link to a upper service, and as a lower.
+    LowerJoinResult(GroupId, u32, bool),          // request a upper result.
 }
 
 #[derive(Debug)]

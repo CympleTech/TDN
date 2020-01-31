@@ -184,7 +184,19 @@ async fn run_receiver(
                                         });
                                     });
                                 }
-                                LayerMessage::LayerJoin(gid, _uid, addr, join_data) => {
+                                LayerMessage::UpperJoin(gid) => {
+                                    // TODO start a upper to listener.
+                                }
+                                LayerMessage::UpperLeave(gid) => {
+                                    // TODO remove a upper to listener.
+                                }
+                                LayerMessage::UpperJoinResult(..) => {
+                                    // Only send to outside message, Nothing to do
+                                }
+                                LayerMessage::UpperLeaveResult(..) => {
+                                    // Only send to outside message, Nothing to do
+                                }
+                                LayerMessage::LowerJoin(gid, _uid, addr, join_data) => {
                                     // handle to upper
                                     config.white_list.push(addr.ip());
                                     // TODO if join data
@@ -197,7 +209,7 @@ async fn run_receiver(
                                         ));
                                     }
                                 }
-                                LayerMessage::LayerJoinResult(gid, uid, is_ok) => {
+                                LayerMessage::LowerJoinResult(gid, uid, is_ok) => {
                                     // handle to lowers
                                     match tmp_lowers.get_mut(&gid) {
                                         Some(h) => {
@@ -241,7 +253,7 @@ async fn run_receiver(
                                     tmp_uppers.get_mut(&gid).map(|h| h.remove(&uid));
                                     send.send(
                                         Message::Layer(
-                                            LayerMessage::LayerJoinResult(gid, uid, true)
+                                            LayerMessage::LowerJoinResult(gid, uid, true)
                                         )).await;
 
                                     &mut uppers
@@ -257,7 +269,7 @@ async fn run_receiver(
                                     if config.public {
                                         send.send(
                                             Message::Layer(
-                                                LayerMessage::LayerJoin(gid, uid, addr, vec![]) // TODO
+                                                LayerMessage::LowerJoin(gid, uid, addr, vec![]) // TODO
                                             )).await;
 
                                         &mut tmp_lowers
