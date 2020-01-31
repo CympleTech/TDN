@@ -9,33 +9,23 @@ use futures::{select, FutureExt};
 pub use chamomile::Config as P2pConfig;
 use chamomile::{new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage};
 
-use crate::primitive::GroupId;
 use crate::{new_channel, GroupMessage, Message};
 
-pub(crate) async fn start(
-    gid: GroupId,
-    config: P2pConfig,
-    send: Sender<Message>,
-) -> Result<Sender<Message>> {
+pub(crate) async fn start(config: P2pConfig, send: Sender<Message>) -> Result<Sender<Message>> {
     let (out_send, out_recv) = new_channel();
     let (p2p_send, p2p_recv) = p2p_new_channel();
 
-    println!(
-        "DEBUG: Group: {:?} is running, P2P listening: {}",
-        gid.short_show(),
-        config.addr
-    );
+    println!("DEBUG: P2P listening: {}", config.addr);
 
     // start chamomile
     let p2p_send = p2p_start(p2p_send, config).await?;
 
-    task::spawn(run_listen(gid, send, p2p_send, p2p_recv, out_recv));
+    task::spawn(run_listen(send, p2p_send, p2p_recv, out_recv));
 
     Ok(out_send)
 }
 
 async fn run_listen(
-    _gid: GroupId,
     send: Sender<Message>,
     p2p_send: Sender<P2pMessage>,
     mut p2p_recv: Receiver<P2pMessage>,
