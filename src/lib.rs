@@ -58,8 +58,8 @@ pub enum LayerMessage {
     UpperJoinResult(GroupId, bool), // start a upper layer result. tdn -> outside
     UpperLeave(GroupId), // remove a upper layer service in layer listen. outside -> tdn
     UpperLeaveResult(GroupId, bool), // remove a upper layer result. tdn -> outside
-    LowerJoin(GroupId, u32, SocketAddr, Vec<u8>), // request for link to a upper service, and as a lower.
-    LowerJoinResult(GroupId, u32, bool),          // request a upper result.
+    LowerJoin(GroupId, GroupId, u32, SocketAddr, Vec<u8>), // request for link to a upper service, and as a lower. (request_group, remote_group, uuid, addr, data)
+    LowerJoinResult(GroupId, GroupId, u32, bool), // request a upper result. (request_group, remote_group, uuid, result)
 }
 
 #[derive(Debug)]

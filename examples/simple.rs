@@ -41,7 +41,7 @@ fn main() {
                     _ => {}
                 },
                 Message::Layer(msg) => match msg {
-                    LayerMessage::LowerJoin(gid, uid, addr, join_data) => {
+                    LayerMessage::LowerJoin(gid, remote_gid, uid, addr, join_data) => {
                         println!(
                             "Layer Join: {}, Addr: {}, join addr: {:?}",
                             gid.short_show(),
@@ -49,12 +49,12 @@ fn main() {
                             join_data
                         );
                         send.send(Message::Layer(LayerMessage::LowerJoinResult(
-                            gid, uid, true,
+                            gid, remote_gid, uid, true,
                         )))
                         .await;
                     }
-                    LayerMessage::LowerJoinResult(gid, _uid, is_ok) => {
-                        println!("Layer: {}, Join Result: {}", gid.short_show(), is_ok);
+                    LayerMessage::LowerJoinResult(_gid, remote_gid, _uid, is_ok) => {
+                        println!("Layer: {}, Join Result: {}", remote_gid.short_show(), is_ok);
                     }
                     _ => {}
                 },

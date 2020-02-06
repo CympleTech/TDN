@@ -27,7 +27,16 @@ pub struct LayerConfig {
     pub black_group_list: Vec<GroupId>,
 }
 
-impl LayerConfig {
+struct Layer {
+    pub public: bool,
+    pub white_list: Vec<IpAddr>,
+    pub black_list: Vec<IpAddr>,
+    pub white_group_list: Vec<GroupId>,
+    pub black_group_list: Vec<GroupId>,
+    pub upper: Vec<(SocketAddr, GroupId)>,
+}
+
+impl Layer {
     pub fn is_close(&self) -> bool {
         self.upper.is_empty()
             && !self.public
@@ -42,6 +51,10 @@ impl LayerConfig {
     fn white_contains(&self, addr: &SocketAddr, gid: &GroupId) -> bool {
         self.white_list.contains(&addr.ip()) || self.white_group_list.contains(gid)
     }
+
+    fn generate_remote_public(&self, r_gid: GroupId, gid: GroupId) -> RemotePublic {
+        RemotePublic(r_gid, gid, vec![])
+    }
 }
 
 pub(crate) async fn start(
@@ -51,23 +64,27 @@ pub(crate) async fn start(
 ) -> Result<Sender<Message>> {
     let (out_send, out_recv) = new_channel();
     let (self_send, self_recv) = channel::<StreamMessage>(MAX_MESSAGE_CAPACITY);
+    let (addr, default_layer) = (
+        config.addr,
+        Layer {
+            public: config.public,
+            white_list: config.white_list,
+            black_list: config.black_list,
+            white_group_list: config.white_group_list,
+            black_group_list: config.black_group_list,
+            upper: config.upper,
+        },
+    );
 
-    if config.is_close() {
+    if default_layer.is_close() {
         return Ok(out_send);
     }
 
-    let remote_public = RemotePublic(gid, vec![]);
-
-    let listener = TcpListener::bind(config.addr).await?;
-    task::spawn(run_listener(
-        remote_public.clone(),
-        listener,
-        send.clone(),
-        self_send.clone(),
-    ));
+    let listener = TcpListener::bind(addr).await?;
+    task::spawn(run_listener(listener, send.clone(), self_send.clone()));
     task::spawn(run_receiver(
-        remote_public,
-        config,
+        gid,
+        default_layer,
         out_recv,
         send,
         self_send,
@@ -78,7 +95,6 @@ pub(crate) async fn start(
 }
 
 async fn run_listener(
-    remote_public: RemotePublic,
     listener: TcpListener,
     send: Sender<Message>,
     self_send: Sender<StreamMessage>,
@@ -86,11 +102,10 @@ async fn run_listener(
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         task::spawn(process_stream(
-            remote_public.clone(),
+            None,
             stream?,
             send.clone(),
             self_send.clone(),
-            false,
         ));
     }
 
@@ -106,13 +121,7 @@ async fn run_client(
     self_send: Sender<StreamMessage>,
 ) -> Result<()> {
     let stream = TcpStream::connect(addr).await?;
-    task::spawn(process_stream(
-        remote_public.clone(),
-        stream,
-        send,
-        self_send,
-        true,
-    ));
+    task::spawn(process_stream(Some(remote_public), stream, send, self_send));
 
     Ok(())
 }
@@ -133,27 +142,33 @@ fn layer_buffer_insert(map: &mut LayerBuffer, gid: GroupId, uid: u32, send: Send
 }
 
 async fn run_receiver(
-    remote_public: RemotePublic,
-    mut config: LayerConfig,
+    default_gid: GroupId,
+    default_layer: Layer,
     mut out_recv: Receiver<Message>,
     send: Sender<Message>,
     self_send: Sender<StreamMessage>,
     mut self_recv: Receiver<StreamMessage>,
 ) -> Result<()> {
+    let mut layers: HashMap<GroupId, Layer> = HashMap::new();
+    layers.insert(default_gid, default_layer);
+
     let mut uppers: LayerBuffer = HashMap::new();
     let mut tmp_uppers: LayerBuffer = HashMap::new();
     let mut lowers: LayerBuffer = HashMap::new();
     let mut tmp_lowers: LayerBuffer = HashMap::new();
 
-    // link to uppers
-    for (addr, _gid) in &config.upper {
-        config.white_list.push(addr.ip());
-        task::spawn(run_client(
-            remote_public.clone(),
-            *addr,
-            send.clone(),
-            self_send.clone(),
-        ));
+    for (gid, layer) in layers.iter_mut() {
+        // link to uppers
+        for (addr, r_gid) in &layer.upper {
+            let remote_public = layer.generate_remote_public(*r_gid, *gid);
+            layer.white_list.push(addr.ip());
+            task::spawn(run_client(
+                remote_public.clone(),
+                *addr,
+                send.clone(),
+                self_send.clone(),
+            ));
+        }
     }
 
     loop {
@@ -186,6 +201,17 @@ async fn run_receiver(
                                 }
                                 LayerMessage::UpperJoin(gid) => {
                                     // TODO start a upper to listener.
+                                    if layers.contains_key(&gid) {
+                                        continue;
+                                    }
+                                    // let layer = Layer {
+                                    //     public: config.public,
+                                    //     white_list: config.white_list,
+                                    //     black_list: config.black_list,
+                                    //     white_group_list: config.white_group_list,
+                                    //     black_group_list: config.black_group_list,
+                                    //     upper: config.upper,
+                                    // }
                                 }
                                 LayerMessage::UpperLeave(gid) => {
                                     // TODO remove a upper to listener.
@@ -196,20 +222,24 @@ async fn run_receiver(
                                 LayerMessage::UpperLeaveResult(..) => {
                                     // Only send to outside message, Nothing to do
                                 }
-                                LayerMessage::LowerJoin(gid, _uid, addr, join_data) => {
-                                    // handle to upper
-                                    config.white_list.push(addr.ip());
-                                    // TODO if join data
-                                    if !uppers.contains_key(&gid) {
-                                        task::spawn(run_client(
-                                            remote_public.clone(),
-                                            addr,
-                                            send.clone(),
-                                            self_send.clone(),
-                                        ));
-                                    }
+                                LayerMessage::LowerJoin(gid, remote_gid, _uid, addr, join_data) => {
+                                    let _ = layers.get_mut(&gid).map(|layer| {
+                                        // handle to upper
+                                        layer.white_list.push(addr.ip());
+                                        let remote_public = layer.generate_remote_public(remote_gid, gid);
+
+                                        // TODO if join data
+                                        if !uppers.contains_key(&gid) {
+                                            task::spawn(run_client(
+                                                remote_public.clone(),
+                                                addr,
+                                                send.clone(),
+                                                self_send.clone(),
+                                            ));
+                                        }
+                                    });
                                 }
-                                LayerMessage::LowerJoinResult(gid, uid, is_ok) => {
+                                LayerMessage::LowerJoinResult(gid, remote_gid, uid, is_ok) => {
                                     // handle to lowers
                                     match tmp_lowers.get_mut(&gid) {
                                         Some(h) => {
@@ -219,7 +249,8 @@ async fn run_receiver(
                                                         StreamMessage::Close(gid, uid, true)
                                                     ).await;
                                                 } else {
-                                                    sender.send(StreamMessage::Ok).await;
+                                                    let layer = layers.get(&gid).unwrap();
+                                                    sender.send(StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))).await;
                                                     layer_buffer_insert(&mut lowers, gid, uid, sender);
                                                 }
                                                 _ => {}
@@ -238,14 +269,18 @@ async fn run_receiver(
             msg = self_recv.next().fuse() => match msg {
                 Some(msg) => {
                     match msg {
-                        StreamMessage::Open(gid, uid, addr, sender, is_upper) => {
-                            println!("DEBUG: layer: {}, uid: {} open ok!", gid.short_show(), uid);
+                        StreamMessage::Open(gid, remote_gid, uid, addr, sender, is_upper) => {
+                            println!("DEBUG: layer: {}, uid: {} open ok!", remote_gid.short_show(), uid);
+                            if !layers.contains_key(&gid) {
+                                continue;
+                            }
+                            let layer = layers.get(&gid).unwrap();
 
-                            if config.black_contains(&addr, &gid) {
+                            if layer.black_contains(&addr, &remote_gid) {
                                 continue;
                             }
 
-                            let is_white = config.white_contains(&addr, &gid);
+                            let is_white = layer.white_contains(&addr, &remote_gid);
 
                             let entry = if is_upper {
                                 if is_white {
@@ -253,7 +288,7 @@ async fn run_receiver(
                                     tmp_uppers.get_mut(&gid).map(|h| h.remove(&uid));
                                     send.send(
                                         Message::Layer(
-                                            LayerMessage::LowerJoinResult(gid, uid, true)
+                                            LayerMessage::LowerJoinResult(gid, remote_gid, uid, true)
                                         )).await;
 
                                     &mut uppers
@@ -262,14 +297,14 @@ async fn run_receiver(
                                 }
                             } else {
                                 if is_white {
-                                    sender.send(StreamMessage::Ok).await;
+                                    sender.send(StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))).await;
 
                                     &mut lowers
                                 } else {
-                                    if config.public {
+                                    if layer.public {
                                         send.send(
                                             Message::Layer(
-                                                LayerMessage::LowerJoin(gid, uid, addr, vec![]) // TODO
+                                                LayerMessage::LowerJoin(gid, remote_gid, uid, addr, vec![]) // TODO
                                             )).await;
 
                                         &mut tmp_lowers
@@ -279,7 +314,7 @@ async fn run_receiver(
                                 }
                             };
 
-                            layer_buffer_insert(entry, gid, uid, sender);
+                            layer_buffer_insert(entry, remote_gid, uid, sender);
                         },
                         StreamMessage::Close(gid, uid, is_upper) => {
                             let (entry, tmp_entry) = if is_upper {
@@ -314,20 +349,19 @@ async fn run_receiver(
 }
 
 async fn process_stream(
-    remote_public: RemotePublic,
+    has_remote_public: Option<RemotePublic>,
     stream: TcpStream,
     sender: Sender<Message>,
     server_send: Sender<StreamMessage>,
-    is_upper: bool,
 ) -> Result<()> {
+    let is_upper = has_remote_public.is_some();
     println!("DEBUG: start process stream");
     let addr = stream.peer_addr()?;
     let (mut reader, mut writer) = &mut (&stream, &stream);
 
-    let remote_public_bytes = remote_public.to_bytes();
-
     // if is to upper, send self-info first.
     if is_upper {
+        let remote_public_bytes = has_remote_public.unwrap().to_bytes();
         println!("DEBUG: send remote by self");
         let len = remote_public_bytes.len() as u32;
         writer.write(&(len.to_be_bytes())).await?;
@@ -368,7 +402,7 @@ async fn process_stream(
         return Ok(());
     }
 
-    let RemotePublic(gid, _bytes) = result.unwrap();
+    let RemotePublic(gid, r_gid, _bytes) = result.unwrap();
 
     // TODO Security DH exchange.
 
@@ -376,7 +410,9 @@ async fn process_stream(
     let uid = rand::random::<u32>();
 
     server_send
-        .send(StreamMessage::Open(gid, uid, addr, self_send, is_upper))
+        .send(StreamMessage::Open(
+            gid, r_gid, uid, addr, self_send, is_upper,
+        ))
         .await;
 
     let mut read_len = [0u8; 4];
@@ -416,8 +452,9 @@ async fn process_stream(
                             writer.write(&(len.to_be_bytes())).await?;
                             writer.write_all(&bytes[..]).await?;
                         }
-                        StreamMessage::Ok => {
+                        StreamMessage::Ok(remote_public) => {
                             println!("DEBUG: send remote after verify");
+                            let remote_public_bytes = remote_public.to_bytes();
                             let len = remote_public_bytes.len() as u32;
                             writer.write(&(len.to_be_bytes())).await?;
                             writer.write_all(&remote_public_bytes[..]).await?;
@@ -440,15 +477,22 @@ async fn process_stream(
 
 #[derive(Debug)]
 enum StreamMessage {
-    Open(GroupId, u32, SocketAddr, Sender<StreamMessage>, bool),
+    Open(
+        GroupId, // request group
+        GroupId, // self group
+        u32,
+        SocketAddr,
+        Sender<StreamMessage>,
+        bool, // is_upper
+    ),
     Close(GroupId, u32, bool),
     Data(Vec<u8>),
-    Ok,
+    Ok(RemotePublic),
 }
 
 // Rtemote Public Info, include local transport and public key bytes.
-#[derive(Deserialize, Serialize, Clone)]
-pub struct RemotePublic(pub GroupId, pub Vec<u8>);
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct RemotePublic(pub GroupId, pub GroupId, pub Vec<u8>);
 
 impl RemotePublic {
     pub fn from_bytes(bytes: Vec<u8>) -> std::result::Result<Self, ()> {
