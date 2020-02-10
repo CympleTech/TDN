@@ -11,7 +11,8 @@ use crate::jsonrpc::RpcConfig;
 use crate::layer::LayerConfig;
 use crate::p2p::P2pConfig;
 use crate::primitive::{
-    GroupId, CONFIG_FILE_NAME, LAYER_ADDR, LAYER_PUBLIC_DEFAULT, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
+    GroupId, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, LAYER_ADDR, LAYER_PUBLIC_DEFAULT, P2P_ADDR,
+    P2P_TRANSPORT, RPC_ADDR,
 };
 
 pub struct Config {
@@ -63,6 +64,7 @@ impl Config {
         } = self;
 
         let p2p_config = P2pConfig {
+            db_dir: DEFAULT_STORAGE_DIR.clone(),
             addr: p2p_addr,
             join_data: p2p_join_data,
             transport: p2p_transport,

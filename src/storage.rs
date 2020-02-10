@@ -1,120 +1,56 @@
 use async_std::fs;
-use async_std::io::Result as AsyncResult;
-use serde::{de::DeserializeOwned, Serialize};
+use async_std::io::Result;
 use std::path::PathBuf;
 
 use crate::primitive::DEFAULT_STORAGE_DIR;
 
-pub async fn read_local_file(name: &str) -> AsyncResult<Vec<u8>> {
+// pub use chamomile local storage.
+pub use chamomile::LocalDB;
+
+pub fn open_db(name: &str) -> Result<LocalDB> {
+    let mut path = DEFAULT_STORAGE_DIR.clone();
+    path.push(name);
+    LocalDB::open_absolute(&path)
+}
+
+pub async fn read_local_file(name: &str) -> Result<Vec<u8>> {
     let mut path = DEFAULT_STORAGE_DIR.clone();
     path.push(name);
     fs::read(path).await
 }
 
-pub async fn read_string_local_file(name: &str) -> AsyncResult<String> {
+pub async fn read_string_local_file(name: &str) -> Result<String> {
     let mut path = DEFAULT_STORAGE_DIR.clone();
     path.push(name);
     fs::read_to_string(path).await
 }
 
-pub async fn write_local_file(name: &str, data: &[u8]) -> AsyncResult<()> {
+pub async fn write_local_file(name: &str, data: &[u8]) -> Result<()> {
     let mut path = DEFAULT_STORAGE_DIR.clone();
     path.push(name);
     fs::write(path, data).await
 }
 
-pub async fn remove_local_file(name: &str) -> AsyncResult<()> {
+pub async fn remove_local_file(name: &str) -> Result<()> {
     let mut path = DEFAULT_STORAGE_DIR.clone();
     path.push(name);
     fs::remove_file(path).await
 }
 
-pub async fn read_absolute_file(path: &PathBuf) -> AsyncResult<Vec<u8>> {
+pub async fn read_absolute_file(path: &PathBuf) -> Result<Vec<u8>> {
     fs::read(path).await
 }
 
-pub async fn read_string_absolute_file(path: &PathBuf) -> AsyncResult<String> {
+pub async fn read_string_absolute_file(path: &PathBuf) -> Result<String> {
     fs::read_to_string(path).await
 }
 
-pub async fn write_absolute_file(path: &PathBuf, data: &[u8]) -> AsyncResult<()> {
+pub async fn write_absolute_file(path: &PathBuf, data: &[u8]) -> Result<()> {
     fs::write(path, data).await
 }
 
-pub async fn remove_absolute_file(path: &PathBuf) -> AsyncResult<()> {
+pub async fn remove_absolute_file(path: &PathBuf) -> Result<()> {
     fs::remove_file(path).await
-}
-
-pub struct LocalDB {
-    tree: sled::Db,
-}
-
-impl LocalDB {
-    pub fn open(name: &str) -> Result<LocalDB, ()> {
-        let mut path = DEFAULT_STORAGE_DIR.clone();
-        path.push(name);
-        let tree = sled::open(path).map_err(|_e| ())?;
-        Ok(LocalDB { tree })
-    }
-
-    pub fn open_absolute(path: &PathBuf) -> Result<LocalDB, ()> {
-        let tree = sled::open(path).map_err(|_e| ())?;
-        Ok(LocalDB { tree })
-    }
-
-    pub fn read<T: Serialize + DeserializeOwned>(&self, k: &Vec<u8>) -> Option<T> {
-        self.tree
-            .get(k)
-            .ok()
-            .map(|v| v)
-            .flatten()
-            .map(|v| bincode::deserialize(&v).ok())
-            .flatten()
-    }
-
-    pub fn write<T: Serialize + DeserializeOwned>(&self, k: Vec<u8>, t: &T) -> Result<(), ()> {
-        bincode::serialize(&t).map_err(|_e| ()).and_then(|bytes| {
-            self.tree
-                .insert(k, bytes)
-                .map_err(|_e| ())
-                .and_then(|_| self.flush())
-        })
-    }
-
-    pub fn update<T: Serialize + DeserializeOwned>(&self, k: Vec<u8>, t: &T) -> Result<(), ()> {
-        bincode::serialize(&t).map_err(|_e| ()).and_then(|bytes| {
-            let old = self.tree.get(&k).ok().map(|v| v).flatten();
-            if old.is_none() {
-                self.tree
-                    .insert(k, bytes)
-                    .map_err(|_e| ())
-                    .and_then(|_| self.flush())
-            } else {
-                self.tree
-                    .compare_and_swap(k, Some(old.unwrap()), Some(bytes))
-                    .map_err(|_e| ())
-                    .and_then(|_| self.flush())
-            }
-        })
-    }
-
-    pub fn delete<T: Serialize + DeserializeOwned>(&self, k: &Vec<u8>) -> Result<T, ()> {
-        let result = self.read::<T>(k);
-        if result.is_some() {
-            self.tree
-                .remove(k)
-                .map_err(|_e| ())
-                .and_then(|_| self.flush())?;
-            Ok(result.unwrap())
-        } else {
-            Err(())
-        }
-    }
-
-    fn flush(&self) -> Result<(), ()> {
-        async_std::task::spawn(self.tree.flush_async());
-        Ok(())
-    }
 }
 
 #[test]
@@ -157,10 +93,10 @@ fn test_db_file() {
     let value_b = "B".to_owned();
 
     async_std::task::block_on(async {
-        let db = LocalDB::open(name).unwrap();
-        assert_eq!(db.write(key.clone(), &value), Ok(()));
+        let db = open_db(name).unwrap();
+        assert_eq!(db.write(key.clone(), &value).ok(), Some(()));
         assert_eq!(db.read::<String>(&key), Some(value.clone()));
-        assert_eq!(db.update::<String>(key.clone(), &value_b), Ok(()));
+        assert_eq!(db.update::<String>(key.clone(), &value_b).ok(), Some(()));
         assert_eq!(db.read::<String>(&key), Some(value_b.clone()));
         assert_eq!(db.delete::<String>(&key).ok(), Some(value_b));
         assert_eq!(db.read::<String>(&key), None);
