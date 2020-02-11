@@ -75,36 +75,36 @@ pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
 
 pub async fn multiple_start(
     groups: Vec<(Config, Sender<Message>)>,
-) -> Result<HashMap<GroupId, Sender<Message>>> {
+) -> Result<HashMap<GroupId, (PeerAddr, Sender<Message>)>> {
     let mut result = HashMap::new();
     for (config, out_send) in groups {
         let (send, recv) = new_channel();
         let gid = config.group_id;
-        start_main(gid, out_send, recv, config).await?;
-        result.insert(gid, send);
+        let peer_addr = start_main(gid, out_send, recv, config).await?;
+        result.insert(gid, (peer_addr, send));
     }
     Ok(result)
 }
 
-pub async fn start(out_send: Sender<Message>) -> Result<Sender<Message>> {
+pub async fn start(out_send: Sender<Message>) -> Result<(PeerAddr, Sender<Message>)> {
     let (send, recv) = new_channel();
 
     let config = Config::load();
 
-    start_main(config.group_id, out_send, recv, config).await?;
+    let peer_addr = start_main(config.group_id, out_send, recv, config).await?;
 
-    Ok(send)
+    Ok((peer_addr, send))
 }
 
 pub async fn start_with_config(
     out_send: Sender<Message>,
     config: Config,
-) -> Result<Sender<Message>> {
+) -> Result<(PeerAddr, Sender<Message>)> {
     let (send, recv) = new_channel();
 
-    start_main(config.group_id, out_send, recv, config).await?;
+    let peer_addr = start_main(config.group_id, out_send, recv, config).await?;
 
-    Ok(send)
+    Ok((peer_addr, send))
 }
 
 async fn start_main(
@@ -112,7 +112,7 @@ async fn start_main(
     out_send: Sender<Message>,
     self_recv: Receiver<Message>,
     config: Config,
-) -> Result<()> {
+) -> Result<PeerAddr> {
     let (p2p_config, layer_config, rpc_config) = config.split();
 
     // start p2p
@@ -123,7 +123,7 @@ async fn start_main(
         layer_start(gid, layer_config, out_send.clone()),
         rpc_start(rpc_config, out_send)
     );
-    let (p2p_sender, layer_sender, rpc_sender) =
+    let ((peer_addr, p2p_sender), layer_sender, rpc_sender) =
         (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
 
     task::spawn(async move {
@@ -137,5 +137,5 @@ async fn start_main(
         }
     });
 
-    Ok(())
+    Ok(peer_addr)
 }

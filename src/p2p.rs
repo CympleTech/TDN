@@ -7,22 +7,27 @@ use async_std::{
 use futures::{select, FutureExt};
 
 pub use chamomile::Config as P2pConfig;
-use chamomile::{new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage};
+use chamomile::{
+    new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage, PeerId,
+};
 
 use crate::{new_channel, GroupMessage, Message};
 
-pub(crate) async fn start(config: P2pConfig, send: Sender<Message>) -> Result<Sender<Message>> {
+pub(crate) async fn start(
+    config: P2pConfig,
+    send: Sender<Message>,
+) -> Result<(PeerId, Sender<Message>)> {
     let (out_send, out_recv) = new_channel();
     let (p2p_send, p2p_recv) = p2p_new_channel();
 
     println!("DEBUG: P2P listening: {}", config.addr);
 
     // start chamomile
-    let p2p_send = p2p_start(p2p_send, config).await?;
+    let (peer_id, p2p_send) = p2p_start(p2p_send, config).await?;
 
     task::spawn(run_listen(send, p2p_send, p2p_recv, out_recv));
 
-    Ok(out_send)
+    Ok((peer_id, out_send))
 }
 
 async fn run_listen(

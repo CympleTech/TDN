@@ -9,7 +9,8 @@ fn main() {
     task::block_on(async {
         let (out_send, out_recv) = new_channel();
         let mut group = PermissionlessGroup::default();
-        let send = start(out_send).await.unwrap();
+        let (peer_addr, send) = start(out_send).await.unwrap();
+        println!("Example: peer id: {}", peer_addr.short_show());
 
         let mut rpc_handler = RpcHandler::new(State(1));
         rpc_handler.add_method("echo", |params, state| {
