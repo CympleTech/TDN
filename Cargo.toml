@@ -26,9 +26,10 @@ sha3 = "0.8"
 rand = "0.7"
 dirs = "2"
 
-# JSONRPC
+# JSON-RPC
 tide = "0.5"
 mime = "0.3"
+async-tungstenite = "0.4"
 
 chamomile = { path = "../chamomile" } # Dev
 

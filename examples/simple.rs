@@ -59,8 +59,8 @@ fn main() {
                     }
                     _ => {}
                 },
-                Message::Rpc(uid, params, _is_ws) => {
-                    send.send(Message::Rpc(uid, rpc_handler.handle(params).await, false))
+                Message::Rpc(uid, params, is_ws) => {
+                    send.send(Message::Rpc(uid, rpc_handler.handle(params).await, is_ws))
                         .await;
                 }
             }

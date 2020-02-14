@@ -35,6 +35,7 @@ pub struct Config {
     pub layer_black_group_list: Vec<GroupId>,
 
     pub rpc_addr: SocketAddr,
+    pub rpc_ws: Option<SocketAddr>,
     pub rpc_index: Option<PathBuf>,
 }
 
@@ -60,6 +61,7 @@ impl Config {
             layer_black_group_list,
 
             rpc_addr,
+            rpc_ws,
             rpc_index,
         } = self;
 
@@ -86,6 +88,7 @@ impl Config {
 
         let rpc_config = RpcConfig {
             addr: rpc_addr,
+            ws: rpc_ws,
             index: rpc_index,
         };
 
@@ -114,6 +117,7 @@ impl Config {
             layer_black_group_list: vec![],
 
             rpc_addr: rpc_addr,
+            rpc_ws: None,
             rpc_index: None,
         }
     }
@@ -174,6 +178,7 @@ pub struct RawConfig {
     pub layer_black_group_list: Option<Vec<String>>,
 
     pub rpc_addr: Option<SocketAddr>,
+    pub rpc_ws: Option<SocketAddr>,
     pub rpc_index: Option<PathBuf>,
 }
 
@@ -293,6 +298,7 @@ impl RawConfig {
                 .unwrap_or(vec![]),
 
             rpc_addr: self.rpc_addr.unwrap_or(RPC_ADDR.parse().unwrap()),
+            rpc_ws: self.rpc_ws,
             rpc_index: self.rpc_index,
         }
     }

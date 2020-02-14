@@ -1,15 +1,22 @@
 use async_std::{
     io::Result,
-    prelude::*,
     sync::{channel, Arc, Receiver, Sender},
     task,
 };
 use futures::future::LocalBoxFuture;
 use futures::{select, FutureExt};
+use rand::prelude::*;
 use serde_json::json;
 use std::collections::HashMap;
+use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use std::path::PathBuf;
+
+use futures::{sink::SinkExt, StreamExt};
+
+use async_std::net::{TcpListener, TcpStream};
+use async_tungstenite::accept_async;
+use async_tungstenite::tungstenite::protocol::Message as WsMessage;
 
 use crate::primitive::{RpcParam, MAX_MESSAGE_CAPACITY};
 use crate::storage::read_string_absolute_file;
@@ -17,11 +24,14 @@ use crate::{new_channel, Message};
 
 pub struct RpcConfig {
     pub addr: SocketAddr,
+    pub ws: Option<SocketAddr>,
     pub index: Option<PathBuf>,
 }
 
 enum RpcMessage {
-    Request(u64, RpcParam, Sender<RpcMessage>),
+    Open(u64, Sender<RpcMessage>),
+    Close(u64),
+    Request(u64, RpcParam, Option<Sender<RpcMessage>>),
     Response(RpcParam),
 }
 
@@ -55,7 +65,10 @@ async fn listen(
                         match msg {
                             Message::Rpc(id, params, is_ws) => {
                                 if is_ws {
-                                    // TODO websocket
+                                    let s = connections.get(&id);
+                                    if s.is_some() {
+                                        s.unwrap().send(RpcMessage::Response(params)).await;
+                                    }
                                 } else {
                                     let s = connections.remove(&id);
                                     if s.is_some() {
@@ -72,8 +85,17 @@ async fn listen(
                     Some(msg) => {
                         match msg {
                             RpcMessage::Request(id, params, sender) => {
+                                let is_ws = sender.is_none();
+                                if !is_ws {
+                                    connections.insert(id, sender.unwrap());
+                                }
+                                send.send(Message::Rpc(id, params, is_ws)).await;
+                            }
+                            RpcMessage::Open(id, sender) => {
                                 connections.insert(id, sender);
-                                send.send(Message::Rpc(id, params, false)).await;
+                            }
+                            RpcMessage::Close(id) => {
+                                connections.remove(&id);
                             }
                             _ => {} // others not handle
                         }
@@ -92,28 +114,26 @@ struct State {
 
 async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
     let state = State {
-        send: Arc::new((send, config.index)),
+        send: Arc::new((send.clone(), config.index)),
     };
 
     let mut app = tide::with_state(state);
 
-    app.at("/").get(|req: tide::Request<State>| {
-        async move {
-            let index_body = if req.state().send.1.is_some() {
-                let path = req.state().send.1.clone().unwrap();
-                read_string_absolute_file(&path).await.ok()
-            } else {
-                None
-            };
+    app.at("/").get(|req: tide::Request<State>| async move {
+        let index_body = if req.state().send.1.is_some() {
+            let path = req.state().send.1.clone().unwrap();
+            read_string_absolute_file(&path).await.ok()
+        } else {
+            None
+        };
 
-            if index_body.is_some() {
-                tide::Response::new(200)
-                    .body_string(index_body.unwrap())
-                    .set_mime(mime::TEXT_HTML)
-            } else {
-                tide::Response::new(404)
-                    .body_string("Not Found Index Page. --- Power By TDN".to_owned())
-            }
+        if index_body.is_some() {
+            tide::Response::new(200)
+                .body_string(index_body.unwrap())
+                .set_mime(mime::TEXT_HTML)
+        } else {
+            tide::Response::new(404)
+                .body_string("Not Found Index Page. --- Power By TDN".to_owned())
         }
     });
 
@@ -127,7 +147,7 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
                     let (s_send, s_recv) = rpc_channel();
                     let sender = req.state().send.0.clone();
                     sender
-                        .send(RpcMessage::Request(id, rpc_param, s_send.clone()))
+                        .send(RpcMessage::Request(id, rpc_param, Some(s_send.clone())))
                         .await;
                     drop(sender);
 
@@ -155,6 +175,75 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
 
     task::spawn(app.listen(config.addr));
 
+    // ws
+    if config.ws.is_some() {
+        task::spawn(ws_listen(
+            send,
+            TcpListener::bind(config.ws.unwrap()).await?,
+        ));
+    }
+
+    Ok(())
+}
+
+async fn ws_listen(send: Sender<RpcMessage>, listener: TcpListener) -> Result<()> {
+    while let Ok((stream, addr)) = listener.accept().await {
+        task::spawn(ws_connection(send.clone(), stream, addr));
+    }
+
+    Ok(())
+}
+
+async fn ws_connection(
+    send: Sender<RpcMessage>,
+    raw_stream: TcpStream,
+    addr: SocketAddr,
+) -> Result<()> {
+    let ws_stream = accept_async(raw_stream)
+        .await
+        .map_err(|_e| Error::new(ErrorKind::Other, "Accept WebSocket Failure!"))?;
+    println!("DEBUG: WebSocket connection established: {}", addr);
+    let id: u64 = rand::thread_rng().gen();
+    let (s_send, mut s_recv) = rpc_channel();
+    send.send(RpcMessage::Open(id, s_send)).await;
+
+    let (mut writer, mut reader) = ws_stream.split();
+
+    loop {
+        select! {
+            msg = reader.next().fuse() => match msg {
+                Some(msg) => {
+                    if msg.is_ok() {
+                        let msg = msg.unwrap();
+                        let msg = msg.to_text().unwrap();
+                        match parse_jsonrpc(msg.to_owned()) {
+                            Ok((rpc_param, _id)) => {
+                                send.send(RpcMessage::Request(id, rpc_param, None)).await;
+                            }
+                            Err((err, id)) => {
+                                let s = WsMessage::from(err.json(id).to_string());
+                                let _ = writer.send(s).await;
+                            }
+                        }
+                    }
+                }
+                None => break,
+            },
+            msg = s_recv.next().fuse() => match msg {
+                Some(msg) => {
+                    let param = match msg {
+                        RpcMessage::Response(param) => param,
+                        _ => Default::default(),
+                    };
+                    let s = WsMessage::from(param.to_string());
+                    let _ = writer.send(s).await;
+                }
+                None => break,
+            }
+        }
+    }
+
+    send.send(RpcMessage::Close(id)).await;
     Ok(())
 }
 

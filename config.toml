@@ -78,6 +78,10 @@ layer_upper = []
 ## Example: rpc_addr = "127.0.0.1:8000"
 rpc_addr = "127.0.0.1:8000"
 
+## WS listen address, default closed. if need, uncomment below to change.
+## Example: rpc_ws = "127.0.0.1:8080"
+rpc_ws = "127.0.0.1:8080"
+
 ## RPC Service index html body. if has, set path, if not, comment it.
 ## Example: rpc_index = "/var/www/html/index.html"
 rpc_index = "/home/sun/Public/html/index.html"
