@@ -32,8 +32,6 @@ pub mod prelude {
     pub use super::GroupMessage;
     pub use super::LayerMessage;
     pub use super::Message;
-
-    // TODO ADD start function
 }
 
 use config::Config;
@@ -42,37 +40,59 @@ use layer::start as layer_start;
 use p2p::start as p2p_start;
 use primitive::{GroupId, PeerAddr, RpcParam, MAX_MESSAGE_CAPACITY};
 
+/// Group Message Type.
 #[derive(Debug)]
 pub enum GroupMessage {
+    /// peer join, peer_id, peer_socketaddr, join info bytes.
     PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
+    /// peer join result. peer_id, is_joined, join info bytes.
     PeerJoinResult(PeerAddr, bool, Vec<u8>),
+    /// peer leave. peer_id.
     PeerLeave(PeerAddr),
+    /// event between peers. peer_id, bytes.
     Event(PeerAddr, Vec<u8>),
 }
 
+/// Layer Message Type.
 #[derive(Debug)]
 pub enum LayerMessage {
+    /// Upper layer send to here, and return send to upper.
     Upper(GroupId, Vec<u8>),
+    /// Lower layer send to here, and return send to lower.
     Lower(GroupId, Vec<u8>),
-    UpperJoin(GroupId), // start a upper layer service in layer listen. outside -> tdn
-    UpperJoinResult(GroupId, bool), // start a upper layer result. tdn -> outside
-    UpperLeave(GroupId), // remove a upper layer service in layer listen. outside -> tdn
-    UpperLeaveResult(GroupId, bool), // remove a upper layer result. tdn -> outside
-    LowerJoin(GroupId, GroupId, u32, SocketAddr, Vec<u8>), // request for link to a upper service, and as a lower. (request_group, remote_group, uuid, addr, data)
-    LowerJoinResult(GroupId, GroupId, u32, bool), // request a upper result. (request_group, remote_group, uuid, result)
+    /// start a upper layer service in layer listen. outside -> tdn.
+    UpperJoin(GroupId),
+    /// start a upper layer result. tdn -> outside
+    UpperJoinResult(GroupId, bool),
+    /// remove a upper layer service in layer listen. outside -> tdn.
+    UpperLeave(GroupId),
+    /// remove a upper layer result. tdn -> outside.
+    UpperLeaveResult(GroupId, bool),
+    /// request for link to a upper service, and as a lower.
+    /// (request_group, remote_group, uuid, addr, data).
+    LowerJoin(GroupId, GroupId, u32, SocketAddr, Vec<u8>),
+    /// request a upper result.
+    /// (request_group, remote_group, uuid, result).
+    LowerJoinResult(GroupId, GroupId, u32, bool),
 }
 
+/// Message between the server and outside.
 #[derive(Debug)]
 pub enum Message {
+    /// Group: GroupMessage.
     Group(GroupMessage),
+    /// Layer: LayerMessage.
     Layer(LayerMessage),
+    /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
 }
 
+/// new a channel, with Message Type. default capacity is 100.
 pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
     channel::<Message>(MAX_MESSAGE_CAPACITY)
 }
 
+/// start multiple services together.
 pub async fn multiple_start(
     groups: Vec<(Config, Sender<Message>)>,
 ) -> Result<HashMap<GroupId, (PeerAddr, Sender<Message>)>> {
@@ -86,6 +106,8 @@ pub async fn multiple_start(
     Ok(result)
 }
 
+/// start a service, use config.toml file.
+/// send a Sender<Message>, and return the peer_id, and service Sender<Message>.
 pub async fn start(out_send: Sender<Message>) -> Result<(PeerAddr, Sender<Message>)> {
     let (send, recv) = new_channel();
 
@@ -96,6 +118,7 @@ pub async fn start(out_send: Sender<Message>) -> Result<(PeerAddr, Sender<Messag
     Ok((peer_addr, send))
 }
 
+/// start a service with config.
 pub async fn start_with_config(
     out_send: Sender<Message>,
     config: Config,
