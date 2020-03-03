@@ -52,6 +52,7 @@ lazy_static! {
 
 // Type: RPC Param
 pub type RpcParam = Value;
+pub use serde_json::json;
 
 /// Type: PeerAddr
 pub type PeerAddr = PeerId;

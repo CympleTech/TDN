@@ -44,8 +44,8 @@ async fn run_listen(
                         P2pMessage::PeerJoin(peer_addr, addr, data) => {
                             send.send(Message::Group(GroupMessage::PeerJoin(peer_addr, addr, data))).await;
                         },
-                        P2pMessage::PeerJoinResult(peer_addr, is_ok, result) => {
-                            send.send(Message::Group(GroupMessage::PeerJoinResult(peer_addr, is_ok, result))).await;
+                        P2pMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
+                            send.send(Message::Group(GroupMessage::PeerJoinResult(peer_addr, is_ok, is_force, result))).await;
                         },
                         P2pMessage::PeerLeave(peer_addr) => {
                             send.send(Message::Group(GroupMessage::PeerLeave(peer_addr))).await;
@@ -64,8 +64,8 @@ async fn run_listen(
                     match msg {
                         Message::Group(message) => {
                             match message {
-                                GroupMessage::PeerJoinResult(peer_addr, is_ok, result) => {
-                                    p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, result)).await;
+                                GroupMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
+                                    p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, is_force, result)).await;
                                 },
                                 GroupMessage::PeerJoin(peer_addr, addr, data) => {
                                     p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;

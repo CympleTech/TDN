@@ -45,8 +45,8 @@ use primitive::{GroupId, PeerAddr, RpcParam, MAX_MESSAGE_CAPACITY};
 pub enum GroupMessage {
     /// peer join, peer_id, peer_socketaddr, join info bytes.
     PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
-    /// peer join result. peer_id, is_joined, join info bytes.
-    PeerJoinResult(PeerAddr, bool, Vec<u8>),
+    /// peer join result. peer_id, is_joined, is_force_close, join info bytes.
+    PeerJoinResult(PeerAddr, bool, bool, Vec<u8>),
     /// peer leave. peer_id.
     PeerLeave(PeerAddr),
     /// event between peers. peer_id, bytes.

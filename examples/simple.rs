@@ -33,7 +33,7 @@ fn main() {
                     GroupMessage::PeerJoin(peer, addr, data) => {
                         group.join(peer, addr, data, send.clone()).await;
                     }
-                    GroupMessage::PeerJoinResult(peer, is_ok, result) => {
+                    GroupMessage::PeerJoinResult(peer, is_ok, _is_force, result) => {
                         group.join_result(peer, is_ok, result);
                     }
                     GroupMessage::PeerLeave(peer) => {
