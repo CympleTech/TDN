@@ -43,6 +43,9 @@ pub enum GroupReceiveMessage {
     /// when peer join, send from TDN to outside.
     /// params is `peer_id`, `socket_addr` and peer `join_info`.
     PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
+    /// when peer get join result.
+    /// params is `peer_id`, `is_ok` and `result_data`.
+    PeerJoinResult(PeerAddr, bool, Vec<u8>),
     /// when peer leave, send from TDN to outside.
     /// params is `peer_id`.
     PeerLeave(PeerAddr),

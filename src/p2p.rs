@@ -48,6 +48,11 @@ async fn run_listen<M: GroupMessage>(
                                 GroupReceiveMessage::PeerJoin(peer_addr, addr, data)
                             )).await;
                         },
+                        ReceiveMessage::PeerJoinResult(peer_addr, is_ok, data) => {
+                            out_send.send(M::new_group(
+                                GroupReceiveMessage::PeerJoinResult(peer_addr, is_ok, data)
+                            )).await;
+                        },
                         ReceiveMessage::PeerLeave(peer_addr) => {
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::PeerLeave(peer_addr)
