@@ -1,18 +1,10 @@
 #![recursion_limit = "1024"]
 #![feature(associated_type_defaults)]
 
-use async_std::{
-    io::Result,
-    sync::{channel, Receiver, Sender},
-    task,
-};
-use futures::join;
-use std::collections::HashMap;
-use std::net::SocketAddr;
-
 mod config;
 mod jsonrpc;
 mod layer;
+mod message;
 mod p2p;
 
 // public mod
@@ -26,139 +18,180 @@ pub mod traits;
 pub mod prelude {
     pub use super::config::Config;
     pub use super::jsonrpc::{RpcError, RpcHandler};
-    pub use super::primitive::GroupId;
-    pub use super::primitive::PeerAddr;
-    pub use super::primitive::RpcParam;
-    pub use super::GroupMessage;
-    pub use super::LayerMessage;
-    pub use super::Message;
-}
+    pub use super::message::{GroupReceiveMessage, GroupSendMessage};
+    pub use super::message::{LayerReceiveMessage, LayerSendMessage};
+    pub use super::message::{ReceiveMessage, SendMessage};
+    pub use super::message::{SingleReceiveMessage, SingleSendMessage};
+    pub use super::primitive::{Broadcast, GroupId, PeerAddr, RpcParam};
 
-use config::Config;
-use jsonrpc::start as rpc_start;
-use layer::start as layer_start;
-use p2p::start as p2p_start;
-use primitive::{GroupId, PeerAddr, RpcParam, MAX_MESSAGE_CAPACITY};
+    use async_std::{
+        io::Result,
+        sync::{channel, Receiver, Sender},
+        task,
+    };
+    use futures::join;
+    use std::collections::HashMap;
 
-/// Group Message Type.
-#[derive(Debug)]
-pub enum GroupMessage {
-    /// peer join, peer_id, peer_socketaddr, join info bytes.
-    PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
-    /// peer join result. peer_id, is_joined, is_force_close, join info bytes.
-    PeerJoinResult(PeerAddr, bool, bool, Vec<u8>),
-    /// peer leave. peer_id.
-    PeerLeave(PeerAddr),
-    /// event between peers. peer_id, bytes.
-    Event(PeerAddr, Vec<u8>),
-}
+    use super::jsonrpc::start as rpc_start;
+    use super::layer::start as layer_start;
+    use super::message::RpcSendMessage;
+    use super::p2p::start as p2p_start;
+    use super::primitive::MAX_MESSAGE_CAPACITY;
 
-/// Layer Message Type.
-#[derive(Debug)]
-pub enum LayerMessage {
-    /// Upper layer send to here, and return send to upper.
-    Upper(GroupId, Vec<u8>),
-    /// Lower layer send to here, and return send to lower.
-    Lower(GroupId, Vec<u8>),
-    /// start a upper layer service in layer listen. outside -> tdn.
-    UpperJoin(GroupId),
-    /// start a upper layer result. tdn -> outside
-    UpperJoinResult(GroupId, bool),
-    /// remove a upper layer service in layer listen. outside -> tdn.
-    UpperLeave(GroupId),
-    /// remove a upper layer result. tdn -> outside.
-    UpperLeaveResult(GroupId, bool),
-    /// request for link to a upper service, and as a lower.
-    /// (request_group, remote_group, uuid, addr, data).
-    LowerJoin(GroupId, GroupId, u32, SocketAddr, Vec<u8>),
-    /// request a upper result.
-    /// (request_group, remote_group, uuid, result).
-    LowerJoinResult(GroupId, GroupId, u32, bool),
-}
-
-/// Message between the server and outside.
-#[derive(Debug)]
-pub enum Message {
-    /// Group: GroupMessage.
-    Group(GroupMessage),
-    /// Layer: LayerMessage.
-    Layer(LayerMessage),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
-}
-
-/// new a channel, with Message Type. default capacity is 100.
-pub fn new_channel() -> (Sender<Message>, Receiver<Message>) {
-    channel::<Message>(MAX_MESSAGE_CAPACITY)
-}
-
-/// start multiple services together.
-pub async fn multiple_start(
-    groups: Vec<(Config, Sender<Message>)>,
-) -> Result<HashMap<GroupId, (PeerAddr, Sender<Message>)>> {
-    let mut result = HashMap::new();
-    for (config, out_send) in groups {
-        let (send, recv) = new_channel();
-        let gid = config.group_id;
-        let peer_addr = start_main(gid, out_send, recv, config).await?;
-        result.insert(gid, (peer_addr, send));
+    /// new a channel, send message to TDN Message. default capacity is 1024.
+    pub fn new_send_channel() -> (Sender<SendMessage>, Receiver<SendMessage>) {
+        channel(MAX_MESSAGE_CAPACITY)
     }
-    Ok(result)
-}
 
-/// start a service, use config.toml file.
-/// send a Sender<Message>, and return the peer_id, and service Sender<Message>.
-pub async fn start(out_send: Sender<Message>) -> Result<(PeerAddr, Sender<Message>)> {
-    let (send, recv) = new_channel();
+    /// new a channel, send message to TDN Message. default capacity is 1024.
+    pub fn new_receive_channel() -> (Sender<ReceiveMessage>, Receiver<ReceiveMessage>) {
+        channel(MAX_MESSAGE_CAPACITY)
+    }
 
-    let config = Config::load();
+    /// new a signle layer channel, send message to TDN. default capacity is 1024.
+    pub fn new_single_send_channel() -> (Sender<SingleSendMessage>, Receiver<SingleSendMessage>) {
+        channel(MAX_MESSAGE_CAPACITY)
+    }
 
-    let peer_addr = start_main(config.group_id, out_send, recv, config).await?;
+    /// new a signle layer channel, receive message from TDN. default capacity is 1024.
+    pub fn new_single_receive_channel(
+    ) -> (Sender<SingleReceiveMessage>, Receiver<SingleReceiveMessage>) {
+        channel(MAX_MESSAGE_CAPACITY)
+    }
 
-    Ok((peer_addr, send))
-}
-
-/// start a service with config.
-pub async fn start_with_config(
-    out_send: Sender<Message>,
-    config: Config,
-) -> Result<(PeerAddr, Sender<Message>)> {
-    let (send, recv) = new_channel();
-
-    let peer_addr = start_main(config.group_id, out_send, recv, config).await?;
-
-    Ok((peer_addr, send))
-}
-
-async fn start_main(
-    gid: GroupId,
-    out_send: Sender<Message>,
-    self_recv: Receiver<Message>,
-    config: Config,
-) -> Result<PeerAddr> {
-    let (p2p_config, layer_config, rpc_config) = config.split();
-
-    // start p2p
-    // start layer_rpc
-    // start inner json_rpc
-    let (p2p_sender_result, layer_sender_result, rpc_sender_result) = join!(
-        p2p_start(p2p_config, out_send.clone()),
-        layer_start(gid, layer_config, out_send.clone()),
-        rpc_start(rpc_config, out_send)
-    );
-    let ((peer_addr, p2p_sender), layer_sender, rpc_sender) =
-        (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
-
-    task::spawn(async move {
-        while let Some(message) = self_recv.recv().await {
-            let sender = match message {
-                Message::Group { .. } => &p2p_sender,
-                Message::Layer { .. } => &layer_sender,
-                Message::Rpc { .. } => &rpc_sender,
-            };
-            sender.send(message).await;
+    /// start multiple services together.
+    pub async fn multiple_start(
+        groups: Vec<Config>,
+    ) -> Result<HashMap<GroupId, (PeerAddr, Sender<SendMessage>, Receiver<ReceiveMessage>)>> {
+        let mut result = HashMap::new();
+        for config in groups {
+            let (send_send, send_recv) = new_send_channel();
+            let (recv_send, recv_recv) = new_receive_channel();
+            let gid = config.group_id;
+            let peer_addr = start_main(gid, recv_send, send_recv, config).await?;
+            result.insert(gid, (peer_addr, send_send, recv_recv));
         }
-    });
+        Ok(result)
+    }
 
-    Ok(peer_addr)
+    /// start a service, use config.toml file.
+    /// send a Sender<Message>, and return the peer_id, and service Sender<Message>.
+    pub async fn start() -> Result<(PeerAddr, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
+        let (send_send, send_recv) = new_send_channel();
+        let (recv_send, recv_recv) = new_receive_channel();
+
+        let config = Config::load();
+
+        let peer_addr = start_main(config.group_id, recv_send, send_recv, config).await?;
+
+        Ok((peer_addr, send_send, recv_recv))
+    }
+
+    /// start a service with config.
+    pub async fn start_with_config(
+        config: Config,
+    ) -> Result<(PeerAddr, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
+        let (send_send, send_recv) = new_send_channel();
+        let (recv_send, recv_recv) = new_receive_channel();
+
+        let peer_addr = start_main(config.group_id, recv_send, send_recv, config).await?;
+
+        Ok((peer_addr, send_send, recv_recv))
+    }
+
+    async fn start_main(
+        gid: GroupId,
+        out_send: Sender<ReceiveMessage>,
+        self_recv: Receiver<SendMessage>,
+        config: Config,
+    ) -> Result<PeerAddr> {
+        let (p2p_config, layer_config, rpc_config) = config.split();
+
+        // start p2p
+        // start layer_rpc
+        // start inner json_rpc
+        let (p2p_sender_result, layer_sender_result, rpc_sender_result) = join!(
+            p2p_start(p2p_config, out_send.clone()),
+            layer_start(gid, layer_config, out_send.clone()),
+            rpc_start(rpc_config, out_send)
+        );
+        let ((peer_addr, p2p_sender), layer_sender, rpc_sender) =
+            (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
+
+        task::spawn(async move {
+            while let Some(message) = self_recv.recv().await {
+                match message {
+                    SendMessage::Layer(msg) => layer_sender.send(msg).await,
+                    SendMessage::Group(msg) => p2p_sender.send(msg).await,
+                    SendMessage::Rpc(uid, param, is_ws) => {
+                        rpc_sender.send(RpcSendMessage(uid, param, is_ws)).await;
+                    }
+                }
+            }
+        });
+
+        Ok(peer_addr)
+    }
+
+    /// start a signle layer service, use config.toml file.
+    /// send a Sender<Message>, and return the peer_id, and service Sender<Message>.
+    pub async fn single_start() -> Result<(
+        PeerAddr,
+        Sender<SingleSendMessage>,
+        Receiver<SingleReceiveMessage>,
+    )> {
+        let (send_send, send_recv) = new_single_send_channel();
+        let (recv_send, recv_recv) = new_single_receive_channel();
+
+        let config = Config::load();
+
+        let peer_addr = single_start_main(recv_send, send_recv, config).await?;
+
+        Ok((peer_addr, send_send, recv_recv))
+    }
+
+    /// start a single layer service with config.
+    pub async fn single_start_with_config(
+        config: Config,
+    ) -> Result<(
+        PeerAddr,
+        Sender<SingleSendMessage>,
+        Receiver<SingleReceiveMessage>,
+    )> {
+        let (send_send, send_recv) = new_single_send_channel();
+        let (recv_send, recv_recv) = new_single_receive_channel();
+
+        let peer_addr = single_start_main(recv_send, send_recv, config).await?;
+
+        Ok((peer_addr, send_send, recv_recv))
+    }
+
+    async fn single_start_main(
+        out_send: Sender<SingleReceiveMessage>,
+        self_recv: Receiver<SingleSendMessage>,
+        config: Config,
+    ) -> Result<PeerAddr> {
+        let (p2p_config, _, rpc_config) = config.split();
+
+        // start p2p
+        // start inner json_rpc
+        let (p2p_sender_result, rpc_sender_result) = join!(
+            p2p_start(p2p_config, out_send.clone()),
+            rpc_start(rpc_config, out_send)
+        );
+        let ((peer_addr, p2p_sender), rpc_sender) = (p2p_sender_result?, rpc_sender_result?);
+
+        task::spawn(async move {
+            while let Some(message) = self_recv.recv().await {
+                match message {
+                    SingleSendMessage::Group(msg) => p2p_sender.send(msg).await,
+                    SingleSendMessage::Rpc(uid, param, is_ws) => {
+                        rpc_sender.send(RpcSendMessage(uid, param, is_ws)).await;
+                    }
+                }
+            }
+        });
+
+        Ok(peer_addr)
+    }
 }

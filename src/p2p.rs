@@ -1,85 +1,94 @@
 use async_std::{
     io::Result,
-    prelude::*,
-    sync::{Receiver, Sender},
+    sync::{channel, Receiver, Sender},
     task,
 };
+use chamomile::prelude::{start as p2p_start, PeerId, ReceiveMessage, SendMessage};
 use futures::{select, FutureExt};
 
-pub use chamomile::Config as P2pConfig;
-use chamomile::{
-    new_channel as p2p_new_channel, start as p2p_start, Message as P2pMessage, PeerId,
-};
+pub use chamomile::prelude::Config as P2pConfig;
 
-use crate::{new_channel, GroupMessage, Message};
+use crate::message::{GroupMessage, GroupReceiveMessage, GroupSendMessage};
+use crate::primitive::MAX_MESSAGE_CAPACITY;
 
-pub(crate) async fn start(
+/// new a channel, send message to p2p Message. default capacity is 1024.
+fn new_send_channel() -> (Sender<GroupSendMessage>, Receiver<GroupSendMessage>) {
+    channel(MAX_MESSAGE_CAPACITY)
+}
+
+pub(crate) async fn start<M: 'static + GroupMessage>(
     config: P2pConfig,
-    send: Sender<Message>,
-) -> Result<(PeerId, Sender<Message>)> {
-    let (out_send, out_recv) = new_channel();
-    let (p2p_send, p2p_recv) = p2p_new_channel();
+    out_send: Sender<M>,
+) -> Result<(PeerId, Sender<GroupSendMessage>)> {
+    let (self_send, self_recv) = new_send_channel();
 
     println!("DEBUG: P2P listening: {}", config.addr);
 
     // start chamomile
-    let (peer_id, p2p_send) = p2p_start(p2p_send, config).await?;
+    let (peer_id, p2p_send, p2p_recv) = p2p_start(config).await?;
 
-    task::spawn(run_listen(send, p2p_send, p2p_recv, out_recv));
+    task::spawn(run_listen(out_send, p2p_send, p2p_recv, self_recv));
 
-    Ok((peer_id, out_send))
+    Ok((peer_id, self_send))
 }
 
-async fn run_listen(
-    send: Sender<Message>,
-    p2p_send: Sender<P2pMessage>,
-    mut p2p_recv: Receiver<P2pMessage>,
-    mut out_recv: Receiver<Message>,
+async fn run_listen<M: GroupMessage>(
+    out_send: Sender<M>,
+    p2p_send: Sender<SendMessage>,
+    p2p_recv: Receiver<ReceiveMessage>,
+    self_recv: Receiver<GroupSendMessage>,
 ) -> Result<()> {
     loop {
         select! {
-            msg = p2p_recv.next().fuse() => match msg {
+            msg = p2p_recv.recv().fuse() => match msg {
                 Some(msg) => {
                     match msg {
-                        P2pMessage::PeerJoin(peer_addr, addr, data) => {
-                            send.send(Message::Group(GroupMessage::PeerJoin(peer_addr, addr, data))).await;
+                        ReceiveMessage::PeerJoin(peer_addr, addr, data) => {
+                            out_send.send(M::new_group(
+                                GroupReceiveMessage::PeerJoin(peer_addr, addr, data)
+                            )).await;
                         },
-                        P2pMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
-                            send.send(Message::Group(GroupMessage::PeerJoinResult(peer_addr, is_ok, is_force, result))).await;
+                        ReceiveMessage::PeerLeave(peer_addr) => {
+                            out_send.send(M::new_group(
+                                GroupReceiveMessage::PeerLeave(peer_addr)
+                            )).await;
                         },
-                        P2pMessage::PeerLeave(peer_addr) => {
-                            send.send(Message::Group(GroupMessage::PeerLeave(peer_addr))).await;
-                        }
-                        P2pMessage::Data(peer_addr, data) => {
+                        ReceiveMessage::Data(peer_addr, data) => {
                             println!("DEBUG: P2P Event Length: {}", data.len());
-                            send.send(Message::Group(GroupMessage::Event(peer_addr, data))).await;
+                            out_send.send(M::new_group(
+                                GroupReceiveMessage::Event(peer_addr, data)
+                            )).await;
                         }
-                        _ => {} // others not handle
                     }
                 },
                 None => break,
             },
-            msg = out_recv.next().fuse() => match msg {
+            msg = self_recv.recv().fuse() => match msg {
                 Some(msg) => {
                     match msg {
-                        Message::Group(message) => {
-                            match message {
-                                GroupMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
-                                    p2p_send.send(P2pMessage::PeerJoinResult(peer_addr, is_ok, is_force, result)).await;
-                                },
-                                GroupMessage::PeerJoin(peer_addr, addr, data) => {
-                                    p2p_send.send(P2pMessage::PeerJoin(peer_addr, addr, data)).await;
-                                }
-                                GroupMessage::PeerLeave(peer_addr) => {
-                                    p2p_send.send(P2pMessage::PeerLeave(peer_addr)).await;
-                                }
-                                GroupMessage::Event(peer_addr, data) => {
-                                    println!("DEBUG: Outside Event Length: {}", data.len());
-                                    p2p_send.send(P2pMessage::Data(peer_addr, data)).await;
-                                }
-                            }
-                        }
-                        _ => {} // others not handle
+                        GroupSendMessage::PeerJoin(peer_addr, addr, data) => {
+                            p2p_send.send(SendMessage::PeerJoin(peer_addr, addr, data)).await;
+                        },
+                        GroupSendMessage::PeerLeave(peer_addr) => {
+                            p2p_send.send(SendMessage::PeerLeave(peer_addr)).await;
+                        },
+                        GroupSendMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
+                            p2p_send.send(SendMessage::PeerJoinResult(
+                                peer_addr, is_ok, is_force, result)).await;
+                        },
+                        GroupSendMessage::Connect(addr, data) => {
+                            p2p_send.send(SendMessage::Connect(addr, data)).await;
+                        },
+                        GroupSendMessage::DisConnect(addr) => {
+                            p2p_send.send(SendMessage::DisConnect(addr)).await;
+                        },
+                        GroupSendMessage::Event(peer_addr, data) => {
+                            println!("DEBUG: Outside Event Length: {}", data.len());
+                            p2p_send.send(SendMessage::Data(peer_addr, data)).await;
+                        },
+                        GroupSendMessage::Broadcast(broadcast, data) => {
+                            p2p_send.send(SendMessage::Broadcast(broadcast, data)).await;
+                        },
                     }
                 },
                 None => break,
@@ -87,10 +96,10 @@ async fn run_listen(
         }
     }
 
-    drop(send);
+    drop(out_send);
     drop(p2p_send);
     drop(p2p_recv);
-    drop(out_recv);
+    drop(self_recv);
 
     Ok(())
 }

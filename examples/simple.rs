@@ -1,15 +1,13 @@
 use async_std::task;
 use tdn::prelude::*;
-use tdn::{new_channel, start};
 use tdn_permission::PermissionlessGroup;
 
 struct State(u32);
 
 fn main() {
     task::block_on(async {
-        let (out_send, out_recv) = new_channel();
         let mut group = PermissionlessGroup::default();
-        let (peer_addr, send) = start(out_send).await.unwrap();
+        let (peer_addr, send, out_recv) = start().await.unwrap();
         println!("Example: peer id: {}", peer_addr.short_show());
 
         let mut rpc_handler = RpcHandler::new(State(1));
@@ -29,39 +27,42 @@ fn main() {
 
         while let Some(message) = out_recv.recv().await {
             match message {
-                Message::Group(msg) => match msg {
-                    GroupMessage::PeerJoin(peer, addr, data) => {
+                ReceiveMessage::Group(msg) => match msg {
+                    GroupReceiveMessage::PeerJoin(peer, addr, data) => {
                         group.join(peer, addr, data, send.clone()).await;
                     }
-                    GroupMessage::PeerJoinResult(peer, is_ok, _is_force, result) => {
-                        group.join_result(peer, is_ok, result);
-                    }
-                    GroupMessage::PeerLeave(peer) => {
+                    GroupReceiveMessage::PeerLeave(peer) => {
                         group.leave(&peer);
                     }
-                    _ => {}
+                    GroupReceiveMessage::Event(peer, _data) => {
+                        println!("receive group event from {}", peer.short_show());
+                    }
                 },
-                Message::Layer(msg) => match msg {
-                    LayerMessage::LowerJoin(gid, remote_gid, uid, addr, join_data) => {
+                ReceiveMessage::Layer(msg) => match msg {
+                    LayerReceiveMessage::LowerJoin(gid, remote_gid, uid, addr, join_data) => {
                         println!(
                             "Layer Join: {}, Addr: {}, join addr: {:?}",
                             gid.short_show(),
                             addr,
                             join_data
                         );
-                        send.send(Message::Layer(LayerMessage::LowerJoinResult(
+                        send.send(SendMessage::Layer(LayerSendMessage::LowerJoinResult(
                             gid, remote_gid, uid, true,
                         )))
                         .await;
                     }
-                    LayerMessage::LowerJoinResult(_gid, remote_gid, _uid, is_ok) => {
+                    LayerReceiveMessage::LowerJoinResult(_gid, remote_gid, _uid, is_ok) => {
                         println!("Layer: {}, Join Result: {}", remote_gid.short_show(), is_ok);
                     }
                     _ => {}
                 },
-                Message::Rpc(uid, params, is_ws) => {
-                    send.send(Message::Rpc(uid, rpc_handler.handle(params).await, is_ws))
-                        .await;
+                ReceiveMessage::Rpc(uid, params, is_ws) => {
+                    send.send(SendMessage::Rpc(
+                        uid,
+                        rpc_handler.handle(params).await,
+                        is_ws,
+                    ))
+                    .await;
                 }
             }
         }

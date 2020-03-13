@@ -13,9 +13,9 @@ use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
+use crate::message::{RpcMessage as RpcMessageTrait, RpcSendMessage};
 use crate::primitive::{RpcParam, MAX_MESSAGE_CAPACITY};
 use crate::storage::read_string_absolute_file;
-use crate::{new_channel, Message};
 
 pub struct RpcConfig {
     pub addr: SocketAddr,
@@ -34,8 +34,15 @@ fn rpc_channel() -> (Sender<RpcMessage>, Receiver<RpcMessage>) {
     channel(MAX_MESSAGE_CAPACITY)
 }
 
-pub(crate) async fn start(config: RpcConfig, send: Sender<Message>) -> Result<Sender<Message>> {
-    let (out_send, out_recv) = new_channel();
+fn rpc_send_channel() -> (Sender<RpcSendMessage>, Receiver<RpcSendMessage>) {
+    channel(MAX_MESSAGE_CAPACITY)
+}
+
+pub(crate) async fn start<M: 'static + RpcMessageTrait>(
+    config: RpcConfig,
+    send: Sender<M>,
+) -> Result<Sender<RpcSendMessage>> {
+    let (out_send, out_recv) = rpc_send_channel();
 
     let (self_send, self_recv) = rpc_channel();
 
@@ -45,38 +52,34 @@ pub(crate) async fn start(config: RpcConfig, send: Sender<Message>) -> Result<Se
     Ok(out_send)
 }
 
-async fn listen(
-    send: Sender<Message>,
-    mut out_recv: Receiver<Message>,
-    mut self_recv: Receiver<RpcMessage>,
+async fn listen<M: 'static + RpcMessageTrait>(
+    send: Sender<M>,
+    out_recv: Receiver<RpcSendMessage>,
+    self_recv: Receiver<RpcMessage>,
 ) -> Result<()> {
     task::spawn(async move {
         let mut connections: HashMap<u64, Sender<RpcMessage>> = HashMap::new();
 
         loop {
             select! {
-                msg = out_recv.next().fuse() => match msg {
+                msg = out_recv.recv().fuse() => match msg {
                     Some(msg) => {
-                        match msg {
-                            Message::Rpc(id, params, is_ws) => {
-                                if is_ws {
-                                    let s = connections.get(&id);
-                                    if s.is_some() {
-                                        s.unwrap().send(RpcMessage::Response(params)).await;
-                                    }
-                                } else {
-                                    let s = connections.remove(&id);
-                                    if s.is_some() {
-                                        s.unwrap().send(RpcMessage::Response(params)).await;
-                                    }
-                                }
+                        let RpcSendMessage(id, params, is_ws) = msg;
+                        if is_ws {
+                            let s = connections.get(&id);
+                            if s.is_some() {
+                                s.unwrap().send(RpcMessage::Response(params)).await;
                             }
-                            _ => {} // others not handle
+                        } else {
+                            let s = connections.remove(&id);
+                            if s.is_some() {
+                                s.unwrap().send(RpcMessage::Response(params)).await;
+                            }
                         }
                     },
                     None => break,
                 },
-                msg = self_recv.next().fuse() => match msg {
+                msg = self_recv.recv().fuse() => match msg {
                     Some(msg) => {
                         match msg {
                             RpcMessage::Request(id, params, sender) => {
@@ -84,7 +87,7 @@ async fn listen(
                                 if !is_ws {
                                     connections.insert(id, sender.unwrap());
                                 }
-                                send.send(Message::Rpc(id, params, is_ws)).await;
+                                send.send(M::new_rpc(id, params, is_ws)).await;
                             }
                             RpcMessage::Open(id, sender) => {
                                 connections.insert(id, sender);

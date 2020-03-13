@@ -1,4 +1,4 @@
-use chamomile::PeerId as PeerAddr;
+use chamomile::prelude::PeerId as PeerAddr;
 use serde::de::DeserializeOwned as SeDeserializeOwned;
 use serde::Serialize as SeSerialize;
 use serde_derive::{Deserialize, Serialize};

@@ -1,4 +1,3 @@
-use chamomile::PeerId;
 use lazy_static::lazy_static;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
@@ -55,7 +54,9 @@ pub type RpcParam = Value;
 pub use serde_json::json;
 
 /// Type: PeerAddr
-pub type PeerAddr = PeerId;
+pub type PeerAddr = chamomile::prelude::PeerId;
+/// Type: P2P common Broadcast
+pub type Broadcast = chamomile::prelude::Broadcast;
 
 /// Type: GroupId
 #[derive(Copy, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]

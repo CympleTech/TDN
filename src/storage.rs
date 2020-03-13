@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::primitive::DEFAULT_STORAGE_DIR;
 
 // pub use chamomile local storage.
-pub use chamomile::LocalDB;
+pub use chamomile::prelude::LocalDB;
 
 pub fn open_db(name: &str) -> Result<LocalDB> {
     let mut path = DEFAULT_STORAGE_DIR.clone();
