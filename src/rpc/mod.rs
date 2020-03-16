@@ -1,21 +1,20 @@
+mod http;
+mod ws;
+
 use async_std::{
     io::Result,
-    net::{TcpListener, TcpStream},
+    net::TcpListener,
     sync::{channel, Arc, Receiver, Sender},
     task,
 };
-use async_tungstenite::{accept_async, tungstenite::protocol::Message as WsMessage};
-use futures::{future::LocalBoxFuture, select, sink::SinkExt, FutureExt, StreamExt};
-use rand::prelude::*;
+use futures::{future::LocalBoxFuture, select, FutureExt};
 use serde_json::json;
 use std::collections::HashMap;
-use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use crate::message::{RpcMessage as RpcMessageTrait, RpcSendMessage};
 use crate::primitive::{RpcParam, MAX_MESSAGE_CAPACITY};
-use crate::storage::read_string_absolute_file;
 
 pub struct RpcConfig {
     pub addr: SocketAddr,
@@ -23,7 +22,7 @@ pub struct RpcConfig {
     pub index: Option<PathBuf>,
 }
 
-enum RpcMessage {
+pub(crate) enum RpcMessage {
     Open(u64, Sender<RpcMessage>),
     Close(u64),
     Request(u64, RpcParam, Option<Sender<RpcMessage>>),
@@ -106,142 +105,21 @@ async fn listen<M: 'static + RpcMessageTrait>(
     Ok(())
 }
 
-struct State {
-    send: Arc<(Sender<RpcMessage>, Option<PathBuf>)>,
-}
-
 async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
-    let state = State {
-        send: Arc::new((send.clone(), config.index)),
-    };
-
-    let mut app = tide::with_state(state);
-
-    app.at("/").get(|req: tide::Request<State>| async move {
-        let index_body = if req.state().send.1.is_some() {
-            let path = req.state().send.1.clone().unwrap();
-            read_string_absolute_file(&path).await.ok()
-        } else {
-            None
-        };
-
-        if index_body.is_some() {
-            tide::Response::new(200)
-                .body_string(index_body.unwrap())
-                .set_mime(mime::TEXT_HTML)
-        } else {
-            tide::Response::new(404)
-                .body_string("Not Found Index Page. --- Power By TDN".to_owned())
-        }
-    });
-
-    app.at("/").post(|mut req: tide::Request<State>| {
-        async move {
-            let body: String = req.body_string().await.unwrap();
-            let res = tide::Response::new(200);
-
-            match parse_jsonrpc(body) {
-                Ok((rpc_param, id)) => {
-                    let (s_send, s_recv) = rpc_channel();
-                    let sender = req.state().send.0.clone();
-                    sender
-                        .send(RpcMessage::Request(id, rpc_param, Some(s_send.clone())))
-                        .await;
-                    drop(sender);
-
-                    // TODO add timeout.
-                    match s_recv.recv().await {
-                        Some(msg) => {
-                            let param = match msg {
-                                RpcMessage::Response(param) => param,
-                                _ => Default::default(),
-                            };
-                            res.body_string(param.to_string())
-                                .set_mime(mime::APPLICATION_JSON)
-                        }
-                        None => res
-                            .body_string(Default::default())
-                            .set_mime(mime::APPLICATION_JSON),
-                    }
-                }
-                Err((err, id)) => res
-                    .body_string(err.json(id).to_string())
-                    .set_mime(mime::APPLICATION_JSON),
-            }
-        }
-    });
-
-    task::spawn(app.listen(config.addr));
+    task::spawn(http::http_listen(
+        config.index.clone(),
+        send.clone(),
+        TcpListener::bind(config.addr).await?,
+    ));
 
     // ws
     if config.ws.is_some() {
-        task::spawn(ws_listen(
+        task::spawn(ws::ws_listen(
             send,
             TcpListener::bind(config.ws.unwrap()).await?,
         ));
     }
 
-    Ok(())
-}
-
-async fn ws_listen(send: Sender<RpcMessage>, listener: TcpListener) -> Result<()> {
-    while let Ok((stream, addr)) = listener.accept().await {
-        task::spawn(ws_connection(send.clone(), stream, addr));
-    }
-
-    Ok(())
-}
-
-async fn ws_connection(
-    send: Sender<RpcMessage>,
-    raw_stream: TcpStream,
-    addr: SocketAddr,
-) -> Result<()> {
-    let ws_stream = accept_async(raw_stream)
-        .await
-        .map_err(|_e| Error::new(ErrorKind::Other, "Accept WebSocket Failure!"))?;
-    println!("DEBUG: WebSocket connection established: {}", addr);
-    let id: u64 = rand::thread_rng().gen();
-    let (s_send, mut s_recv) = rpc_channel();
-    send.send(RpcMessage::Open(id, s_send)).await;
-
-    let (mut writer, mut reader) = ws_stream.split();
-
-    loop {
-        select! {
-            msg = reader.next().fuse() => match msg {
-                Some(msg) => {
-                    if msg.is_ok() {
-                        let msg = msg.unwrap();
-                        let msg = msg.to_text().unwrap();
-                        match parse_jsonrpc(msg.to_owned()) {
-                            Ok((rpc_param, _id)) => {
-                                send.send(RpcMessage::Request(id, rpc_param, None)).await;
-                            }
-                            Err((err, id)) => {
-                                let s = WsMessage::from(err.json(id).to_string());
-                                let _ = writer.send(s).await;
-                            }
-                        }
-                    }
-                }
-                None => break,
-            },
-            msg = s_recv.next().fuse() => match msg {
-                Some(msg) => {
-                    let param = match msg {
-                        RpcMessage::Response(param) => param,
-                        _ => Default::default(),
-                    };
-                    let s = WsMessage::from(param.to_string());
-                    let _ = writer.send(s).await;
-                }
-                None => break,
-            }
-        }
-    }
-
-    send.send(RpcMessage::Close(id)).await;
     Ok(())
 }
 

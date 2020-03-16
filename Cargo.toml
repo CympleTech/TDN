@@ -27,7 +27,8 @@ rand = "0.7"
 dirs = "2"
 
 # JSON-RPC
-tide = "0.5"
+# tide = "0.5"
+httparse = "1"
 mime = "0.3"
 async-tungstenite = "0.4"
 

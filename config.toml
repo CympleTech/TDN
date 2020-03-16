@@ -2,6 +2,11 @@
 ## Example: group_id = "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4"
 group_id = "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4"
 
+## If custom db storage path. uncomment it.
+## Default is `$HOME`,  `./` when dev.
+## Example: db_path = "./"
+#db_path = "../"
+
 ## Group Symbol Name.
 ## If also have group_id and group_symbol, config will use group_id.
 ## Example: group_symbol = "CypherLink"

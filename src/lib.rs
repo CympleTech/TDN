@@ -2,10 +2,10 @@
 #![feature(associated_type_defaults)]
 
 mod config;
-mod jsonrpc;
 mod layer;
 mod message;
 mod p2p;
+mod rpc;
 
 // public mod
 pub use async_std; // pub async std to others
@@ -17,12 +17,12 @@ pub mod traits;
 // public struct
 pub mod prelude {
     pub use super::config::Config;
-    pub use super::jsonrpc::{RpcError, RpcHandler};
     pub use super::message::{GroupReceiveMessage, GroupSendMessage};
     pub use super::message::{LayerReceiveMessage, LayerSendMessage};
     pub use super::message::{ReceiveMessage, SendMessage};
     pub use super::message::{SingleReceiveMessage, SingleSendMessage};
     pub use super::primitive::{Broadcast, GroupId, PeerAddr, RpcParam};
+    pub use super::rpc::{RpcError, RpcHandler};
 
     use async_std::{
         io::Result,
@@ -32,11 +32,11 @@ pub mod prelude {
     use futures::join;
     use std::collections::HashMap;
 
-    use super::jsonrpc::start as rpc_start;
     use super::layer::start as layer_start;
     use super::message::RpcSendMessage;
     use super::p2p::start as p2p_start;
     use super::primitive::MAX_MESSAGE_CAPACITY;
+    use super::rpc::start as rpc_start;
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_send_channel() -> (Sender<SendMessage>, Receiver<SendMessage>) {

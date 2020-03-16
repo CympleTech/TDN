@@ -7,15 +7,16 @@ use std::io::prelude::*;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 
-use crate::jsonrpc::RpcConfig;
 use crate::layer::LayerConfig;
 use crate::p2p::P2pConfig;
 use crate::primitive::{
     GroupId, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, LAYER_ADDR, LAYER_PUBLIC_DEFAULT, P2P_ADDR,
     P2P_TRANSPORT, RPC_ADDR,
 };
+use crate::rpc::RpcConfig;
 
 pub struct Config {
+    pub db_path: Option<PathBuf>,
     pub group_id: GroupId,
 
     pub p2p_addr: SocketAddr,
@@ -42,7 +43,8 @@ pub struct Config {
 impl Config {
     pub fn split(self) -> (P2pConfig, LayerConfig, RpcConfig) {
         let Config {
-            group_id: _,
+            db_path,
+            group_id: _, // DEBUG Not used ?
 
             p2p_addr,
             p2p_join_data,
@@ -64,9 +66,14 @@ impl Config {
             rpc_ws,
             rpc_index,
         } = self;
+        println!("db_path: {:?}", db_path);
 
         let p2p_config = P2pConfig {
-            db_dir: DEFAULT_STORAGE_DIR.clone(),
+            db_dir: if let Some(path) = db_path {
+                path
+            } else {
+                DEFAULT_STORAGE_DIR.clone()
+            },
             addr: p2p_addr,
             join_data: p2p_join_data,
             transport: p2p_transport,
@@ -99,6 +106,7 @@ impl Config {
 impl Config {
     pub fn with_addr(p2p_addr: SocketAddr, layer_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
         Config {
+            db_path: None,
             group_id: GroupId::default(),
             p2p_addr: p2p_addr,
             p2p_join_data: vec![],
@@ -158,6 +166,7 @@ pub struct RawUpper {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfig {
+    pub db_path: Option<PathBuf>,
     pub group_id: Option<String>,
     pub group_symbol: Option<String>,
 
@@ -185,6 +194,7 @@ pub struct RawConfig {
 impl RawConfig {
     fn parse(self) -> Config {
         Config {
+            db_path: self.db_path,
             group_id: self
                 .group_id
                 .map(|s| {
