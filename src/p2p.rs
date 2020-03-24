@@ -26,8 +26,10 @@ pub(crate) async fn start<M: 'static + GroupMessage>(
 
     // start chamomile
     let (peer_id, p2p_send, p2p_recv) = p2p_start(config).await?;
+    println!("p2p service started");
 
     task::spawn(run_listen(out_send, p2p_send, p2p_recv, self_recv));
+    println!("p2p channel service started");
 
     Ok((peer_id, self_send))
 }

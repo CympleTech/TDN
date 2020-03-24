@@ -66,7 +66,6 @@ impl Config {
             rpc_ws,
             rpc_index,
         } = self;
-        println!("db_path: {:?}", db_path);
 
         let p2p_config = P2pConfig {
             db_dir: if let Some(path) = db_path {

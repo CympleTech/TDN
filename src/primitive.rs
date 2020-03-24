@@ -11,7 +11,7 @@ use crate::error::Error;
 pub const P2P_ADDR: &str = "0.0.0.0:7364";
 
 /// P2P default transport.
-pub const P2P_TRANSPORT: &str = "udp";
+pub const P2P_TRANSPORT: &str = "tcp";
 
 /// Layer default binding addr.
 pub const LAYER_ADDR: &str = "0.0.0.0:7000";

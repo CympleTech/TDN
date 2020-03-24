@@ -37,6 +37,11 @@ pub async fn remove_local_file(name: &str) -> Result<()> {
     fs::remove_file(path).await
 }
 
+pub fn open_absolute_db(mut path: PathBuf, name: &str) -> Result<LocalDB> {
+    path.push(name);
+    LocalDB::open_absolute(&path)
+}
+
 pub async fn read_absolute_file(path: &PathBuf) -> Result<Vec<u8>> {
     fs::read(path).await
 }
