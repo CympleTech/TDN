@@ -105,10 +105,10 @@ async fn run_listener(
     self_send: Sender<StreamMessage>,
 ) -> Result<()> {
     let mut incoming = listener.incoming();
-    while let Some(stream) = incoming.next().await {
+    while let Some(Ok(stream)) = incoming.next().await {
         task::spawn(process_stream(
             None,
-            stream?,
+            stream,
             send.clone(),
             self_send.clone(),
         ));
