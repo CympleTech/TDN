@@ -255,7 +255,7 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 /// //    _ => {}
 /// //}
 /// ````
-pub struct RpcHandler<S: 'static + Send + Sync> {
+pub struct RpcHandler<S> {
     state: Arc<S>,
     fns: HashMap<String, Box<dyn Fn(Vec<RpcParam>, Arc<S>) -> RpcFut>>,
 }
@@ -263,7 +263,7 @@ pub struct RpcHandler<S: 'static + Send + Sync> {
 type RpcResult = std::result::Result<RpcParam, RpcError>;
 type RpcFut = LocalBoxFuture<'static, RpcResult>;
 
-impl<S: 'static + Send + Sync> RpcHandler<S> {
+impl<S> RpcHandler<S> {
     pub fn new(state: S) -> RpcHandler<S> {
         Self {
             state: Arc::new(state),
