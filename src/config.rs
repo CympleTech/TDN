@@ -1,9 +1,8 @@
+use async_std::io::Result;
 use chamomile::prelude::PeerId as PeerAddr;
 use serde::de::DeserializeOwned as SeDeserializeOwned;
 use serde::Serialize as SeSerialize;
 use serde_derive::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::prelude::*;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 
@@ -14,6 +13,7 @@ use crate::primitive::{
     P2P_TRANSPORT, RPC_ADDR,
 };
 use crate::rpc::RpcConfig;
+use crate::storage::read_string_absolute_file;
 
 pub struct Config {
     pub db_path: Option<PathBuf>,
@@ -137,23 +137,45 @@ impl Config {
         )
     }
 
-    pub fn load() -> Self {
-        let string = load_file_string();
-        if string.is_none() {
-            return Config::default();
-        }
+    pub async fn load() -> Self {
+        let string = load_file_string(DEFAULT_STORAGE_DIR.clone()).await;
 
-        let raw_config: RawConfig = toml::from_str(&string.unwrap()).unwrap();
-        raw_config.parse()
+        match string {
+            Ok(string) => {
+                let raw_config: RawConfig = toml::from_str(&string).unwrap();
+                raw_config.parse()
+            }
+            Err(_) => Config::default(),
+        }
     }
 
-    pub fn load_custom<S: SeSerialize + SeDeserializeOwned>() -> Option<S> {
-        let string = load_file_string();
-        if string.is_none() {
-            return None;
+    pub async fn load_with_path(path: PathBuf) -> Self {
+        let string = load_file_string(path).await;
+        match string {
+            Ok(string) => {
+                let raw_config: RawConfig = toml::from_str(&string).unwrap();
+                raw_config.parse()
+            }
+            Err(_) => Config::default(),
         }
+    }
 
-        toml::from_str::<S>(&string.unwrap()).ok()
+    pub async fn load_custom<S: SeSerialize + SeDeserializeOwned>() -> Option<S> {
+        let string = load_file_string(DEFAULT_STORAGE_DIR.clone()).await;
+        match string {
+            Ok(string) => toml::from_str::<S>(&string).ok(),
+            Err(_) => None,
+        }
+    }
+
+    pub async fn load_custom_with_path<S: SeSerialize + SeDeserializeOwned>(
+        path: PathBuf,
+    ) -> Option<S> {
+        let string = load_file_string(path).await;
+        match string {
+            Ok(string) => toml::from_str::<S>(&string).ok(),
+            Err(_) => None,
+        }
     }
 }
 
@@ -313,18 +335,7 @@ impl RawConfig {
     }
 }
 
-fn load_file_string() -> Option<String> {
-    let mut file = match File::open(CONFIG_FILE_NAME) {
-        Ok(f) => f,
-        Err(_) => {
-            return None;
-        }
-    };
-
-    let mut str_val = String::new();
-    match file.read_to_string(&mut str_val) {
-        Ok(s) => s,
-        Err(e) => panic!("Error Reading file: {}", e),
-    };
-    Some(str_val)
+async fn load_file_string(mut path: PathBuf) -> Result<String> {
+    path.push(CONFIG_FILE_NAME);
+    read_string_absolute_file(&path).await
 }

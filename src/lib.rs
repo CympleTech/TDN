@@ -80,7 +80,7 @@ pub mod prelude {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
-        let config = Config::load();
+        let config = Config::load().await;
 
         let peer_addr = start_main(config.group_id, recv_send, send_recv, config).await?;
 
@@ -143,7 +143,7 @@ pub mod prelude {
         let (send_send, send_recv) = new_single_send_channel();
         let (recv_send, recv_recv) = new_single_receive_channel();
 
-        let config = Config::load();
+        let config = Config::load().await;
 
         let peer_addr = single_start_main(recv_send, send_recv, config).await?;
 
