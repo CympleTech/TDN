@@ -180,7 +180,7 @@ async fn run_receiver(
         select! {
             msg = out_recv.recv().fuse() => match msg {
                 Some(msg) => {
-                    println!("DEBUG: recv from outside: {:?}", msg);
+                    debug!("DEBUG: recv from outside: {:?}", msg);
                     match msg {
                         LayerSendMessage::Upper(gid, data) => {
                             uppers.get(&gid).map(|h| {
@@ -264,7 +264,7 @@ async fn run_receiver(
                 Some(msg) => {
                     match msg {
                         StreamMessage::Open(gid, remote_gid, uid, addr, sender, is_upper) => {
-                            println!("DEBUG: layer: {}, uid: {} open ok!", remote_gid.short_show(), uid);
+                            debug!("DEBUG: layer: {}, uid: {} open ok!", remote_gid.short_show(), uid);
                             if !layers.contains_key(&gid) {
                                 continue;
                             }
@@ -350,14 +350,14 @@ async fn process_stream(
     server_send: Sender<StreamMessage>,
 ) -> Result<()> {
     let is_upper = has_remote_public.is_some();
-    println!("DEBUG: start process stream");
+    debug!("DEBUG: start process stream");
     let addr = stream.peer_addr()?;
     let (mut reader, mut writer) = &mut (&stream, &stream);
 
     // if is to upper, send self-info first.
     if is_upper {
         let remote_public_bytes = has_remote_public.unwrap().to_bytes();
-        println!("DEBUG: send remote by self");
+        debug!("DEBUG: send remote by self");
         let len = remote_public_bytes.len() as u32;
         writer.write(&(len.to_be_bytes())).await?;
         writer.write_all(&remote_public_bytes[..]).await?;
@@ -387,13 +387,13 @@ async fn process_stream(
     .await;
 
     if result.is_err() {
-        println!("Debug: Session timeout");
+        debug!("Debug: Session timeout");
         return Ok(());
     }
 
     let result = result.unwrap();
     if result.is_none() {
-        println!("Debug: Session invalid pk");
+        debug!("Debug: Session invalid pk");
         return Ok(());
     }
 
@@ -448,7 +448,7 @@ async fn process_stream(
                             writer.write_all(&bytes[..]).await?;
                         }
                         StreamMessage::Ok(remote_public) => {
-                            println!("DEBUG: send remote after verify");
+                            debug!("DEBUG: send remote after verify");
                             let remote_public_bytes = remote_public.to_bytes();
                             let len = remote_public_bytes.len() as u32;
                             writer.write(&(len.to_be_bytes())).await?;
@@ -462,7 +462,7 @@ async fn process_stream(
         }
     }
 
-    println!("DEBUG: close layers: {}", addr);
+    debug!("DEBUG: close layers: {}", addr);
     server_send
         .send(StreamMessage::Close(gid, uid, is_upper))
         .await;

@@ -124,15 +124,16 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
 }
 
 #[derive(Debug, Clone)]
-pub enum RpcError {
+pub enum RpcError<'a> {
     ParseError,
     InvalidRequest,
     InvalidVersion,
     InvalidResponse,
-    MethodNotFound(String),
+    MethodNotFound(&'a str),
+    Custom(&'a str),
 }
 
-impl RpcError {
+impl<'a> RpcError<'a> {
     pub fn json(&self, id: u64) -> RpcParam {
         match self {
             RpcError::ParseError => json!({
@@ -174,11 +175,21 @@ impl RpcError {
                     "message": "Invalid Response"
                 }
             }),
+            RpcError::Custom(m) => json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {
+                    "code": -32600,
+                    "message": m
+                }
+            }),
         }
     }
 }
 
-fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (RpcError, u64)> {
+fn parse_jsonrpc<'a>(
+    json_string: String,
+) -> std::result::Result<(RpcParam, u64), (RpcError<'a>, u64)> {
     match serde_json::from_str::<RpcParam>(&json_string) {
         Ok(mut value) => {
             let id_res = value
@@ -257,11 +268,11 @@ fn parse_jsonrpc(json_string: String) -> std::result::Result<(RpcParam, u64), (R
 /// ````
 pub struct RpcHandler<S> {
     state: Arc<S>,
-    fns: HashMap<String, Box<dyn Fn(Vec<RpcParam>, Arc<S>) -> RpcFut>>,
+    fns: HashMap<String, Box<dyn Fn(Vec<RpcParam>, Arc<S>) -> RpcFut<'static>>>,
 }
 
-type RpcResult = std::result::Result<RpcParam, RpcError>;
-type RpcFut = LocalBoxFuture<'static, RpcResult>;
+type RpcResult<'a> = std::result::Result<RpcParam, RpcError<'a>>;
+type RpcFut<'a> = LocalBoxFuture<'static, RpcResult<'a>>;
 
 impl<S> RpcHandler<S> {
     pub fn new(state: S) -> RpcHandler<S> {
@@ -271,7 +282,7 @@ impl<S> RpcHandler<S> {
         }
     }
 
-    pub fn add_method<F: 'static + Fn(Vec<RpcParam>, Arc<S>) -> RpcFut>(
+    pub fn add_method<F: 'static + Fn(Vec<RpcParam>, Arc<S>) -> RpcFut<'static>>(
         &mut self,
         name: &str,
         f: F,
@@ -291,12 +302,17 @@ impl<S> RpcHandler<S> {
                         Ok(params) => json!({
                             "jsonrpc": "2.0",
                             "id": id,
+                            "method": method,
                             "result": params,
                         }),
-                        Err(err) => err.json(id),
+                        Err(err) => {
+                            let mut res = err.json(id);
+                            res["method"] = method.into();
+                            res
+                        }
                     }
                 }
-                None => RpcError::MethodNotFound(method.to_owned()).json(id),
+                None => RpcError::MethodNotFound(method).json(id),
             }
         } else {
             RpcError::InvalidRequest.json(id)

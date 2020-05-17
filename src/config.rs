@@ -337,5 +337,6 @@ impl RawConfig {
 
 async fn load_file_string(mut path: PathBuf) -> Result<String> {
     path.push(CONFIG_FILE_NAME);
+    debug!("DEBUG-TDN: config file: {:?}", path);
     read_string_absolute_file(&path).await
 }

@@ -28,7 +28,7 @@ async fn ws_connection(
     let ws_stream = accept_async(raw_stream)
         .await
         .map_err(|_e| Error::new(ErrorKind::Other, "Accept WebSocket Failure!"))?;
-    println!("DEBUG: WebSocket connection established: {}", addr);
+    debug!("DEBUG: WebSocket connection established: {}", addr);
     let id: u64 = rand::thread_rng().gen();
     let (s_send, mut s_recv) = rpc_channel();
     send.send(RpcMessage::Open(id, s_send)).await;

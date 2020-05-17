@@ -107,7 +107,7 @@ async fn http_connection(
     raw_stream: TcpStream,
     addr: SocketAddr,
 ) -> Result<()> {
-    println!("processing jsonrpc request.");
+    debug!("processing jsonrpc request.");
     let (mut reader, mut writer) = &mut (&raw_stream, &raw_stream);
 
     //io::timeout(Duration::from_secs(5), async { () }).await;

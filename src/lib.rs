@@ -1,6 +1,9 @@
 #![recursion_limit = "1024"]
 #![feature(associated_type_defaults)]
 
+#[macro_use]
+extern crate log;
+
 mod config;
 mod layer;
 mod message;

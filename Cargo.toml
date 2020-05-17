@@ -25,6 +25,7 @@ toml = "0.5"
 sha3 = "0.8"
 rand = "0.7"
 dirs = "2"
+log = "0.4"
 
 # JSON-RPC
 # tide = "0.5"

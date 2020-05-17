@@ -22,14 +22,14 @@ pub(crate) async fn start<M: 'static + GroupMessage>(
 ) -> Result<(PeerId, Sender<GroupSendMessage>)> {
     let (self_send, self_recv) = new_send_channel();
 
-    println!("DEBUG: P2P listening: {}", config.addr);
+    debug!("DEBUG: P2P listening: {}", config.addr);
 
     // start chamomile
     let (peer_id, p2p_send, p2p_recv) = p2p_start(config).await?;
-    println!("p2p service started");
+    debug!("p2p service started");
 
     task::spawn(run_listen(out_send, p2p_send, p2p_recv, self_recv));
-    println!("p2p channel service started");
+    debug!("p2p channel service started");
 
     Ok((peer_id, self_send))
 }
@@ -61,7 +61,7 @@ async fn run_listen<M: GroupMessage>(
                             )).await;
                         },
                         ReceiveMessage::Data(peer_addr, data) => {
-                            println!("DEBUG: P2P Event Length: {}", data.len());
+                            debug!("DEBUG: P2P Event Length: {}", data.len());
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::Event(peer_addr, data)
                             )).await;
@@ -90,7 +90,7 @@ async fn run_listen<M: GroupMessage>(
                             p2p_send.send(SendMessage::DisConnect(addr)).await;
                         },
                         GroupSendMessage::Event(peer_addr, data) => {
-                            println!("DEBUG: Outside Event Length: {}", data.len());
+                            debug!("DEBUG: Outside Event Length: {}", data.len());
                             p2p_send.send(SendMessage::Data(peer_addr, data)).await;
                         },
                         GroupSendMessage::Broadcast(broadcast, data) => {
