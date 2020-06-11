@@ -25,11 +25,14 @@ fn main() {
             })
         });
 
-        while let Some(message) = out_recv.recv().await {
+        while let Ok(message) = out_recv.recv().await {
             match message {
                 ReceiveMessage::Group(msg) => match msg {
                     GroupReceiveMessage::PeerJoin(peer, addr, data) => {
                         group.join(peer, addr, data, send.clone()).await;
+                    }
+                    GroupReceiveMessage::PeerJoinResult(..) => {
+                        //
                     }
                     GroupReceiveMessage::PeerLeave(peer) => {
                         group.leave(&peer);
