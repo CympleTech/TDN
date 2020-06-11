@@ -1,8 +1,8 @@
 use async_std::io::Result;
 use chamomile::prelude::PeerId as PeerAddr;
 use serde::de::DeserializeOwned as SeDeserializeOwned;
-use serde::Serialize as SeSerialize;
-use serde_derive::{Deserialize, Serialize};
+use serde::ser::Serialize as SeSerialize;
+use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 

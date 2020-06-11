@@ -62,7 +62,7 @@ async fn listen<M: 'static + RpcMessageTrait>(
         loop {
             select! {
                 msg = out_recv.recv().fuse() => match msg {
-                    Some(msg) => {
+                    Ok(msg) => {
                         let RpcSendMessage(id, params, is_ws) = msg;
                         if is_ws {
                             let s = connections.get(&id);
@@ -76,10 +76,10 @@ async fn listen<M: 'static + RpcMessageTrait>(
                             }
                         }
                     },
-                    None => break,
+                    Err(_) => break,
                 },
                 msg = self_recv.recv().fuse() => match msg {
-                    Some(msg) => {
+                    Ok(msg) => {
                         match msg {
                             RpcMessage::Request(id, params, sender) => {
                                 let is_ws = sender.is_none();
@@ -97,7 +97,7 @@ async fn listen<M: 'static + RpcMessageTrait>(
                             _ => {} // others not handle
                         }
                     },
-                    None => break,
+                    Err(_) => break,
                 }
             }
         }

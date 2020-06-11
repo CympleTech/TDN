@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};

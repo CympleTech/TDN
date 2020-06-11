@@ -43,7 +43,7 @@ async fn run_listen<M: GroupMessage>(
     loop {
         select! {
             msg = p2p_recv.recv().fuse() => match msg {
-                Some(msg) => {
+                Ok(msg) => {
                     match msg {
                         ReceiveMessage::PeerJoin(peer_addr, addr, data) => {
                             out_send.send(M::new_group(
@@ -68,10 +68,10 @@ async fn run_listen<M: GroupMessage>(
                         }
                     }
                 },
-                None => break,
+                Err(_) => break,
             },
             msg = self_recv.recv().fuse() => match msg {
-                Some(msg) => {
+                Ok(msg) => {
                     match msg {
                         GroupSendMessage::PeerJoin(peer_addr, addr, data) => {
                             p2p_send.send(SendMessage::PeerJoin(peer_addr, addr, data)).await;
@@ -98,7 +98,7 @@ async fn run_listen<M: GroupMessage>(
                         },
                     }
                 },
-                None => break,
+                Err(_) => break,
             },
         }
     }

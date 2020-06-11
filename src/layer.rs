@@ -7,7 +7,7 @@ use async_std::{
     task,
 };
 use futures::{select, FutureExt};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::{hash_map::Entry, HashMap};
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
@@ -179,7 +179,7 @@ async fn run_receiver(
     loop {
         select! {
             msg = out_recv.recv().fuse() => match msg {
-                Some(msg) => {
+                Ok(msg) => {
                     debug!("DEBUG: recv from outside: {:?}", msg);
                     match msg {
                         LayerSendMessage::Upper(gid, data) => {
@@ -258,10 +258,10 @@ async fn run_receiver(
                         }
                     }
                 },
-                None => break,
+                Err(_) => break,
             },
             msg = self_recv.recv().fuse() => match msg {
-                Some(msg) => {
+                Ok(msg) => {
                     match msg {
                         StreamMessage::Open(gid, remote_gid, uid, addr, sender, is_upper) => {
                             debug!("DEBUG: layer: {}, uid: {} open ok!", remote_gid.short_show(), uid);
@@ -330,7 +330,7 @@ async fn run_receiver(
                         _ => {}
                     }
                 }
-                None => break,
+                Err(_) => break,
             }
         }
     }

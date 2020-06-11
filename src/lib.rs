@@ -122,7 +122,7 @@ pub mod prelude {
             (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
 
         task::spawn(async move {
-            while let Some(message) = self_recv.recv().await {
+            while let Ok(message) = self_recv.recv().await {
                 match message {
                     SendMessage::Layer(msg) => layer_sender.send(msg).await,
                     SendMessage::Group(msg) => p2p_sender.send(msg).await,
@@ -185,7 +185,7 @@ pub mod prelude {
         let ((peer_addr, p2p_sender), rpc_sender) = (p2p_sender_result?, rpc_sender_result?);
 
         task::spawn(async move {
-            while let Some(message) = self_recv.recv().await {
+            while let Ok(message) = self_recv.recv().await {
                 match message {
                     SingleSendMessage::Group(msg) => p2p_sender.send(msg).await,
                     SingleSendMessage::Rpc(uid, param, is_ws) => {
