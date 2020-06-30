@@ -4,7 +4,7 @@
 ## Example
 - `cargo run --example simple` Congratulation, you are running a trusted distributed network :)
 
-### Features
+## Features
 - Support different data structures
 - Support different consensus algorithms
 - Support different permission mechanisms
@@ -12,7 +12,7 @@
 - Applications can communicate with others
 - Trust can be passed on and accumulated
 
-### Architecture
+## Architecture
 ![TDN Groups And Layers](https://raw.githubusercontent.com/cypherlink/cypherlink.github.io/master/assets/TDN_groups_layers.jpg)
 
 ## License
