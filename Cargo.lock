@@ -178,7 +178,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "chamomile"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes-soft 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-std 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -963,7 +962,7 @@ dependencies = [
  "async-std 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-tungstenite 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "chamomile 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chamomile 0.1.0",
  "dirs 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "httparse 1.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1218,7 +1217,6 @@ dependencies = [
 "checksum bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)" = "130aac562c0dd69c56b3b1cc8ffd2e17be31d0b6c25b61c96b76231aa23e39e1"
 "checksum cc 1.0.54 (registry+https://github.com/rust-lang/crates.io-index)" = "7bbb73db36c1246e9034e307d0fba23f9a2e251faa47ade70c1bd252220c8311"
 "checksum cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
-"checksum chamomile 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4a40cbe42d1f4a039f24a1395624ba3636cfdad1192dad74d73832399392e48d"
 "checksum clear_on_drop 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "c9cc5db465b294c3fa986d5bbb0f3017cd850bff6dd6c52f9ccff8b4d21b7b08"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum constant_time_eq 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"

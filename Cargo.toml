@@ -14,7 +14,6 @@ default = ["dev"]
 dev = []
 
 [dependencies]
-chamomile = "0.1"
 async-std = { version = "1", features = ["unstable"] }
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }
@@ -27,8 +26,9 @@ rand = "0.7"
 dirs = "2"
 log = "0.4"
 
+chamomile = { path = "../chamomile" }
+
 # JSON-RPC
-#tide = "0.8"
 httparse = "1"
 mime = "0.3"
 async-tungstenite = "0.4"
