@@ -41,52 +41,47 @@ pub(crate) async fn http_listen(
 }
 
 enum HTTP {
-    Ok,
-    NeedMore(usize),
+    Ok(usize),
+    NeedMore(usize, usize),
 }
 
-fn parse_req<'a>(src: Vec<u8>, had_body: &mut Vec<u8>) -> std::result::Result<HTTP, &'a str> {
-    if had_body.len() == 0 {
-        let mut req_parsed_headers = [httparse::EMPTY_HEADER; 16];
-        let mut req = httparse::Request::new(&mut req_parsed_headers);
-        let status = req.parse(&src).map_err(|_| "HTTP parse error")?;
+fn parse_req<'a>(src: &[u8]) -> std::result::Result<HTTP, &'a str> {
+    let mut req_parsed_headers = [httparse::EMPTY_HEADER; 16];
+    let mut req = httparse::Request::new(&mut req_parsed_headers);
+    let status = req.parse(&src).map_err(|_| "HTTP parse error")?;
 
-        let content_length_headers: Vec<httparse::Header> = req
-            .headers
-            .iter()
-            .filter(|header| header.name == "Content-Length")
-            .cloned()
-            .collect();
+    let content_length_headers: Vec<httparse::Header> = req
+        .headers
+        .iter()
+        .filter(|header| header.name.to_ascii_lowercase() == "content-length")
+        .cloned()
+        .collect();
 
-        if content_length_headers.len() != 1 {
-            return Err("HTTP header is invalid");
-        }
-
-        let length_bytes = content_length_headers.first().unwrap().value;
-        let mut length_string = String::new();
-
-        for b in length_bytes {
-            length_string.push(*b as char);
-        }
-
-        let length = length_string
-            .parse::<usize>()
-            .map_err(|_| "HTTP length is invalid")?;
-
-        let amt = match status {
-            httparse::Status::Complete(amt) => amt,
-            httparse::Status::Partial => return Err("HTTP parse error"),
-        };
-
-        let (_pre, had) = src.split_at(amt);
-        had_body.extend(had);
-
-        if had_body.len() < length {
-            return Ok(HTTP::NeedMore(length));
-        }
+    if content_length_headers.len() != 1 {
+        return Err("HTTP header is invalid");
     }
 
-    Ok(HTTP::Ok)
+    let length_bytes = content_length_headers.first().unwrap().value;
+    let mut length_string = String::new();
+
+    for b in length_bytes {
+        length_string.push(*b as char);
+    }
+
+    let length = length_string
+        .parse::<usize>()
+        .map_err(|_| "HTTP length is invalid")?;
+
+    let amt = match status {
+        httparse::Status::Complete(amt) => amt,
+        httparse::Status::Partial => return Err("HTTP parse error"),
+    };
+
+    if src[amt..].len() >= length {
+        return Ok(HTTP::Ok(amt));
+    }
+
+    Ok(HTTP::NeedMore(amt, length))
 }
 
 async fn http_connection(
@@ -100,38 +95,31 @@ async fn http_connection(
     let (s_send, s_recv) = rpc_channel();
 
     let mut buf = vec![];
-    let mut length = 0;
 
     // TODO add timeout
-    loop {
-        let mut tmp_buf = vec![0u8; 1024];
-        let n = stream.read(&mut tmp_buf).await?;
-        let tmp_buf = tmp_buf[..n].to_vec();
-
-        if n == 0 {
-            break;
-        }
-
-        if buf.len() == 0 {
-            match parse_req(tmp_buf, &mut buf) {
-                Ok(HTTP::NeedMore(len)) => {
-                    length = len;
-                }
-                Ok(HTTP::Ok) => break,
-                Err(e) => {
-                    info!("TDN: HTTP JSONRPC parse error: {}", e);
-                    return Ok(());
+    let mut tmp_buf = vec![0u8; 1024];
+    let n = stream.read(&mut tmp_buf).await?;
+    let body = match parse_req(&tmp_buf[..n]) {
+        Ok(HTTP::NeedMore(amt, len)) => {
+            buf.extend(&tmp_buf[amt..n]);
+            loop {
+                let mut tmp = vec![0u8; 1024];
+                let n = stream.read(&mut tmp).await?;
+                buf.extend(&tmp[..n]);
+                if buf.len() >= len {
+                    break;
                 }
             }
-        } else {
-            buf.extend(&tmp_buf[0..n]);
-            if buf.len() >= length {
-                break;
-            }
+            &buf[..]
         }
-    }
+        Ok(HTTP::Ok(amt)) => &tmp_buf[amt..n],
+        Err(e) => {
+            info!("TDN: HTTP JSONRPC parse error: {}", e);
+            return Ok(());
+        }
+    };
 
-    let msg = String::from_utf8_lossy(&buf[..]);
+    let msg = String::from_utf8_lossy(body);
     let res = "HTTP/1.1 200 OK\r\n\r\n";
 
     match parse_jsonrpc((*msg).to_string()) {
