@@ -138,12 +138,15 @@ pub enum SingleReceiveMessage {
     Rpc(u64, RpcParam, bool),
 }
 
+/// packaging the rpc message. not open to ouside.
 pub(crate) struct RpcSendMessage(pub u64, pub RpcParam, pub bool);
 
+/// generic group message for code reduce.
 pub(crate) trait GroupMessage: Send {
     fn new_group(group_receive_message: GroupReceiveMessage) -> Self;
 }
 
+/// generic layer message for code reduce.
 pub(crate) trait RpcMessage: Send {
     fn new_rpc(uid: u64, param: RpcParam, is_ws: bool) -> Self;
 }

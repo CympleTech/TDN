@@ -15,6 +15,7 @@ use crate::primitive::{
 use crate::rpc::RpcConfig;
 use crate::storage::read_string_absolute_file;
 
+/// load config from config file.
 pub struct Config {
     pub db_path: Option<PathBuf>,
     pub group_id: GroupId,
@@ -185,6 +186,7 @@ pub struct RawUpper {
     group_id: String,
 }
 
+/// parse raw file content to Config.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfig {
     pub db_path: Option<PathBuf>,
