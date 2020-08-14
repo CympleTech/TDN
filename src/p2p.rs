@@ -66,6 +66,11 @@ async fn run_listen<M: GroupMessage>(
                                 GroupReceiveMessage::Event(peer_addr, data)
                             )).await;
                         }
+                        ReceiveMessage::Stream(id, stream) => {
+                            out_send.send(M::new_group(
+                                GroupReceiveMessage::Stream(id, stream)
+                            )).await
+                        }
                     }
                 },
                 Err(_) => break,
@@ -96,6 +101,9 @@ async fn run_listen<M: GroupMessage>(
                         GroupSendMessage::Broadcast(broadcast, data) => {
                             p2p_send.send(SendMessage::Broadcast(broadcast, data)).await;
                         },
+                        GroupSendMessage::Stream(id, stream) => {
+                            p2p_send.send(SendMessage::Stream(id, stream)).await;
+                        }
                     }
                 },
                 Err(_) => break,

@@ -40,6 +40,9 @@ fn main() {
                     GroupReceiveMessage::Event(peer, _data) => {
                         println!("receive group event from {}", peer.short_show());
                     }
+                    GroupReceiveMessage::Stream(..) => {
+                        //
+                    }
                 },
                 ReceiveMessage::Layer(msg) => match msg {
                     LayerReceiveMessage::LowerJoin(gid, remote_gid, uid, addr, join_data) => {

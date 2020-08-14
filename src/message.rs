@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use crate::primitive::{Broadcast, GroupId, PeerAddr, RpcParam};
+use crate::primitive::{Broadcast, GroupId, PeerAddr, RpcParam, StreamType};
 
 /// channel message send to TDN Group.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,6 +35,9 @@ pub enum GroupSendMessage {
     /// common algorithm, use it, donnot worry.
     /// params is `broadcast_type` and `data_bytes`
     Broadcast(Broadcast, Vec<u8>),
+    /// Apply for build a stream between nodes.
+    /// params is `u32` stream symbol, and `StreamType`.
+    Stream(u32, StreamType),
 }
 
 /// channel message receive from TDN Group.
@@ -52,6 +55,9 @@ pub enum GroupReceiveMessage {
     /// when received a data from a trusted peer, send to outside.
     /// params is `peer_id` and `data_bytes`.
     Event(PeerAddr, Vec<u8>),
+    /// Apply for build a stream between nodes.
+    /// params is `u32` stream symbol, and `StreamType`.
+    Stream(u32, StreamType),
 }
 
 /// channel message send to TDN Layers.

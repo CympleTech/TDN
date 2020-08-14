@@ -55,8 +55,15 @@ pub use serde_json::json;
 
 /// Type: PeerAddr
 pub type PeerAddr = chamomile::prelude::PeerId;
+
 /// Type: P2P common Broadcast
-pub type Broadcast = chamomile::prelude::Broadcast;
+pub use chamomile::prelude::Broadcast;
+
+/// Type: P2P stream type.
+pub use chamomile::prelude::StreamType;
+
+/// Type: P2P transport stream type.
+pub use chamomile::transports::TransportStream;
 
 /// Type: GroupId
 #[derive(Copy, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
