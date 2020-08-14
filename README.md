@@ -1,7 +1,9 @@
+[![crate](https://img.shields.io/badge/crates.io-v0.1-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.1-blue.svg)](https://docs.rs/tdn)
+
 # TDN - Trusted Distributed Network
 *Blockchain infrastructure framework for security and trusted distributed interactive.*
 
-This is underlying network (including p2p, rpc, and other special transports) and application framework built on `Groups` and `Layers`, we built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
+TDN is underlying network (including p2p, rpc, and other special transports) and application framework built on `Groups` and `Layers`, we built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
 
 ## Example
 - `cargo run --example simple` Congratulation, you are running a trusted distributed network :)
@@ -17,10 +19,10 @@ This is underlying network (including p2p, rpc, and other special transports) an
 - Trust can be passed on and accumulated
 
 ## Architecture
-![TDN Groups And Layers](https://raw.githubusercontent.com/cypherlink/cypherlink.github.io/master/assets/TDN_groups_layers.jpg)
+![TDN Groups And Layers](https://cypherlink.io/dist/images/TDN_groups_layers.jpg)
 
 ### Core QA
-1. **What is Layers & Groups**
+1. **What is Layers & Groups?**
 Simply `Group` is application, one application is one group, `Layer` is communication between apps. In the Group, users can define everything. The Layer is divided into upper and lower, upper is this application depends on others, lower is others depends on this. If app is an independent application that does not interact with other applications, then you can completely ignore Layer.
 
 2. **Different consensus?**

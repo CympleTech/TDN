@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.0.1"
+version = "0.1"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
 readme = "README.md"
@@ -25,13 +25,12 @@ sha3 = "0.8"
 rand = "0.7"
 dirs = "2"
 log = "0.4"
-
-chamomile = { path = "../chamomile" }
-
-# JSON-RPC
 httparse = "1"
 mime = "0.3"
 async-tungstenite = "0.4"
+chamomile = "0.1.1"
+# chamomile = { path = "../chamomile" }
 
 [dev-dependencies]
-tdn_permission = { path = "../TDN-Permission" } # Dev
+tdn_permission = { git = "https://github.com/cypherlink/TDN-Permission.git" }
+#tdn_permission = { path = "../TDN-Permission" } # Dev
