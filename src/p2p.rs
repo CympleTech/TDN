@@ -78,11 +78,11 @@ async fn run_listen<M: GroupMessage>(
             msg = self_recv.recv().fuse() => match msg {
                 Ok(msg) => {
                     match msg {
-                        GroupSendMessage::PeerJoin(peer_addr, addr, data) => {
-                            p2p_send.send(SendMessage::PeerJoin(peer_addr, addr, data)).await;
+                        GroupSendMessage::PeerConnect(peer_addr, addr, data) => {
+                            p2p_send.send(SendMessage::PeerConnect(peer_addr, addr, data)).await;
                         },
-                        GroupSendMessage::PeerLeave(peer_addr) => {
-                            p2p_send.send(SendMessage::PeerLeave(peer_addr)).await;
+                        GroupSendMessage::PeerDisconnect(peer_addr) => {
+                            p2p_send.send(SendMessage::PeerDisconnect(peer_addr)).await;
                         },
                         GroupSendMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
                             p2p_send.send(SendMessage::PeerJoinResult(
@@ -94,7 +94,7 @@ async fn run_listen<M: GroupMessage>(
                         GroupSendMessage::DisConnect(addr) => {
                             p2p_send.send(SendMessage::DisConnect(addr)).await;
                         },
-                        GroupSendMessage::Event(peer_addr, data) => {
+                        GroupSendMessage::Data(peer_addr, data) => {
                             debug!("DEBUG: Outside Event Length: {}", data.len());
                             p2p_send.send(SendMessage::Data(peer_addr, data)).await;
                         },

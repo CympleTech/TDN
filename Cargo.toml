@@ -21,16 +21,12 @@ serde_json = "1"
 bincode = "1"
 lazy_static = "1"
 toml = "0.5"
-sha3 = "0.8"
+sha3 = "0.9"
 rand = "0.7"
 dirs = "2"
 log = "0.4"
 httparse = "1"
 mime = "0.3"
 async-tungstenite = "0.4"
-chamomile = "0.1.1"
-# chamomile = { path = "../chamomile" }
-
-[dev-dependencies]
-tdn_permission = { git = "https://github.com/cypherlink/TDN-Permission.git" }
-#tdn_permission = { path = "../TDN-Permission" } # Dev
+# chamomile = "0.1.1"
+chamomile = { path = "../chamomile" }

@@ -7,10 +7,10 @@ use crate::primitive::{Broadcast, GroupId, PeerAddr, RpcParam, StreamType};
 pub enum GroupSendMessage {
     /// when need add a peer, send to TDN from outside.
     /// params is `peer_id`, `socket_addr` and peer `join_info`.
-    PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
+    PeerConnect(PeerAddr, Option<SocketAddr>, Vec<u8>),
     /// when outside want to close a connectioned peer. use it force close.
     /// params is `peer_id`.
-    PeerLeave(PeerAddr),
+    PeerDisconnect(PeerAddr),
     /// when peer request for join, outside decide connect or not.
     /// params is `peer_id`, `is_connect`, `is_force_close`, `result info`.
     /// if `is_connect` is true, it will add to white directly list.
@@ -30,7 +30,7 @@ pub enum GroupSendMessage {
     /// when need send a data to a peer, only need know the peer_id,
     /// the TDN will help you send data to there.
     /// params is `peer_id` and `data_bytes`.
-    Event(PeerAddr, Vec<u8>),
+    Data(PeerAddr, Vec<u8>),
     /// when need broadcast a data to all network, TDN support some
     /// common algorithm, use it, donnot worry.
     /// params is `broadcast_type` and `data_bytes`

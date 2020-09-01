@@ -84,9 +84,9 @@ impl GroupId {
     pub fn from_symbol(s: impl ToString) -> GroupId {
         let s = s.to_string();
         let mut sha = Sha3_256::new();
-        sha.input(&s);
+        sha.update(&s);
         let mut peer_bytes = [0u8; 32];
-        peer_bytes.copy_from_slice(&sha.result()[..]);
+        peer_bytes.copy_from_slice(&sha.finalize()[..]);
         GroupId(peer_bytes)
     }
 

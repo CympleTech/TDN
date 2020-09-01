@@ -1,12 +1,10 @@
 use async_std::task;
 use tdn::prelude::*;
-use tdn_permission::PermissionlessGroup;
 
 struct State(u32);
 
 fn main() {
     task::block_on(async {
-        let mut group = PermissionlessGroup::default();
         let (peer_addr, send, out_recv) = start().await.unwrap();
         println!("Example: peer id: {}", peer_addr.short_show());
 

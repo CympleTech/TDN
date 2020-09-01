@@ -19,6 +19,7 @@ use crate::storage::read_string_absolute_file;
 pub struct Config {
     pub db_path: Option<PathBuf>,
     pub group_id: GroupId,
+    pub permission: bool,
 
     pub p2p_addr: SocketAddr,
     pub p2p_join_data: Vec<u8>,
@@ -47,6 +48,7 @@ impl Config {
             db_path,
             group_id: _, // DEBUG Not used ?
 
+            permission,
             p2p_addr,
             p2p_join_data,
             p2p_transport,
@@ -81,6 +83,7 @@ impl Config {
             black_list: p2p_black_list,
             white_peer_list: p2p_white_peer_list,
             black_peer_list: p2p_black_peer_list,
+            permission: permission,
         };
 
         let layer_config = LayerConfig {
@@ -108,6 +111,7 @@ impl Config {
         Config {
             db_path: None,
             group_id: GroupId::default(),
+            permission: false, //default is permissionless
             p2p_addr: p2p_addr,
             p2p_join_data: vec![],
             p2p_transport: P2P_TRANSPORT.to_owned(),
@@ -151,13 +155,16 @@ impl Config {
     }
 
     pub async fn load_with_path(path: PathBuf) -> Self {
-        let string = load_file_string(path).await;
+        let string = load_file_string(path.clone()).await;
         match string {
             Ok(string) => {
                 let raw_config: RawConfig = toml::from_str(&string).unwrap();
                 raw_config.parse()
             }
-            Err(_) => Config::default(),
+            Err(_err) => {
+                warn!("File {:?} not found, use the config default.", path);
+                Config::default()
+            }
         }
     }
 
@@ -192,6 +199,7 @@ pub struct RawConfig {
     pub db_path: Option<PathBuf>,
     pub group_id: Option<String>,
     pub group_symbol: Option<String>,
+    pub permission: Option<bool>,
 
     pub p2p_addr: Option<SocketAddr>,
     pub p2p_join_data: Option<String>,
@@ -248,6 +256,7 @@ impl RawConfig {
                         .map(|s| GroupId::from_symbol(s))
                         .unwrap_or(GroupId::default()),
                 ),
+            permission: self.permission.unwrap_or(false),
             p2p_addr: self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),
             p2p_join_data: self
                 .p2p_join_data
