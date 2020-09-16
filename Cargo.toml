@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
 readme = "README.md"
@@ -19,7 +19,8 @@ default = ["dev"]
 dev = []
 
 [dependencies]
-tdn_types = { path = "./types" }
+tdn_types = "0.2"
+#tdn_types = { path = "./types" }
 futures = "0.3"
 smol = "1.0"
 serde = { version = "1", features = ["derive"] }
@@ -31,5 +32,5 @@ log = "0.4"
 httparse = "1"
 mime = "0.3"
 async-tungstenite = "0.4"
-# chamomile = "0.1.1"
-chamomile = { path = "../chamomile" }
+chamomile = "0.2"
+#chamomile = { path = "../chamomile" }

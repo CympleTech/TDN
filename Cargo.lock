@@ -344,7 +344,9 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "chamomile"
-version = "0.1.1"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92fbf0fd8a715b212112a670ba846d9582bdd5d3523a3bb95efd775807e50158"
 dependencies = [
  "aes-soft",
  "block-modes",
@@ -365,7 +367,9 @@ dependencies = [
 
 [[package]]
 name = "chamomile_types"
-version = "0.1.0"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ee0cb3210afbc5ced6edf9b484650ba49e965b1aeb94a75b2455dadf5f762cd"
 dependencies = [
  "async-channel",
  "serde",
@@ -438,19 +442,6 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d85653f070353a16313d0046f173f70d1aadd5b42600a14de626f0dfb3473a5"
-dependencies = [
- "byteorder",
- "digest 0.8.1",
- "rand_core",
- "subtle",
- "zeroize",
-]
-
-[[package]]
-name = "curve25519-dalek"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8492de420e9e60bc9a1d66e2dbb91825390b738a388606600663fc529b4b307"
@@ -516,7 +507,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53d2e93f837d749c16d118e7ddf7a4dfd0ac8f452cf51e46e9348824e5ef6851"
 dependencies = [
- "curve25519-dalek 3.0.0",
+ "curve25519-dalek",
  "ed25519",
  "rand",
  "serde",
@@ -1256,7 +1247,7 @@ dependencies = [
 
 [[package]]
 name = "tdn"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-tungstenite",
  "chamomile",
@@ -1269,13 +1260,27 @@ dependencies = [
  "serde",
  "serde_json",
  "smol",
- "tdn_types",
+ "tdn_types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml",
 ]
 
 [[package]]
 name = "tdn_types"
-version = "0.1.0"
+version = "0.2.0"
+dependencies = [
+ "chamomile_types",
+ "dirs",
+ "lazy_static",
+ "serde",
+ "serde_json",
+ "sha3 0.9.1",
+]
+
+[[package]]
+name = "tdn_types"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d61f3c167ea1acbb2b888bd474446d083481bad19a6a7ddce6ee0612b5d09bc"
 dependencies = [
  "chamomile_types",
  "dirs",
@@ -1423,11 +1428,11 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "x25519-dalek"
-version = "0.6.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "637ff90c9540fa3073bb577e65033069e4bae7c79d49d74aa3ffdf5342a53217"
+checksum = "bc614d95359fd7afc321b66d2107ede58b246b844cf5d8a0adcca413e439f088"
 dependencies = [
- "curve25519-dalek 2.1.0",
+ "curve25519-dalek",
  "rand_core",
  "zeroize",
 ]
