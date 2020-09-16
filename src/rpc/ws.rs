@@ -1,12 +1,11 @@
-use async_std::{
-    io::Result,
-    net::{TcpListener, TcpStream},
-    sync::Sender,
-    task,
-};
 use async_tungstenite::{accept_async, tungstenite::protocol::Message as WsMessage};
 use futures::{select, sink::SinkExt, FutureExt, StreamExt};
 use rand::prelude::*;
+use smol::{
+    channel::Sender,
+    io::Result,
+    net::{TcpListener, TcpStream},
+};
 use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 
@@ -14,7 +13,7 @@ use super::{parse_jsonrpc, rpc_channel, RpcMessage};
 
 pub(crate) async fn ws_listen(send: Sender<RpcMessage>, listener: TcpListener) -> Result<()> {
     while let Ok((stream, addr)) = listener.accept().await {
-        task::spawn(ws_connection(send.clone(), stream, addr));
+        smol::spawn(ws_connection(send.clone(), stream, addr)).detach();
     }
 
     Ok(())
@@ -31,7 +30,9 @@ async fn ws_connection(
     debug!("DEBUG: WebSocket connection established: {}", addr);
     let id: u64 = rand::thread_rng().gen();
     let (s_send, mut s_recv) = rpc_channel();
-    send.send(RpcMessage::Open(id, s_send)).await;
+    send.send(RpcMessage::Open(id, s_send))
+        .await
+        .expect("Ws to Rpc channel closed");
 
     let (mut writer, mut reader) = ws_stream.split();
 
@@ -44,7 +45,8 @@ async fn ws_connection(
                         let msg = msg.to_text().unwrap();
                         match parse_jsonrpc(msg.to_owned()) {
                             Ok((rpc_param, _id)) => {
-                                send.send(RpcMessage::Request(id, rpc_param, None)).await;
+                                send.send(RpcMessage::Request(id, rpc_param, None))
+                                    .await.expect("Ws to Rpc channel closed");
                             }
                             Err((err, id)) => {
                                 let s = WsMessage::from(err.json(id).to_string());
@@ -69,6 +71,8 @@ async fn ws_connection(
         }
     }
 
-    send.send(RpcMessage::Close(id)).await;
+    send.send(RpcMessage::Close(id))
+        .await
+        .expect("Ws to Rpc channel closed");
     Ok(())
 }

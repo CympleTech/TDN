@@ -1,9 +1,8 @@
-use async_std::task;
 use std::path::PathBuf;
 use tdn::prelude::*;
 
 fn main() {
-    task::block_on(async {
+    smol::block_on(async {
         // use crate root directory's config.toml
         let dir_path = PathBuf::from(".");
         let config = Config::load_with_path(dir_path).await;

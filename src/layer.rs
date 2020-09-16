@@ -1,19 +1,20 @@
-use async_std::{
-    io,
+use futures::{select, FutureExt};
+use serde::{Deserialize, Serialize};
+use smol::future::FutureExt as SmolFutureExt;
+use smol::{
+    channel::{self, Receiver, Sender},
     io::Result,
     net::{TcpListener, TcpStream},
     prelude::*,
-    sync::{channel, Receiver, Sender},
-    task,
 };
-use futures::{select, FutureExt};
-use serde::{Deserialize, Serialize};
 use std::collections::{hash_map::Entry, HashMap};
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 
-use crate::message::{LayerReceiveMessage, LayerSendMessage, ReceiveMessage};
-use crate::primitive::{GroupId, MAX_MESSAGE_CAPACITY};
+use tdn_types::{
+    group::GroupId,
+    message::{LayerReceiveMessage, LayerSendMessage, ReceiveMessage},
+};
 
 // if layer open is ture, check black_list -> permissionless
 // if layer open if false, check white_list -> permissioned
@@ -59,7 +60,7 @@ impl Layer {
 
 /// new a channel, send message to layers Message. default capacity is 1024.
 fn new_send_channel() -> (Sender<LayerSendMessage>, Receiver<LayerSendMessage>) {
-    channel(MAX_MESSAGE_CAPACITY)
+    channel::unbounded()
 }
 
 pub(crate) async fn start(
@@ -68,7 +69,7 @@ pub(crate) async fn start(
     send: Sender<ReceiveMessage>,
 ) -> Result<Sender<LayerSendMessage>> {
     let (out_send, out_recv) = new_send_channel();
-    let (self_send, self_recv) = channel::<StreamMessage>(MAX_MESSAGE_CAPACITY);
+    let (self_send, self_recv) = channel::unbounded();
     let (addr, default_layer) = (
         config.addr,
         Layer {
@@ -86,15 +87,16 @@ pub(crate) async fn start(
     }
 
     let listener = TcpListener::bind(addr).await?;
-    task::spawn(run_listener(listener, send.clone(), self_send.clone()));
-    task::spawn(run_receiver(
+    smol::spawn(run_listener(listener, send.clone(), self_send.clone())).detach();
+    smol::spawn(run_receiver(
         gid,
         default_layer,
         out_recv,
         send,
         self_send,
         self_recv,
-    ));
+    ))
+    .detach();
 
     Ok(out_send)
 }
@@ -106,12 +108,13 @@ async fn run_listener(
 ) -> Result<()> {
     let mut incoming = listener.incoming();
     while let Some(Ok(stream)) = incoming.next().await {
-        task::spawn(process_stream(
+        smol::spawn(process_stream(
             None,
             stream,
             send.clone(),
             self_send.clone(),
-        ));
+        ))
+        .detach();
     }
 
     drop(incoming);
@@ -126,7 +129,7 @@ async fn run_client(
     self_send: Sender<StreamMessage>,
 ) -> Result<()> {
     let stream = TcpStream::connect(addr).await?;
-    task::spawn(process_stream(Some(remote_public), stream, send, self_send));
+    smol::spawn(process_stream(Some(remote_public), stream, send, self_send)).detach();
 
     Ok(())
 }
@@ -167,12 +170,13 @@ async fn run_receiver(
         for (addr, r_gid) in &layer.upper {
             let remote_public = layer.generate_remote_public(*r_gid, *gid);
             layer.white_list.push(addr.ip());
-            task::spawn(run_client(
+            smol::spawn(run_client(
                 remote_public.clone(),
                 *addr,
                 send.clone(),
                 self_send.clone(),
-            ));
+            ))
+            .detach();
         }
     }
 
@@ -187,7 +191,7 @@ async fn run_receiver(
                                 let _ = h.iter().map(|(_u, sender)| {
                                     let data = data.clone();
                                     async move {
-                                        sender.send(StreamMessage::Data(data)).await;
+                                        let _ = sender.send(StreamMessage::Data(data)).await;
                                     }
                                 });
                             });
@@ -197,7 +201,7 @@ async fn run_receiver(
                                 let _ = h.iter().map(|(_u, sender)| {
                                     let data = data.clone();
                                     async move {
-                                        sender.send(StreamMessage::Data(data)).await;
+                                        let _ = sender.send(StreamMessage::Data(data)).await;
                                     }
                                 });
                             });
@@ -227,12 +231,12 @@ async fn run_receiver(
 
                                 // TODO if join data
                                 if !uppers.contains_key(&gid) {
-                                    task::spawn(run_client(
+                                    smol::spawn(run_client(
                                         remote_public.clone(),
                                         addr,
                                         send.clone(),
                                         self_send.clone(),
-                                    ));
+                                    )).detach();
                                 }
                             });
                         }
@@ -242,12 +246,14 @@ async fn run_receiver(
                                 Some(h) => {
                                     match h.remove(&uid) {
                                         Some(sender) => if !is_ok {
-                                            sender.send(
+                                            let _ = sender.send(
                                                 StreamMessage::Close(gid, uid, true)
                                             ).await;
                                         } else {
                                             let layer = layers.get(&gid).unwrap();
-                                            sender.send(StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))).await;
+                                            let _ = sender.send(
+                                                StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))
+                                            ).await;
                                             layer_buffer_insert(&mut lowers, gid, uid, sender);
                                         }
                                         _ => {}
@@ -280,7 +286,7 @@ async fn run_receiver(
                                 if is_white {
                                     // remove tmp_uppers
                                     tmp_uppers.get_mut(&gid).map(|h| h.remove(&uid));
-                                    send.send(ReceiveMessage::Layer(
+                                    let _ = send.send(ReceiveMessage::Layer(
                                         LayerReceiveMessage::LowerJoinResult(
                                             gid, remote_gid, uid, true
                                         ))).await;
@@ -291,12 +297,14 @@ async fn run_receiver(
                                 }
                             } else {
                                 if is_white {
-                                    sender.send(StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))).await;
+                                    let _ = sender.send(
+                                        StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))
+                                    ).await;
 
                                     &mut lowers
                                 } else {
                                     if layer.public {
-                                        send.send(
+                                        let _ = send.send(
                                             ReceiveMessage::Layer(
                                                 LayerReceiveMessage::LowerJoin(
                                                     gid, remote_gid, uid, addr, vec![]) // TODO
@@ -363,35 +371,60 @@ async fn process_stream(
         writer.write_all(&remote_public_bytes[..]).await?;
     }
 
+    let mut init_bytes = [0u8; 4];
     // timeout 10s to read peer_id & public_key
-    let result: Result<Option<RemotePublic>> = io::timeout(Duration::from_secs(5), async {
-        let mut read_len = [0u8; 4];
-        while let Ok(size) = reader.read(&mut read_len).await {
+    let init_result: Result<usize> = reader
+        .read(&mut init_bytes)
+        .or(async {
+            smol::Timer::after(Duration::from_secs(10)).await;
+            Err(std::io::ErrorKind::TimedOut.into())
+        })
+        .await
+        .map(|size| {
             if size == 0 {
                 // when close or better when many Ok(0)
-                break;
+                0
+            } else {
+                u32::from_be_bytes(init_bytes) as usize
             }
+        });
 
-            let len: usize = u32::from_be_bytes(read_len) as usize;
-            let mut read_bytes = vec![0u8; len];
-            while let Ok(bytes_size) = reader.read(&mut read_bytes).await {
-                if bytes_size != len {
-                    break;
-                }
+    drop(init_bytes);
 
-                return Ok(RemotePublic::from_bytes(read_bytes).ok());
-            }
-        }
-        Ok(None)
-    })
-    .await;
-
-    if result.is_err() {
+    if init_result.is_err() {
         debug!("Debug: Session timeout");
         return Ok(());
     }
 
-    let result = result.unwrap();
+    let init_len = init_result.unwrap();
+    if init_len == 0 {
+        debug!("Debug: Session init invalid");
+        return Ok(());
+    }
+
+    let mut session_bytes = vec![0u8; init_len];
+
+    let init_session: Result<Option<RemotePublic>> = reader
+        .read(&mut session_bytes)
+        .or(async {
+            smol::Timer::after(Duration::from_secs(10)).await;
+            Err(std::io::ErrorKind::TimedOut.into())
+        })
+        .await
+        .map(|size| {
+            if size != init_len {
+                None
+            } else {
+                RemotePublic::from_bytes(session_bytes).ok()
+            }
+        });
+
+    if init_session.is_err() {
+        debug!("Debug: Session timeout");
+        return Ok(());
+    }
+
+    let result = init_session.unwrap();
     if result.is_none() {
         debug!("Debug: Session invalid pk");
         return Ok(());
@@ -401,10 +434,10 @@ async fn process_stream(
 
     // TODO Security DH exchange.
 
-    let (self_send, mut self_recv) = channel::<StreamMessage>(MAX_MESSAGE_CAPACITY);
+    let (self_send, mut self_recv) = channel::unbounded();
     let uid = rand::random::<u32>();
 
-    server_send
+    let _ = server_send
         .send(StreamMessage::Open(
             gid, r_gid, uid, addr, self_send, is_upper,
         ))
@@ -432,7 +465,7 @@ async fn process_stream(
                         } else {
                             ReceiveMessage::Layer(LayerReceiveMessage::Lower(gid, read_bytes.clone()))
                         };
-                        sender.send(message).await;
+                        let _ = sender.send(message).await;
                         break;
                     }
                     read_len = [0u8; 4];
@@ -463,7 +496,7 @@ async fn process_stream(
     }
 
     debug!("DEBUG: close layers: {}", addr);
-    server_send
+    let _ = server_send
         .send(StreamMessage::Close(gid, uid, is_upper))
         .await;
 
@@ -491,10 +524,10 @@ pub struct RemotePublic(pub GroupId, pub GroupId, pub Vec<u8>);
 
 impl RemotePublic {
     pub fn from_bytes(bytes: Vec<u8>) -> std::result::Result<Self, ()> {
-        bincode::deserialize(&bytes).map_err(|_e| ())
+        postcard::from_bytes(&bytes).map_err(|_e| ())
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+        postcard::to_allocvec(self).unwrap_or(vec![])
     }
 }

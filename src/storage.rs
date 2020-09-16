@@ -1,8 +1,8 @@
-use async_std::fs;
-use async_std::io::Result;
+use smol::fs;
+use smol::io::Result;
 use std::path::PathBuf;
 
-use crate::primitive::DEFAULT_STORAGE_DIR;
+use tdn_types::primitive::DEFAULT_STORAGE_DIR;
 
 // pub use chamomile local storage.
 pub use chamomile::prelude::LocalDB;
@@ -62,7 +62,8 @@ pub async fn remove_absolute_file(path: &PathBuf) -> Result<()> {
 fn test_local_file() {
     let name = "test.file";
     let data = "A".to_owned();
-    async_std::task::block_on(async {
+
+    smol::block_on(async {
         write_local_file(name, data.as_bytes()).await.unwrap();
         assert_eq!(
             read_local_file(name).await.ok(),
@@ -79,7 +80,8 @@ fn test_absolute_file() {
     let data = "A".to_owned();
     let mut path = PathBuf::from("../");
     path.push(name);
-    async_std::task::block_on(async {
+
+    smol::block_on(async {
         write_absolute_file(&path, data.as_bytes()).await.unwrap();
         assert_eq!(
             read_absolute_file(&path).await.ok(),
@@ -97,13 +99,11 @@ fn test_db_file() {
     let value = "A".to_owned();
     let value_b = "B".to_owned();
 
-    async_std::task::block_on(async {
-        let db = open_db(name).unwrap();
-        assert_eq!(db.write(key.clone(), &value).ok(), Some(()));
-        assert_eq!(db.read::<String>(&key), Some(value.clone()));
-        assert_eq!(db.update::<String>(key.clone(), &value_b).ok(), Some(()));
-        assert_eq!(db.read::<String>(&key), Some(value_b.clone()));
-        assert_eq!(db.delete::<String>(&key).ok(), Some(value_b));
-        assert_eq!(db.read::<String>(&key), None);
-    });
+    let db = open_db(name).unwrap();
+    assert_eq!(db.write(key.clone(), &value).ok(), Some(()));
+    assert_eq!(db.read::<String>(&key), Some(value.clone()));
+    assert_eq!(db.update::<String>(key.clone(), &value_b).ok(), Some(()));
+    assert_eq!(db.read::<String>(&key), Some(value_b.clone()));
+    assert_eq!(db.delete::<String>(&key).ok(), Some(value_b));
+    assert_eq!(db.read::<String>(&key), None);
 }

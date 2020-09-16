@@ -1,20 +1,21 @@
 mod http;
 mod ws;
 
-use async_std::{
+use futures::{future::LocalBoxFuture, select, FutureExt};
+use smol::{
+    channel::{self, Receiver, Sender},
     io::Result,
     net::TcpListener,
-    sync::{channel, Arc, Receiver, Sender},
-    task,
 };
-use futures::{future::LocalBoxFuture, select, FutureExt};
-use serde_json::json;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use crate::message::{RpcMessage as RpcMessageTrait, RpcSendMessage};
-use crate::primitive::{RpcParam, MAX_MESSAGE_CAPACITY};
+use tdn_types::{
+    message::{RpcMessage as RpcMessageTrait, RpcSendMessage},
+    primitive::{json, RpcParam},
+};
 
 pub struct RpcConfig {
     pub addr: SocketAddr,
@@ -30,11 +31,11 @@ pub(crate) enum RpcMessage {
 }
 
 fn rpc_channel() -> (Sender<RpcMessage>, Receiver<RpcMessage>) {
-    channel(MAX_MESSAGE_CAPACITY)
+    channel::unbounded()
 }
 
 fn rpc_send_channel() -> (Sender<RpcSendMessage>, Receiver<RpcSendMessage>) {
-    channel(MAX_MESSAGE_CAPACITY)
+    channel::unbounded()
 }
 
 pub(crate) async fn start<M: 'static + RpcMessageTrait>(
@@ -56,7 +57,7 @@ async fn listen<M: 'static + RpcMessageTrait>(
     out_recv: Receiver<RpcSendMessage>,
     self_recv: Receiver<RpcMessage>,
 ) -> Result<()> {
-    task::spawn(async move {
+    smol::spawn(async move {
         let mut connections: HashMap<u64, Sender<RpcMessage>> = HashMap::new();
 
         loop {
@@ -67,12 +68,12 @@ async fn listen<M: 'static + RpcMessageTrait>(
                         if is_ws {
                             let s = connections.get(&id);
                             if s.is_some() {
-                                s.unwrap().send(RpcMessage::Response(params)).await;
+                                let _ = s.unwrap().send(RpcMessage::Response(params)).await;
                             }
                         } else {
                             let s = connections.remove(&id);
                             if s.is_some() {
-                                s.unwrap().send(RpcMessage::Response(params)).await;
+                                let _ = s.unwrap().send(RpcMessage::Response(params)).await;
                             }
                         }
                     },
@@ -86,7 +87,8 @@ async fn listen<M: 'static + RpcMessageTrait>(
                                 if !is_ws {
                                     connections.insert(id, sender.unwrap());
                                 }
-                                send.send(M::new_rpc(id, params, is_ws)).await;
+                                send.send(M::new_rpc(id, params, is_ws))
+                                    .await.expect("Rpc to Outside channel closed");
                             }
                             RpcMessage::Open(id, sender) => {
                                 connections.insert(id, sender);
@@ -101,23 +103,27 @@ async fn listen<M: 'static + RpcMessageTrait>(
                 }
             }
         }
-    });
+    })
+    .detach();
+
     Ok(())
 }
 
 async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
-    task::spawn(http::http_listen(
+    smol::spawn(http::http_listen(
         config.index.clone(),
         send.clone(),
         TcpListener::bind(config.addr).await?,
-    ));
+    ))
+    .detach();
 
     // ws
     if config.ws.is_some() {
-        task::spawn(ws::ws_listen(
+        smol::spawn(ws::ws_listen(
             send,
             TcpListener::bind(config.ws.unwrap()).await?,
-        ));
+        ))
+        .detach();
     }
 
     Ok(())

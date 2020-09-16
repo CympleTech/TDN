@@ -16,60 +16,59 @@ extern crate log;
 
 mod config;
 mod layer;
-mod message;
 mod p2p;
 mod rpc;
 
 // public mod
-pub use async_std; // pub async std to others
 pub mod error;
-pub mod primitive;
 pub mod storage;
-pub mod traits;
+
+// re-export tdn_types
+pub use tdn_types;
 
 // public struct
 pub mod prelude {
     pub use super::config::Config;
-    pub use super::message::{GroupReceiveMessage, GroupSendMessage};
-    pub use super::message::{LayerReceiveMessage, LayerSendMessage};
-    pub use super::message::{ReceiveMessage, SendMessage};
-    pub use super::message::{SingleReceiveMessage, SingleSendMessage};
-    pub use super::primitive::{Broadcast, GroupId, PeerAddr, RpcParam};
     pub use super::rpc::{RpcError, RpcHandler};
 
-    use async_std::{
-        io::Result,
-        sync::{channel, Receiver, Sender},
-        task,
-    };
+    pub use tdn_types::group::GroupId;
+    pub use tdn_types::message::{GroupReceiveMessage, GroupSendMessage};
+    pub use tdn_types::message::{LayerReceiveMessage, LayerSendMessage};
+    pub use tdn_types::message::{ReceiveMessage, SendMessage};
+    pub use tdn_types::message::{SingleReceiveMessage, SingleSendMessage};
+    pub use tdn_types::primitive::{Broadcast, PeerAddr, RpcParam};
+
     use futures::join;
+    use smol::{
+        channel::{self, Receiver, Sender},
+        io::Result,
+    };
     use std::collections::HashMap;
+    use tdn_types::message::RpcSendMessage;
 
     use super::layer::start as layer_start;
-    use super::message::RpcSendMessage;
     use super::p2p::start as p2p_start;
-    use super::primitive::MAX_MESSAGE_CAPACITY;
     use super::rpc::start as rpc_start;
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_send_channel() -> (Sender<SendMessage>, Receiver<SendMessage>) {
-        channel(MAX_MESSAGE_CAPACITY)
+        channel::unbounded()
     }
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_receive_channel() -> (Sender<ReceiveMessage>, Receiver<ReceiveMessage>) {
-        channel(MAX_MESSAGE_CAPACITY)
+        channel::unbounded()
     }
 
     /// new a signle layer channel, send message to TDN. default capacity is 1024.
     pub fn new_single_send_channel() -> (Sender<SingleSendMessage>, Receiver<SingleSendMessage>) {
-        channel(MAX_MESSAGE_CAPACITY)
+        channel::unbounded()
     }
 
     /// new a signle layer channel, receive message from TDN. default capacity is 1024.
     pub fn new_single_receive_channel(
     ) -> (Sender<SingleReceiveMessage>, Receiver<SingleReceiveMessage>) {
-        channel(MAX_MESSAGE_CAPACITY)
+        channel::unbounded()
     }
 
     /// start multiple services together.
@@ -131,17 +130,25 @@ pub mod prelude {
         let ((peer_addr, p2p_sender), layer_sender, rpc_sender) =
             (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
 
-        task::spawn(async move {
+        smol::spawn(async move {
             while let Ok(message) = self_recv.recv().await {
                 match message {
-                    SendMessage::Layer(msg) => layer_sender.send(msg).await,
-                    SendMessage::Group(msg) => p2p_sender.send(msg).await,
+                    SendMessage::Layer(msg) => {
+                        layer_sender.send(msg).await.expect("Layer channel closed");
+                    }
+                    SendMessage::Group(msg) => {
+                        p2p_sender.send(msg).await.expect("Group channel closed");
+                    }
                     SendMessage::Rpc(uid, param, is_ws) => {
-                        rpc_sender.send(RpcSendMessage(uid, param, is_ws)).await;
+                        rpc_sender
+                            .send(RpcSendMessage(uid, param, is_ws))
+                            .await
+                            .expect("Rpc channel closed");
                     }
                 }
             }
-        });
+        })
+        .detach();
 
         Ok(peer_addr)
     }
@@ -194,16 +201,22 @@ pub mod prelude {
         );
         let ((peer_addr, p2p_sender), rpc_sender) = (p2p_sender_result?, rpc_sender_result?);
 
-        task::spawn(async move {
+        smol::spawn(async move {
             while let Ok(message) = self_recv.recv().await {
                 match message {
-                    SingleSendMessage::Group(msg) => p2p_sender.send(msg).await,
+                    SingleSendMessage::Group(msg) => {
+                        p2p_sender.send(msg).await.expect("Group channel closed");
+                    }
                     SingleSendMessage::Rpc(uid, param, is_ws) => {
-                        rpc_sender.send(RpcSendMessage(uid, param, is_ws)).await;
+                        rpc_sender
+                            .send(RpcSendMessage(uid, param, is_ws))
+                            .await
+                            .expect("Rpc channel closed");
                     }
                 }
             }
-        });
+        })
+        .detach();
 
         Ok(peer_addr)
     }

@@ -1,25 +1,26 @@
-use async_std::{
-    io::Result,
-    sync::{channel, Receiver, Sender},
-    task,
-};
-use chamomile::prelude::{start as p2p_start, PeerId, ReceiveMessage, SendMessage};
+use chamomile::prelude::{start as p2p_start, ReceiveMessage, SendMessage};
 use futures::{select, FutureExt};
+use smol::{
+    channel::{self, Receiver, Sender},
+    io::Result,
+};
 
 pub use chamomile::prelude::Config as P2pConfig;
 
-use crate::message::{GroupMessage, GroupReceiveMessage, GroupSendMessage};
-use crate::primitive::MAX_MESSAGE_CAPACITY;
+use tdn_types::{
+    message::{GroupMessage, GroupReceiveMessage, GroupSendMessage},
+    primitive::PeerAddr,
+};
 
 /// new a channel, send message to p2p Message. default capacity is 1024.
 fn new_send_channel() -> (Sender<GroupSendMessage>, Receiver<GroupSendMessage>) {
-    channel(MAX_MESSAGE_CAPACITY)
+    channel::unbounded()
 }
 
 pub(crate) async fn start<M: 'static + GroupMessage>(
     config: P2pConfig,
     out_send: Sender<M>,
-) -> Result<(PeerId, Sender<GroupSendMessage>)> {
+) -> Result<(PeerAddr, Sender<GroupSendMessage>)> {
     let (self_send, self_recv) = new_send_channel();
 
     debug!("DEBUG: P2P listening: {}", config.addr);
@@ -28,7 +29,7 @@ pub(crate) async fn start<M: 'static + GroupMessage>(
     let (peer_id, p2p_send, p2p_recv) = p2p_start(config).await?;
     debug!("p2p service started");
 
-    task::spawn(run_listen(out_send, p2p_send, p2p_recv, self_recv));
+    smol::spawn(run_listen(out_send, p2p_send, p2p_recv, self_recv)).detach();
     debug!("p2p channel service started");
 
     Ok((peer_id, self_send))
@@ -48,28 +49,28 @@ async fn run_listen<M: GroupMessage>(
                         ReceiveMessage::PeerJoin(peer_addr, addr, data) => {
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::PeerJoin(peer_addr, addr, data)
-                            )).await;
+                            )).await.expect("P2P to Outside channel closed");
                         },
                         ReceiveMessage::PeerJoinResult(peer_addr, is_ok, data) => {
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::PeerJoinResult(peer_addr, is_ok, data)
-                            )).await;
+                            )).await.expect("P2P to Outside channel closed");
                         },
                         ReceiveMessage::PeerLeave(peer_addr) => {
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::PeerLeave(peer_addr)
-                            )).await;
+                            )).await.expect("P2P to Outside channel closed");
                         },
                         ReceiveMessage::Data(peer_addr, data) => {
                             debug!("DEBUG: P2P Event Length: {}", data.len());
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::Event(peer_addr, data)
-                            )).await;
+                            )).await.expect("P2P to Outside channel closed");
                         }
                         ReceiveMessage::Stream(id, stream) => {
                             out_send.send(M::new_group(
                                 GroupReceiveMessage::Stream(id, stream)
-                            )).await
+                            )).await.expect("P2P to Outside channel closed");
                         }
                     }
                 },
@@ -79,30 +80,38 @@ async fn run_listen<M: GroupMessage>(
                 Ok(msg) => {
                     match msg {
                         GroupSendMessage::PeerConnect(peer_addr, addr, data) => {
-                            p2p_send.send(SendMessage::PeerConnect(peer_addr, addr, data)).await;
+                            p2p_send.send(SendMessage::PeerConnect(peer_addr, addr, data))
+                                .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::PeerDisconnect(peer_addr) => {
-                            p2p_send.send(SendMessage::PeerDisconnect(peer_addr)).await;
+                            p2p_send.send(SendMessage::PeerDisconnect(peer_addr))
+                                .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
                             p2p_send.send(SendMessage::PeerJoinResult(
-                                peer_addr, is_ok, is_force, result)).await;
+                                peer_addr, is_ok, is_force, result))
+                                .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::Connect(addr, data) => {
-                            p2p_send.send(SendMessage::Connect(addr, data)).await;
+                            p2p_send.send(SendMessage::Connect(addr, data))
+                                .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::DisConnect(addr) => {
-                            p2p_send.send(SendMessage::DisConnect(addr)).await;
+                            p2p_send.send(SendMessage::DisConnect(addr))
+                                .await.expect("P2P to chamomile channel closed");
                         },
-                        GroupSendMessage::Data(peer_addr, data) => {
+                        GroupSendMessage::Event(peer_addr, data) => {
                             debug!("DEBUG: Outside Event Length: {}", data.len());
-                            p2p_send.send(SendMessage::Data(peer_addr, data)).await;
+                            p2p_send.send(SendMessage::Data(peer_addr, data))
+                                .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::Broadcast(broadcast, data) => {
-                            p2p_send.send(SendMessage::Broadcast(broadcast, data)).await;
+                            p2p_send.send(SendMessage::Broadcast(broadcast, data))
+                                .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::Stream(id, stream) => {
-                            p2p_send.send(SendMessage::Stream(id, stream)).await;
+                            p2p_send.send(SendMessage::Stream(id, stream))
+                                .await.expect("P2P to chamomile channel closed");
                         }
                     }
                 },

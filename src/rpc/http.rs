@@ -1,13 +1,14 @@
-use async_std::{
+use rand::prelude::*;
+use smol::{
+    channel::Sender,
     io::Result,
+    lock::RwLock,
     net::{TcpListener, TcpStream},
     prelude::*,
-    sync::{Arc, RwLock, Sender},
-    task,
 };
-use rand::prelude::*;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 //use std::time::Duration;
 
 use crate::storage::read_string_absolute_file;
@@ -29,12 +30,13 @@ pub(crate) async fn http_listen(
     let homelink = Arc::new(RwLock::new(homepage));
 
     while let Ok((stream, addr)) = listener.accept().await {
-        task::spawn(http_connection(
+        smol::spawn(http_connection(
             homelink.clone(),
             send.clone(),
             stream,
             addr,
-        ));
+        ))
+        .detach();
     }
 
     Ok(())
@@ -125,13 +127,14 @@ async fn http_connection(
     match parse_jsonrpc((*msg).to_string()) {
         Ok((rpc_param, _id)) => {
             send.send(RpcMessage::Request(id, rpc_param, Some(s_send)))
-                .await;
+                .await
+                .expect("Http to Rpc channel closed");
         }
         Err((err, id)) => {
             stream
                 .write(format!("{}{}", res, err.json(id).to_string()).as_bytes())
                 .await?;
-            stream.flush();
+            let _ = stream.flush().await;
             stream.shutdown(std::net::Shutdown::Both)?;
         }
     }
@@ -144,7 +147,7 @@ async fn http_connection(
         stream
             .write(format!("{}{}", res, param.to_string()).as_bytes())
             .await?;
-        stream.flush();
+        let _ = stream.flush().await;
         stream.shutdown(std::net::Shutdown::Both)?;
         break;
     }

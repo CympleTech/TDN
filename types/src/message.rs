@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 
-use crate::primitive::{Broadcast, GroupId, PeerAddr, RpcParam, StreamType};
+use crate::group::GroupId;
+use crate::primitive::{Broadcast, PeerAddr, RpcParam, StreamType};
 
 /// channel message send to TDN Group.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,7 +31,7 @@ pub enum GroupSendMessage {
     /// when need send a data to a peer, only need know the peer_id,
     /// the TDN will help you send data to there.
     /// params is `peer_id` and `data_bytes`.
-    Data(PeerAddr, Vec<u8>),
+    Event(PeerAddr, Vec<u8>),
     /// when need broadcast a data to all network, TDN support some
     /// common algorithm, use it, donnot worry.
     /// params is `broadcast_type` and `data_bytes`
@@ -139,15 +140,15 @@ pub enum SingleReceiveMessage {
 }
 
 /// packaging the rpc message. not open to ouside.
-pub(crate) struct RpcSendMessage(pub u64, pub RpcParam, pub bool);
+pub struct RpcSendMessage(pub u64, pub RpcParam, pub bool);
 
 /// generic group message for code reduce.
-pub(crate) trait GroupMessage: Send {
+pub trait GroupMessage: Send {
     fn new_group(group_receive_message: GroupReceiveMessage) -> Self;
 }
 
 /// generic layer message for code reduce.
-pub(crate) trait RpcMessage: Send {
+pub trait RpcMessage: Send {
     fn new_rpc(uid: u64, param: RpcParam, is_ws: bool) -> Self;
 }
 
