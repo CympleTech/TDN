@@ -23,6 +23,8 @@ mod rpc;
 pub mod error;
 pub mod storage;
 
+// re-export smol
+pub use smol;
 // re-export tdn_types
 pub use tdn_types;
 

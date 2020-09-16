@@ -1260,8 +1260,21 @@ dependencies = [
  "serde",
  "serde_json",
  "smol",
+ "tdn_permission",
  "tdn_types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml",
+]
+
+[[package]]
+name = "tdn_permission"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "557cd2a42eb0b334ba6645584fc57f08f036aa92599362c9920ddedf2027c82b"
+dependencies = [
+ "async-channel",
+ "postcard",
+ "serde",
+ "tdn_types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

@@ -34,3 +34,6 @@ mime = "0.3"
 async-tungstenite = "0.4"
 chamomile = "0.2"
 #chamomile = { path = "../chamomile" }
+
+[dev-dependencies]
+tdn_permission = "0.2"
