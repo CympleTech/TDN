@@ -9,7 +9,9 @@ use smol::{
 use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 
-use super::{parse_jsonrpc, rpc_channel, RpcMessage};
+use tdn_types::rpc::parse_jsonrpc;
+
+use super::{rpc_channel, RpcMessage};
 
 pub(crate) async fn ws_listen(send: Sender<RpcMessage>, listener: TcpListener) -> Result<()> {
     while let Ok((stream, addr)) = listener.accept().await {
@@ -44,7 +46,7 @@ async fn ws_connection(
                         let msg = msg.unwrap();
                         let msg = msg.to_text().unwrap();
                         match parse_jsonrpc(msg.to_owned()) {
-                            Ok((rpc_param, _id)) => {
+                            Ok(rpc_param) => {
                                 send.send(RpcMessage::Request(id, rpc_param, None))
                                     .await.expect("Ws to Rpc channel closed");
                             }

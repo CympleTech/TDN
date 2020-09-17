@@ -345,8 +345,6 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 [[package]]
 name = "chamomile"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92fbf0fd8a715b212112a670ba846d9582bdd5d3523a3bb95efd775807e50158"
 dependencies = [
  "aes-soft",
  "block-modes",
@@ -1261,7 +1259,7 @@ dependencies = [
  "serde_json",
  "smol",
  "tdn_permission",
- "tdn_types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tdn_types 0.2.0",
  "toml",
 ]
 

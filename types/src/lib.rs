@@ -3,3 +3,4 @@
 pub mod group;
 pub mod message;
 pub mod primitive;
+pub mod rpc;

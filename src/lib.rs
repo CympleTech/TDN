@@ -26,19 +26,19 @@ pub mod storage;
 // re-export smol
 pub use smol;
 // re-export tdn_types
-pub use tdn_types;
+pub use tdn_types as types;
 
 // public struct
 pub mod prelude {
     pub use super::config::Config;
-    pub use super::rpc::{RpcError, RpcHandler};
 
     pub use tdn_types::group::GroupId;
     pub use tdn_types::message::{GroupReceiveMessage, GroupSendMessage};
     pub use tdn_types::message::{LayerReceiveMessage, LayerSendMessage};
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
     pub use tdn_types::message::{SingleReceiveMessage, SingleSendMessage};
-    pub use tdn_types::primitive::{Broadcast, PeerAddr, RpcParam};
+    pub use tdn_types::primitive::{Broadcast, PeerAddr};
+    pub use tdn_types::rpc::RpcParam;
 
     use futures::join;
     use smol::{

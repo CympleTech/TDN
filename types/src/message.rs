@@ -1,7 +1,8 @@
 use std::net::SocketAddr;
 
 use crate::group::GroupId;
-use crate::primitive::{Broadcast, PeerAddr, RpcParam, StreamType};
+use crate::primitive::{Broadcast, PeerAddr, StreamType};
+use crate::rpc::RpcParam;
 
 /// channel message send to TDN Group.
 #[derive(Debug, Clone, PartialEq, Eq)]

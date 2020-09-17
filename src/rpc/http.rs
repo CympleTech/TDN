@@ -11,9 +11,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 //use std::time::Duration;
 
+use tdn_types::rpc::parse_jsonrpc;
+
 use crate::storage::read_string_absolute_file;
 
-use super::{parse_jsonrpc, rpc_channel, RpcMessage};
+use super::{rpc_channel, RpcMessage};
 
 pub(crate) async fn http_listen(
     index: Option<PathBuf>,
@@ -125,7 +127,7 @@ async fn http_connection(
     let res = "HTTP/1.1 200 OK\r\n\r\n";
 
     match parse_jsonrpc((*msg).to_string()) {
-        Ok((rpc_param, _id)) => {
+        Ok(rpc_param) => {
             send.send(RpcMessage::Request(id, rpc_param, Some(s_send)))
                 .await
                 .expect("Http to Rpc channel closed");

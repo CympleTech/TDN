@@ -2,8 +2,8 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
-use crate::message::{GroupSendMessage, LayerSendMessage};
-use crate::primitive::RpcParam;
+use crate::message::GroupReceiveMessage;
+use crate::primitive::{new_io_error, HandleResult, PeerAddr, Result};
 
 /// Type: GroupId
 #[derive(Copy, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
@@ -30,17 +30,17 @@ impl GroupId {
         GroupId(peer_bytes)
     }
 
-    pub fn from_hex(s: impl ToString) -> Result<GroupId, &'static str> {
+    pub fn from_hex(s: impl ToString) -> Result<GroupId> {
         let s = s.to_string();
         if s.len() != 64 {
-            return Err("Hex is invalid");
+            return Err(new_io_error("Hex is invalid"));
         }
 
         let mut value = [0u8; 32];
 
         for i in 0..(s.len() / 2) {
-            let res =
-                u8::from_str_radix(&s[2 * i..2 * i + 2], 16).map_err(|_e| "Hex is invalid")?;
+            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)
+                .map_err(|_e| new_io_error("Hex is invalid"))?;
             value[i] = res;
         }
 
@@ -65,13 +65,14 @@ impl Debug for GroupId {
 /// Helper: this is the interface of the Group in the network.
 /// Group id's data structure is defined by TDN,
 pub trait Group {
-    /// define join_data's type.
-    type JoinType;
-    /// define join_result_data's type.
-    type JoinResultType;
-
     /// get the group id, defined in TDN
     fn id(&self) -> &GroupId;
+
+    /// guard if the peer is valid.
+    fn guard(&self, addr: &PeerAddr) -> bool;
+
+    /// when receive group message, handle it, and return HandleResult.
+    fn handle<'a>(&mut self, msg: GroupReceiveMessage) -> Result<HandleResult<'a>>;
 }
 
 /// Helper: this is the interface of the Peer in the network.
@@ -80,14 +81,9 @@ pub trait Peer {
     type SecretKey: Serialize + DeserializeOwned;
     type Signature: Serialize + DeserializeOwned;
 
-    fn sign(
-        sk: &Self::SecretKey,
-        msg: &Vec<u8>,
-    ) -> Result<Self::Signature, Box<dyn std::error::Error>>;
+    fn sign(sk: &Self::SecretKey, msg: &Vec<u8>) -> Result<Self::Signature>;
 
     fn verify(pk: &Self::PublicKey, msg: &Vec<u8>, sign: &Self::Signature) -> bool;
-
-    fn hex_public_key(pk: &Self::PublicKey) -> String;
 }
 
 /// Helper: this is the EventId in the network.
@@ -97,11 +93,4 @@ pub struct EventId(pub [u8; 64]);
 pub trait Event: Clone + Send + Debug + Eq + Ord + Serialize + DeserializeOwned {
     /// get the event id, defined in TDN
     fn id(&self) -> &EventId;
-}
-
-/// Helper: this is the Event handle result in the network.
-pub struct EventResult {
-    pub rpcs: Vec<(String, RpcParam)>,
-    pub groups: Vec<GroupSendMessage>,
-    pub layers: Vec<LayerSendMessage>,
 }

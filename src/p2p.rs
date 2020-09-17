@@ -1,15 +1,12 @@
 use chamomile::prelude::{start as p2p_start, ReceiveMessage, SendMessage};
 use futures::{select, FutureExt};
-use smol::{
-    channel::{self, Receiver, Sender},
-    io::Result,
-};
+use smol::channel::{self, Receiver, Sender};
 
 pub use chamomile::prelude::Config as P2pConfig;
 
 use tdn_types::{
     message::{GroupMessage, GroupReceiveMessage, GroupSendMessage},
-    primitive::PeerAddr,
+    primitive::{PeerAddr, Result},
 };
 
 /// new a channel, send message to p2p Message. default capacity is 1024.

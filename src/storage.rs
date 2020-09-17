@@ -1,8 +1,7 @@
 use smol::fs;
-use smol::io::Result;
 use std::path::PathBuf;
 
-use tdn_types::primitive::DEFAULT_STORAGE_DIR;
+use tdn_types::primitive::{Result, DEFAULT_STORAGE_DIR};
 
 // pub use chamomile local storage.
 pub use chamomile::prelude::LocalDB;

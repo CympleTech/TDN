@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use smol::future::FutureExt as SmolFutureExt;
 use smol::{
     channel::{self, Receiver, Sender},
-    io::Result,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
@@ -14,6 +13,7 @@ use std::time::Duration;
 use tdn_types::{
     group::GroupId,
     message::{LayerReceiveMessage, LayerSendMessage, ReceiveMessage},
+    primitive::Result,
 };
 
 // if layer open is ture, check black_list -> permissionless

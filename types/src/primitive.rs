@@ -1,5 +1,4 @@
 use lazy_static::lazy_static;
-use serde_json::Value;
 use std::path::PathBuf;
 
 /// P2P default binding addr.
@@ -41,10 +40,6 @@ lazy_static! {
     };
 }
 
-// Type: RPC Param
-pub type RpcParam = Value;
-pub use serde_json::json;
-
 /// Type: PeerAddr
 pub type PeerAddr = chamomile_types::types::PeerId;
 
@@ -56,3 +51,55 @@ pub use chamomile_types::message::StreamType;
 
 /// Type: P2P transport stream type.
 pub use chamomile_types::types::TransportStream;
+
+pub type Result<T> = std::io::Result<T>;
+
+#[inline]
+pub fn new_io_error(info: &str) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::Other, info)
+}
+
+#[inline]
+pub fn vec_remove_item<T: Eq + PartialEq>(vec: &mut Vec<T>, item: &T) {
+    let mut need_remove: Vec<usize> = vec![];
+    for (k, i) in vec.iter().enumerate() {
+        if i == item {
+            need_remove.push(k);
+        }
+    }
+
+    for i in need_remove.iter().rev() {
+        vec.remove(*i);
+    }
+}
+
+#[inline]
+pub fn vec_check_push<T: Eq + PartialEq>(vec: &mut Vec<T>, item: T) {
+    for i in vec.iter() {
+        if i == &item {
+            return;
+        }
+    }
+
+    vec.push(item);
+}
+
+/// Helper: this is the group/layer/rpc handle result in the network.
+pub struct HandleResult<'a> {
+    /// rpc tasks: [(method, params)].
+    pub rpcs: Vec<(&'a str, crate::rpc::RpcParam)>,
+    /// group tasks: [GroupSendMessage]
+    pub groups: Vec<crate::message::GroupSendMessage>,
+    /// layer tasks: [LayerSendMessage]
+    pub layers: Vec<crate::message::LayerSendMessage>,
+}
+
+impl<'a> HandleResult<'a> {
+    pub fn new() -> Self {
+        HandleResult {
+            rpcs: vec![],
+            groups: vec![],
+            layers: vec![],
+        }
+    }
+}

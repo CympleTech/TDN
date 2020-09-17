@@ -1,14 +1,13 @@
 use serde::de::DeserializeOwned as SeDeserializeOwned;
 use serde::ser::Serialize as SeSerialize;
 use serde::{Deserialize, Serialize};
-use smol::io::Result;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 
 use tdn_types::{
     group::GroupId,
     primitive::{
-        PeerAddr, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, LAYER_ADDR, LAYER_PUBLIC_DEFAULT,
+        PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, LAYER_ADDR, LAYER_PUBLIC_DEFAULT,
         P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
     },
 };
