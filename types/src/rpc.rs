@@ -7,6 +7,8 @@ use std::sync::Arc;
 pub use serde_json::json;
 pub type RpcParam = Value;
 
+use crate::primitive::{HandleResult, Result};
+
 #[derive(Debug, Clone)]
 pub enum RpcError<'a> {
     ParseError,
@@ -161,8 +163,8 @@ pub struct RpcHandler<S: 'static + Send + Sync> {
     //fns: HashMap<&'static str, BoxFuture<'static, RpcResult<'static>>>,
 }
 
-type RpcResult<'a> = std::result::Result<RpcParam, RpcError<'a>>;
-type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+type RpcResult<'a> = std::result::Result<HandleResult, RpcError<'a>>;
+type BoxFuture<'a, RpcResult> = Pin<Box<dyn Future<Output = RpcResult> + Send + 'a>>;
 
 pub trait FutFn<S>: Send + Sync + 'static {
     fn call<'a>(&'a self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<'a, RpcResult<'a>>;
@@ -193,32 +195,53 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         self.fns.insert(name, Box::new(f));
     }
 
-    pub async fn handle(&self, mut param: RpcParam) -> RpcParam {
+    pub async fn handle(&self, mut param: RpcParam) -> Result<HandleResult> {
         let id = param["id"].take().as_u64().unwrap();
         let method_s = param["method"].take();
         let method = method_s.as_str().unwrap();
+        let mut new_results = HandleResult::new();
+
         if let RpcParam::Array(params) = param["params"].take() {
             match self.fns.get(method) {
                 Some(f) => {
                     let res = f.call(params, self.state.clone()).await;
                     match res {
-                        Ok(params) => json!({
-                            "jsonrpc": "2.0",
-                            "id": id,
-                            "method": method,
-                            "result": params,
-                        }),
+                        Ok(HandleResult {
+                            rpcs,
+                            groups,
+                            layers,
+                        }) => {
+                            new_results.groups = groups;
+                            new_results.layers = layers;
+
+                            for params in rpcs {
+                                new_results.rpcs.push(rpc_response(id, method, params));
+                            }
+                        }
                         Err(err) => {
                             let mut res = err.json(id);
                             res["method"] = method.into();
-                            res
+                            new_results.rpcs.push(res);
                         }
                     }
                 }
-                None => RpcError::MethodNotFound(method).json(id),
+                None => new_results
+                    .rpcs
+                    .push(RpcError::MethodNotFound(method).json(id)),
             }
         } else {
-            RpcError::InvalidRequest.json(id)
+            new_results.rpcs.push(RpcError::InvalidRequest.json(id))
         }
+
+        Ok(new_results)
     }
+}
+
+pub fn rpc_response(id: u64, method: &str, params: RpcParam) -> RpcParam {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "method": method,
+        "result": params
+    })
 }

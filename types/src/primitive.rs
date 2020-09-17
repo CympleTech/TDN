@@ -85,21 +85,45 @@ pub fn vec_check_push<T: Eq + PartialEq>(vec: &mut Vec<T>, item: T) {
 }
 
 /// Helper: this is the group/layer/rpc handle result in the network.
-pub struct HandleResult<'a> {
+pub struct HandleResult {
     /// rpc tasks: [(method, params)].
-    pub rpcs: Vec<(&'a str, crate::rpc::RpcParam)>,
+    pub rpcs: Vec<crate::rpc::RpcParam>,
     /// group tasks: [GroupSendMessage]
     pub groups: Vec<crate::message::GroupSendMessage>,
     /// layer tasks: [LayerSendMessage]
     pub layers: Vec<crate::message::LayerSendMessage>,
 }
 
-impl<'a> HandleResult<'a> {
+impl<'a> HandleResult {
     pub fn new() -> Self {
         HandleResult {
             rpcs: vec![],
             groups: vec![],
             layers: vec![],
+        }
+    }
+
+    pub fn rpc(p: crate::rpc::RpcParam) -> Self {
+        HandleResult {
+            rpcs: vec![p],
+            groups: vec![],
+            layers: vec![],
+        }
+    }
+
+    pub fn group(m: crate::message::GroupSendMessage) -> Self {
+        HandleResult {
+            rpcs: vec![],
+            groups: vec![m],
+            layers: vec![],
+        }
+    }
+
+    pub fn layer(m: crate::message::LayerSendMessage) -> Self {
+        HandleResult {
+            rpcs: vec![],
+            groups: vec![],
+            layers: vec![m],
         }
     }
 }

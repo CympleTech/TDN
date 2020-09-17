@@ -72,7 +72,7 @@ pub trait Group {
     fn guard(&self, addr: &PeerAddr) -> bool;
 
     /// when receive group message, handle it, and return HandleResult.
-    fn handle<'a>(&mut self, msg: GroupReceiveMessage) -> Result<HandleResult<'a>>;
+    fn handle<'a>(&mut self, msg: GroupReceiveMessage) -> Result<HandleResult>;
 }
 
 /// Helper: this is the interface of the Peer in the network.
