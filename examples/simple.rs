@@ -1,4 +1,6 @@
 use tdn::prelude::*;
+use tdn::types::rpc::{RpcHandler, json};
+use std::sync::Arc;
 
 struct State(u32);
 
@@ -8,18 +10,14 @@ fn main() {
         println!("Example: peer id: {}", peer_addr.short_show());
 
         let mut rpc_handler = RpcHandler::new(State(1));
-        rpc_handler.add_method("echo", |params, state| {
-            Box::pin(async move {
-                assert_eq!(1, state.0);
-                Ok(RpcParam::Array(params))
-            })
+        rpc_handler.add_method("echo", |params, state: Arc<State>| async move {
+            assert_eq!(1, state.0);
+            Ok(HandleResult::rpc(json!(params)))
         });
 
-        rpc_handler.add_method("say_hello", |_params, state| {
-            Box::pin(async move {
-                assert_eq!(1, state.0);
-                Ok(RpcParam::String("Hello".to_owned()))
-            })
+        rpc_handler.add_method("say_hello", |_params, state: Arc<State>| async move {
+            assert_eq!(1, state.0);
+            Ok(HandleResult::rpc(json!("hello")))
         });
 
         while let Ok(message) = out_recv.recv().await {
@@ -61,13 +59,16 @@ fn main() {
                     _ => {}
                 },
                 ReceiveMessage::Rpc(uid, params, is_ws) => {
-                    let _ = send
-                        .send(SendMessage::Rpc(
-                            uid,
-                            rpc_handler.handle(params).await,
-                            is_ws,
-                        ))
-                        .await;
+                    if let Ok(HandleResult {mut rpcs, groups, layers}) = rpc_handler.handle(params).await {
+                        loop {
+                            if rpcs.len() != 0 {
+                                let msg = rpcs.remove(0);
+                                send.send(SendMessage::Rpc(uid, msg, is_ws)).await.expect("TDN channel closed");
+                            } else {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -36,8 +36,7 @@ pub mod prelude {
     pub use tdn_types::message::{LayerReceiveMessage, LayerSendMessage};
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
     pub use tdn_types::message::{SingleReceiveMessage, SingleSendMessage};
-    pub use tdn_types::primitive::{Broadcast, PeerAddr};
-    pub use tdn_types::rpc::RpcParam;
+    pub use tdn_types::primitive::{Broadcast, PeerAddr, HandleResult};
 
     use futures::join;
     use smol::{

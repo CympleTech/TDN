@@ -132,15 +132,16 @@ pub fn parse_jsonrpc<'a>(
 
 /// Helpe better handle rpc. Example.
 /// ``` rust
-/// use tdn_types::rpc::{RpcParam, RpcHandler, json};
+/// use tdn_types::{primitive::HandleResult, rpc::{RpcParam, RpcHandler, json}};
+/// use std::sync::Arc;
 ///
 /// struct State(u32); // Global State share in all rpc request.
 ///
 /// let mut rpc_handler = RpcHandler::new(State(1));
-/// rpc_handler.add_method("echo", |params, state|
+/// rpc_handler.add_method("echo", |params: Vec<RpcParam>, state: Arc<State>|
 ///     async move {
 ///         assert_eq!(1, state.0);
-///         Ok(RpcParam::Array(params))
+///         Ok(HandleResult::rpc(json!(params)))
 ///    }
 /// );
 ///
@@ -150,12 +151,20 @@ pub fn parse_jsonrpc<'a>(
 /// };
 ///
 /// // when match Message
-/// //match msg {
-/// //    Message::Rpc(uid, params) => Message::Rpc(uid, params) => {
-/// //        send.send(Message::Rpc(uid, rpc_handler.handle(params).await)).await;
-/// //    }
-/// //    _ => {}
-/// //}
+/// match msg {
+///     Message::Rpc(uid, params) => Message::Rpc(uid, params) => {
+///         if let Ok(HandleResult {mut rpcs, groups, layers}) = rpc_handler.handle(params).await {
+///             loop {
+///                 if rpcs.len() != 0 {
+///                     let msg = rpcs.remove(0);
+///                     sender.send(SendMessage::Rpc(uid, msg, is_ws)).await.expect("TDN channel closed");
+///                 } else {
+///                     break;
+///             }
+///         }
+///     }
+///     _ => {}
+/// }
 /// ````
 pub struct RpcHandler<S: 'static + Send + Sync> {
     state: Arc<S>,
