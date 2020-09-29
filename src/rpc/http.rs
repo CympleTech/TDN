@@ -5,6 +5,7 @@ use smol::{
     lock::RwLock,
     net::{TcpListener, TcpStream},
     prelude::*,
+    fs,
 };
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -12,8 +13,6 @@ use std::sync::Arc;
 //use std::time::Duration;
 
 use tdn_types::rpc::parse_jsonrpc;
-
-use crate::storage::read_string_absolute_file;
 
 use super::{rpc_channel, RpcMessage};
 
@@ -23,7 +22,7 @@ pub(crate) async fn http_listen(
     listener: TcpListener,
 ) -> Result<()> {
     let homepage = if let Some(path) = index {
-        read_string_absolute_file(&path)
+        fs::read_to_string(path)
             .await
             .unwrap_or("Error Homepage.".to_owned())
     } else {

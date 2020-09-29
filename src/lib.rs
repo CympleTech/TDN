@@ -21,7 +21,6 @@ mod rpc;
 
 // public mod
 pub mod error;
-pub mod storage;
 
 // re-export smol
 pub use smol;

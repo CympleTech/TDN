@@ -3,6 +3,7 @@ use serde::ser::Serialize as SeSerialize;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
+use smol::fs;
 
 use tdn_types::{
     group::GroupId,
@@ -15,7 +16,6 @@ use tdn_types::{
 use crate::layer::LayerConfig;
 use crate::p2p::P2pConfig;
 use crate::rpc::RpcConfig;
-use crate::storage::read_string_absolute_file;
 
 /// load config from config file.
 pub struct Config {
@@ -351,5 +351,5 @@ impl RawConfig {
 async fn load_file_string(mut path: PathBuf) -> Result<String> {
     path.push(CONFIG_FILE_NAME);
     debug!("DEBUG-TDN: config file: {:?}", path);
-    read_string_absolute_file(&path).await
+    fs::read_to_string(path).await
 }
