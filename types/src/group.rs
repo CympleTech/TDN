@@ -72,12 +72,12 @@ pub trait Group {
     fn guard(&self, addr: &PeerAddr) -> bool;
 
     /// when receive group message, handle it, and return HandleResult.
-    fn handle<'a>(&mut self, msg: GroupReceiveMessage) -> Result<HandleResult>;
+    fn handle(&mut self, msg: GroupReceiveMessage) -> Result<HandleResult>;
 }
 
 /// Helper: this is the interface of the Peer in the network.
 pub trait Peer {
-    type PublicKey: Serialize + DeserializeOwned;
+    type PublicKey: Serialize + DeserializeOwned + Eq + std::hash::Hash + Clone;
     type SecretKey: Serialize + DeserializeOwned;
     type Signature: Serialize + DeserializeOwned;
 

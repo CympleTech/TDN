@@ -19,8 +19,8 @@ default = ["dev"]
 dev = []
 
 [dependencies]
-#tdn_types = "0.2"
-tdn_types = { path = "./types" }
+tdn_types = "0.2"
+#tdn_types = { path = "./types" }
 futures = "0.3"
 smol = "1.0"
 serde = { version = "1", features = ["derive"] }

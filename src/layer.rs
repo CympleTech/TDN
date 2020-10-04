@@ -360,7 +360,8 @@ async fn process_stream(
     let is_upper = has_remote_public.is_some();
     debug!("DEBUG: start process stream");
     let addr = stream.peer_addr()?;
-    let (mut reader, mut writer) = &mut (&stream, &stream);
+    let mut reader = stream.clone();
+    let mut writer = stream;
 
     // if is to upper, send self-info first.
     if is_upper {
