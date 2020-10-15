@@ -1127,7 +1127,7 @@ dependencies = [
  "serde_json",
  "smol",
  "tdn_permission",
- "tdn_types 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tdn_types 0.2.1",
  "toml",
 ]
 
