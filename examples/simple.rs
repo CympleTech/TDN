@@ -1,6 +1,6 @@
-use tdn::prelude::*;
-use tdn::types::rpc::{RpcHandler, json};
 use std::sync::Arc;
+use tdn::prelude::*;
+use tdn::types::rpc::{json, RpcHandler};
 
 struct State(u32);
 
@@ -23,13 +23,13 @@ fn main() {
         while let Ok(message) = out_recv.recv().await {
             match message {
                 ReceiveMessage::Group(msg) => match msg {
-                    GroupReceiveMessage::PeerJoin(peer, addr, _data) => {
-                        println!("receive group peer {} {:?} join", peer.short_show(), addr);
+                    GroupReceiveMessage::StableConnect(peer, _data) => {
+                        println!("receive group peer {} join", peer.short_show());
                     }
-                    GroupReceiveMessage::PeerJoinResult(..) => {
+                    GroupReceiveMessage::StableResult(..) => {
                         //
                     }
-                    GroupReceiveMessage::PeerLeave(peer) => {
+                    GroupReceiveMessage::StableLeave(peer) => {
                         println!("receive group peer {} leave", peer.short_show());
                     }
                     GroupReceiveMessage::Event(peer, _data) => {
@@ -59,11 +59,18 @@ fn main() {
                     _ => {}
                 },
                 ReceiveMessage::Rpc(uid, params, is_ws) => {
-                    if let Ok(HandleResult {mut rpcs, groups, layers}) = rpc_handler.handle(params).await {
+                    if let Ok(HandleResult {
+                        mut rpcs,
+                        groups,
+                        layers,
+                    }) = rpc_handler.handle(params).await
+                    {
                         loop {
                             if rpcs.len() != 0 {
                                 let msg = rpcs.remove(0);
-                                send.send(SendMessage::Rpc(uid, msg, is_ws)).await.expect("TDN channel closed");
+                                send.send(SendMessage::Rpc(uid, msg, is_ws))
+                                    .await
+                                    .expect("TDN channel closed");
                             } else {
                                 break;
                             }

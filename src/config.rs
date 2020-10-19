@@ -1,9 +1,9 @@
 use serde::de::DeserializeOwned as SeDeserializeOwned;
 use serde::ser::Serialize as SeSerialize;
 use serde::{Deserialize, Serialize};
+use smol::fs;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
-use smol::fs;
 
 use tdn_types::{
     group::GroupId,
@@ -22,9 +22,9 @@ pub struct Config {
     pub db_path: Option<PathBuf>,
     pub group_id: GroupId,
     pub permission: bool,
+    pub only_stable_data: bool,
 
     pub p2p_addr: SocketAddr,
-    pub p2p_join_data: Vec<u8>,
     pub p2p_transport: String,
     pub p2p_white_list: Vec<SocketAddr>,
     pub p2p_black_list: Vec<IpAddr>,
@@ -51,8 +51,8 @@ impl Config {
             group_id: _, // DEBUG Not used ?
 
             permission,
+            only_stable_data,
             p2p_addr,
-            p2p_join_data,
             p2p_transport,
             p2p_white_list,
             p2p_black_list,
@@ -79,13 +79,13 @@ impl Config {
                 DEFAULT_STORAGE_DIR.clone()
             },
             addr: p2p_addr,
-            join_data: p2p_join_data,
             transport: p2p_transport,
             white_list: p2p_white_list,
             black_list: p2p_black_list,
             white_peer_list: p2p_white_peer_list,
             black_peer_list: p2p_black_peer_list,
             permission: permission,
+            only_stable_data: only_stable_data,
         };
 
         let layer_config = LayerConfig {
@@ -113,9 +113,9 @@ impl Config {
         Config {
             db_path: None,
             group_id: GroupId::default(),
-            permission: false, //default is permissionless
+            permission: false,       // default is permissionless
+            only_stable_data: false, // default is permissionless
             p2p_addr: p2p_addr,
-            p2p_join_data: vec![],
             p2p_transport: P2P_TRANSPORT.to_owned(),
             p2p_white_list: vec![],
             p2p_black_list: vec![],
@@ -202,9 +202,9 @@ pub struct RawConfig {
     pub group_id: Option<String>,
     pub group_symbol: Option<String>,
     pub permission: Option<bool>,
+    pub only_stable_data: Option<bool>,
 
     pub p2p_addr: Option<SocketAddr>,
-    pub p2p_join_data: Option<String>,
     pub p2p_default_transport: Option<String>,
     pub p2p_bootstrap: Vec<SocketAddr>,
     pub p2p_black_list: Option<Vec<IpAddr>>,
@@ -259,22 +259,8 @@ impl RawConfig {
                         .unwrap_or(GroupId::default()),
                 ),
             permission: self.permission.unwrap_or(false),
+            only_stable_data: self.only_stable_data.unwrap_or(false),
             p2p_addr: self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),
-            p2p_join_data: self
-                .p2p_join_data
-                .map(|s| {
-                    let mut value: Vec<u8> = vec![];
-
-                    for i in 0..(s.len() / 2) {
-                        let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16);
-                        if res.is_err() {
-                            return vec![];
-                        }
-                        value.push(res.unwrap());
-                    }
-                    value
-                })
-                .unwrap_or(vec![]),
             p2p_transport: self
                 .p2p_default_transport
                 .unwrap_or(P2P_TRANSPORT.to_owned()),

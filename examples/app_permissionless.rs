@@ -10,13 +10,13 @@ fn main() {
         while let Ok(message) = out_recv.recv().await {
             match message {
                 ReceiveMessage::Group(msg) => match msg {
-                    GroupReceiveMessage::PeerJoin(peer, addr, data) => {
+                    GroupReceiveMessage::StableConnect(peer, data) => {
                         group.join(peer, addr, data, send.clone()).await;
                     }
-                    GroupReceiveMessage::PeerJoinResult(..) => {
+                    GroupReceiveMessage::StableResult(..) => {
                         //
                     }
-                    GroupReceiveMessage::PeerLeave(peer) => {
+                    GroupReceiveMessage::StableLeave(peer) => {
                         group.leave(&peer);
                     }
                     GroupReceiveMessage::Event(peer, _data) => {

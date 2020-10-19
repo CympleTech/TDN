@@ -43,19 +43,19 @@ async fn run_listen<M: GroupMessage>(
             msg = p2p_recv.recv().fuse() => match msg {
                 Ok(msg) => {
                     match msg {
-                        ReceiveMessage::PeerJoin(peer_addr, addr, data) => {
+                        ReceiveMessage::StableConnect(peer_addr, data) => {
                             out_send.send(M::new_group(
-                                GroupReceiveMessage::PeerJoin(peer_addr, addr, data)
+                                GroupReceiveMessage::StableConnect(peer_addr, data)
                             )).await.expect("P2P to Outside channel closed");
                         },
-                        ReceiveMessage::PeerJoinResult(peer_addr, is_ok, data) => {
+                        ReceiveMessage::StableResult(peer_addr, is_ok, data) => {
                             out_send.send(M::new_group(
-                                GroupReceiveMessage::PeerJoinResult(peer_addr, is_ok, data)
+                                GroupReceiveMessage::StableResult(peer_addr, is_ok, data)
                             )).await.expect("P2P to Outside channel closed");
                         },
-                        ReceiveMessage::PeerLeave(peer_addr) => {
+                        ReceiveMessage::StableLeave(peer_addr) => {
                             out_send.send(M::new_group(
-                                GroupReceiveMessage::PeerLeave(peer_addr)
+                                GroupReceiveMessage::StableLeave(peer_addr)
                             )).await.expect("P2P to Outside channel closed");
                         },
                         ReceiveMessage::Data(peer_addr, data) => {
@@ -76,21 +76,21 @@ async fn run_listen<M: GroupMessage>(
             msg = self_recv.recv().fuse() => match msg {
                 Ok(msg) => {
                     match msg {
-                        GroupSendMessage::PeerConnect(peer_addr, addr, data) => {
-                            p2p_send.send(SendMessage::PeerConnect(peer_addr, addr, data))
+                        GroupSendMessage::StableConnect(peer_addr, addr, data) => {
+                            p2p_send.send(SendMessage::StableConnect(peer_addr, addr, data))
                                 .await.expect("P2P to chamomile channel closed");
                         },
-                        GroupSendMessage::PeerDisconnect(peer_addr) => {
-                            p2p_send.send(SendMessage::PeerDisconnect(peer_addr))
+                        GroupSendMessage::StableDisconnect(peer_addr) => {
+                            p2p_send.send(SendMessage::StableDisconnect(peer_addr))
                                 .await.expect("P2P to chamomile channel closed");
                         },
-                        GroupSendMessage::PeerJoinResult(peer_addr, is_ok, is_force, result) => {
-                            p2p_send.send(SendMessage::PeerJoinResult(
+                        GroupSendMessage::StableResult(peer_addr, is_ok, is_force, result) => {
+                            p2p_send.send(SendMessage::StableResult(
                                 peer_addr, is_ok, is_force, result))
                                 .await.expect("P2P to chamomile channel closed");
                         },
-                        GroupSendMessage::Connect(addr, data) => {
-                            p2p_send.send(SendMessage::Connect(addr, data))
+                        GroupSendMessage::Connect(addr) => {
+                            p2p_send.send(SendMessage::Connect(addr))
                                 .await.expect("P2P to chamomile channel closed");
                         },
                         GroupSendMessage::DisConnect(addr) => {

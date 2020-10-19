@@ -12,11 +12,18 @@ group_id = "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4"
 ## Example: group_symbol = "CypherLink"
 group_symbol = "CypherLink"
 
+## App Permission.
+## If set true, it is permissioned, and only stable connection;
+## if set false, it is permissionless, has stable connection and DHT(p2p) connection.
+## Default is false.
+## Suggest: if want a permissioned DApp, use `permission = false` and `only_stable_data = true`.
+permission = false
+
+## If only receive stable connection's data.
+only_stable_data = false
+
 ## P2P listen address, default is 0.0.0.0:7364,  uncomment below to change.
 p2p_addr = "0.0.0.0:7364"
-
-## P2P when peer join, defined data.
-#p2p_join_data = "8247"
 
 ## P2P transport include: tcp, udp, udt, rtp, default is udp.
 p2p_default_transport = "tcp"

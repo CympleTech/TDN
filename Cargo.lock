@@ -347,7 +347,7 @@ version = "0.2.0"
 dependencies = [
  "aes-soft",
  "block-modes",
- "chamomile_types",
+ "chamomile_types 0.2.0",
  "ed25519-dalek",
  "log",
  "postcard",
@@ -358,6 +358,14 @@ dependencies = [
  "smol",
  "toml",
  "x25519-dalek",
+]
+
+[[package]]
+name = "chamomile_types"
+version = "0.2.0"
+dependencies = [
+ "async-channel",
+ "serde",
 ]
 
 [[package]]
@@ -1127,7 +1135,7 @@ dependencies = [
  "serde_json",
  "smol",
  "tdn_permission",
- "tdn_types 0.2.1",
+ "tdn_types 0.3.0",
  "toml",
 ]
 
@@ -1140,14 +1148,16 @@ dependencies = [
  "async-channel",
  "postcard",
  "serde",
- "tdn_types 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tdn_types 0.2.1",
 ]
 
 [[package]]
 name = "tdn_types"
 version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91c2009789ab9e55214d359cb0679824e3eaf1d71fcac68ad9818060209bbd77"
 dependencies = [
- "chamomile_types",
+ "chamomile_types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs",
  "lazy_static",
  "serde",
@@ -1157,11 +1167,9 @@ dependencies = [
 
 [[package]]
 name = "tdn_types"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91c2009789ab9e55214d359cb0679824e3eaf1d71fcac68ad9818060209bbd77"
+version = "0.3.0"
 dependencies = [
- "chamomile_types",
+ "chamomile_types 0.2.0",
  "dirs",
  "lazy_static",
  "serde",

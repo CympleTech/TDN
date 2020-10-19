@@ -9,7 +9,6 @@
 //! lightweight application framework, TDN can satisfy you.
 
 #![recursion_limit = "1024"]
-#![feature(associated_type_defaults)]
 
 #[macro_use]
 extern crate log;
@@ -36,7 +35,7 @@ pub mod prelude {
     pub use tdn_types::message::{LayerReceiveMessage, LayerSendMessage};
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
     pub use tdn_types::message::{SingleReceiveMessage, SingleSendMessage};
-    pub use tdn_types::primitive::{Broadcast, PeerAddr, HandleResult};
+    pub use tdn_types::primitive::{Broadcast, HandleResult, PeerAddr};
 
     use futures::join;
     use smol::{

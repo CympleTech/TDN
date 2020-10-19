@@ -7,26 +7,25 @@ use crate::rpc::RpcParam;
 /// channel message send to TDN Group.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GroupSendMessage {
-    /// when need add a peer, send to TDN from outside.
+    /// when need stable connect to a peer, send to TDN from outside.
     /// params is `peer_id`, `socket_addr` and peer `join_info`.
-    PeerConnect(PeerAddr, Option<SocketAddr>, Vec<u8>),
+    StableConnect(PeerAddr, Option<SocketAddr>, Vec<u8>),
     /// when outside want to close a connectioned peer. use it force close.
     /// params is `peer_id`.
-    PeerDisconnect(PeerAddr),
-    /// when peer request for join, outside decide connect or not.
+    StableDisconnect(PeerAddr),
+    /// when peer request for stable, outside decide connect or not.
     /// params is `peer_id`, `is_connect`, `is_force_close`, `result info`.
     /// if `is_connect` is true, it will add to white directly list.
     /// we want to build a better network, add a `is_force_close`.
     /// if `is_connect` is false, but `is_force_close` if true, we
     /// will use this peer to build our DHT for better connection.
     /// if false, we will force close it.
-    PeerJoinResult(PeerAddr, bool, bool, Vec<u8>),
-    /// when outside want to connect a peer. will try connect directly.
-    /// if connected, TDN will send PeerJoin back. if join_info is none,
-    /// TDN will use config's join_data as default.
-    /// params is `socket_addr`, `join_info`.
-    Connect(SocketAddr, Option<Vec<u8>>),
-    /// when outside donnot want to connect peer. use it to force close.
+    StableResult(PeerAddr, bool, bool, Vec<u8>),
+    /// when outside want to add a peer to bootstrap and DHT.
+    /// if connected, TDN will add it to boostrap and DHT.
+    /// params is `socket_addr`.
+    Connect(SocketAddr),
+    /// when outside donnot want to remove peer. use it to force close.
     /// params is `socket_addr`.
     DisConnect(SocketAddr),
     /// when need send a data to a peer, only need know the peer_id,
@@ -45,15 +44,15 @@ pub enum GroupSendMessage {
 /// channel message receive from TDN Group.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GroupReceiveMessage {
-    /// when peer join, send from TDN to outside.
-    /// params is `peer_id`, `socket_addr` and peer `join_info`.
-    PeerJoin(PeerAddr, SocketAddr, Vec<u8>),
-    /// when peer get join result.
+    /// when peer what a stable connection, send from TDN to outside.
+    /// params is `peer_id`, and peer `connect_info`.
+    StableConnect(PeerAddr, Vec<u8>),
+    /// when peer a stable connect result.
     /// params is `peer_id`, `is_ok` and `result_data`.
-    PeerJoinResult(PeerAddr, bool, Vec<u8>),
-    /// when peer leave, send from TDN to outside.
+    StableResult(PeerAddr, bool, Vec<u8>),
+    /// when a stable connected peer leave, send from TDN to outside.
     /// params is `peer_id`.
-    PeerLeave(PeerAddr),
+    StableLeave(PeerAddr),
     /// when received a data from a trusted peer, send to outside.
     /// params is `peer_id` and `data_bytes`.
     Event(PeerAddr, Vec<u8>),
