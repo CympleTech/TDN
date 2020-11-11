@@ -133,15 +133,24 @@ pub mod prelude {
             while let Ok(message) = self_recv.recv().await {
                 match message {
                     SendMessage::Layer(msg) => {
-                        layer_sender.send(msg).await.expect("Layer channel closed");
+                        layer_sender
+                            .send(msg)
+                            .await
+                            .map_err(|e| error!("{:?}", e))
+                            .expect("Layer channel closed");
                     }
                     SendMessage::Group(msg) => {
-                        p2p_sender.send(msg).await.expect("Group channel closed");
+                        p2p_sender
+                            .send(msg)
+                            .await
+                            .map_err(|e| error!("{:?}", e))
+                            .expect("Group channel closed");
                     }
                     SendMessage::Rpc(uid, param, is_ws) => {
                         rpc_sender
                             .send(RpcSendMessage(uid, param, is_ws))
                             .await
+                            .map_err(|e| error!("{:?}", e))
                             .expect("Rpc channel closed");
                     }
                 }
@@ -204,12 +213,17 @@ pub mod prelude {
             while let Ok(message) = self_recv.recv().await {
                 match message {
                     SingleSendMessage::Group(msg) => {
-                        p2p_sender.send(msg).await.expect("Group channel closed");
+                        p2p_sender
+                            .send(msg)
+                            .await
+                            .map_err(|e| error!("{:?}", e))
+                            .expect("Group channel closed");
                     }
                     SingleSendMessage::Rpc(uid, param, is_ws) => {
                         rpc_sender
                             .send(RpcSendMessage(uid, param, is_ws))
                             .await
+                            .map_err(|e| error!("{:?}", e))
                             .expect("Rpc channel closed");
                     }
                 }

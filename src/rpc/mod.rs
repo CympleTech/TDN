@@ -112,7 +112,10 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
     smol::spawn(http::http_listen(
         config.index.clone(),
         send.clone(),
-        TcpListener::bind(config.addr).await?,
+        TcpListener::bind(config.addr).await.map_err(|e| {
+            error!("RPC HTTP listen {:?}", e);
+            std::io::Error::new(std::io::ErrorKind::Other, "TCP Listen")
+        })?,
     ))
     .detach();
 
@@ -120,7 +123,10 @@ async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
     if config.ws.is_some() {
         smol::spawn(ws::ws_listen(
             send,
-            TcpListener::bind(config.ws.unwrap()).await?,
+            TcpListener::bind(config.ws.unwrap()).await.map_err(|e| {
+                error!("RPC WS listen {:?}", e);
+                std::io::Error::new(std::io::ErrorKind::Other, "TCP Listen")
+            })?,
         ))
         .detach();
     }

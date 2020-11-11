@@ -1,11 +1,11 @@
 use rand::prelude::*;
 use smol::{
     channel::Sender,
+    fs,
     io::Result,
     lock::RwLock,
     net::{TcpListener, TcpStream},
     prelude::*,
-    fs,
 };
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -123,7 +123,7 @@ async fn http_connection(
     };
 
     let msg = String::from_utf8_lossy(body);
-    let res = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
+    let res = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin:*;charset=UTF-8\r\n\r\n";
 
     match parse_jsonrpc((*msg).to_string()) {
         Ok(rpc_param) => {

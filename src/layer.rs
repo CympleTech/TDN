@@ -86,7 +86,11 @@ pub(crate) async fn start(
         return Ok(out_send);
     }
 
-    let listener = TcpListener::bind(addr).await?;
+    let listener = TcpListener::bind(addr).await.map_err(|e| {
+        error!("Layer TCP listen {:?}", e);
+        std::io::Error::new(std::io::ErrorKind::Other, "TCP Listen")
+    })?;
+
     smol::spawn(run_listener(listener, send.clone(), self_send.clone())).detach();
     smol::spawn(run_receiver(
         gid,
