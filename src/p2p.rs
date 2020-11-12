@@ -110,6 +110,10 @@ async fn run_listen<M: GroupMessage>(
                             p2p_send.send(SendMessage::Stream(id, stream))
                                 .await.expect("P2P to chamomile channel closed");
                         }
+                        GroupSendMessage::NetworkState(req, sender) => {
+                            p2p_send.send(SendMessage::NetworkState(req, sender))
+                                .await.expect("P2P to chamomile channel closed");
+                        }
                     }
                 },
                 Err(_) => break,

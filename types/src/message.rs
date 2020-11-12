@@ -1,11 +1,14 @@
+use async_channel::Sender;
 use std::net::SocketAddr;
+
+pub use chamomile_types::message::{StateRequest, StateResponse};
 
 use crate::group::GroupId;
 use crate::primitive::{Broadcast, PeerAddr, StreamType};
 use crate::rpc::RpcParam;
 
 /// channel message send to TDN Group.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum GroupSendMessage {
     /// when need stable connect to a peer, send to TDN from outside.
     /// params is `peer_id`, `socket_addr` and peer `join_info`.
@@ -39,10 +42,13 @@ pub enum GroupSendMessage {
     /// Apply for build a stream between nodes.
     /// params is `u32` stream symbol, and `StreamType`.
     Stream(u32, StreamType),
+    /// Request for return the network current state info.
+    /// params is request type, and return channel's sender (async).
+    NetworkState(StateRequest, Sender<StateResponse>),
 }
 
 /// channel message receive from TDN Group.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum GroupReceiveMessage {
     /// when peer what a stable connection, send from TDN to outside.
     /// params is `peer_id`, and peer `connect_info`.
@@ -62,7 +68,7 @@ pub enum GroupReceiveMessage {
 }
 
 /// channel message send to TDN Layers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum LayerSendMessage {
     /// Upper layer send to here, and return send to upper.
     Upper(GroupId, Vec<u8>),
@@ -81,7 +87,7 @@ pub enum LayerSendMessage {
 }
 
 /// channel message receive from TDN Layers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum LayerReceiveMessage {
     /// Upper layer send to here, and return send to upper.
     Upper(GroupId, Vec<u8>),

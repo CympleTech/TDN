@@ -31,7 +31,9 @@ pub mod prelude {
     pub use super::config::Config;
 
     pub use tdn_types::group::GroupId;
-    pub use tdn_types::message::{GroupReceiveMessage, GroupSendMessage};
+    pub use tdn_types::message::{
+        GroupReceiveMessage, GroupSendMessage, StateRequest, StateResponse,
+    };
     pub use tdn_types::message::{LayerReceiveMessage, LayerSendMessage};
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
     pub use tdn_types::message::{SingleReceiveMessage, SingleSendMessage};
