@@ -39,9 +39,9 @@ pub mod prelude {
     pub use tdn_types::message::{SingleReceiveMessage, SingleSendMessage};
     pub use tdn_types::primitive::{Broadcast, HandleResult, PeerAddr};
 
-    use futures::join;
     use smol::{
         channel::{self, Receiver, Sender},
+        future,
         io::Result,
     };
     use std::collections::HashMap;
@@ -123,13 +123,14 @@ pub mod prelude {
         // start p2p
         // start layer_rpc
         // start inner json_rpc
-        let (p2p_sender_result, layer_sender_result, rpc_sender_result) = join!(
+        let ((peer_addr, p2p_sender), (layer_sender, rpc_sender)) = future::try_zip(
             p2p_start(p2p_config, out_send.clone()),
-            layer_start(gid, layer_config, out_send.clone()),
-            rpc_start(rpc_config, out_send)
-        );
-        let ((peer_addr, p2p_sender), layer_sender, rpc_sender) =
-            (p2p_sender_result?, layer_sender_result?, rpc_sender_result?);
+            future::try_zip(
+                layer_start(gid, layer_config, out_send.clone()),
+                rpc_start(rpc_config, out_send),
+            ),
+        )
+        .await?;
 
         smol::spawn(async move {
             while let Ok(message) = self_recv.recv().await {
@@ -205,11 +206,11 @@ pub mod prelude {
 
         // start p2p
         // start inner json_rpc
-        let (p2p_sender_result, rpc_sender_result) = join!(
+        let ((peer_addr, p2p_sender), rpc_sender) = future::try_zip(
             p2p_start(p2p_config, out_send.clone()),
-            rpc_start(rpc_config, out_send)
-        );
-        let ((peer_addr, p2p_sender), rpc_sender) = (p2p_sender_result?, rpc_sender_result?);
+            rpc_start(rpc_config, out_send),
+        )
+        .await?;
 
         smol::spawn(async move {
             while let Ok(message) = self_recv.recv().await {

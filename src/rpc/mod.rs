@@ -1,9 +1,9 @@
 mod http;
 mod ws;
 
-use futures::{select, FutureExt};
 use smol::{
     channel::{self, Receiver, Sender},
+    future,
     net::TcpListener,
 };
 use std::collections::HashMap;
@@ -51,6 +51,11 @@ pub(crate) async fn start<M: 'static + RpcMessageTrait>(
     Ok(out_send)
 }
 
+enum FutureResult {
+    Out(RpcSendMessage),
+    Stream(RpcMessage),
+}
+
 async fn listen<M: 'static + RpcMessageTrait>(
     send: Sender<M>,
     out_recv: Receiver<RpcSendMessage>,
@@ -60,46 +65,47 @@ async fn listen<M: 'static + RpcMessageTrait>(
         let mut connections: HashMap<u64, Sender<RpcMessage>> = HashMap::new();
 
         loop {
-            select! {
-                msg = out_recv.recv().fuse() => match msg {
-                    Ok(msg) => {
-                        let RpcSendMessage(id, params, is_ws) = msg;
-                        if is_ws {
-                            let s = connections.get(&id);
-                            if s.is_some() {
-                                let _ = s.unwrap().send(RpcMessage::Response(params)).await;
-                            }
-                        } else {
-                            let s = connections.remove(&id);
-                            if s.is_some() {
-                                let _ = s.unwrap().send(RpcMessage::Response(params)).await;
-                            }
+            match future::race(
+                async { out_recv.recv().await.map(|msg| FutureResult::Out(msg)) },
+                async { self_recv.recv().await.map(|msg| FutureResult::Stream(msg)) },
+            )
+            .await
+            {
+                Ok(FutureResult::Out(msg)) => {
+                    let RpcSendMessage(id, params, is_ws) = msg;
+                    if is_ws {
+                        let s = connections.get(&id);
+                        if s.is_some() {
+                            let _ = s.unwrap().send(RpcMessage::Response(params)).await;
                         }
-                    },
-                    Err(_) => break,
-                },
-                msg = self_recv.recv().fuse() => match msg {
-                    Ok(msg) => {
-                        match msg {
-                            RpcMessage::Request(id, params, sender) => {
-                                let is_ws = sender.is_none();
-                                if !is_ws {
-                                    connections.insert(id, sender.unwrap());
-                                }
-                                send.send(M::new_rpc(id, params, is_ws))
-                                    .await.expect("Rpc to Outside channel closed");
-                            }
-                            RpcMessage::Open(id, sender) => {
-                                connections.insert(id, sender);
-                            }
-                            RpcMessage::Close(id) => {
-                                connections.remove(&id);
-                            }
-                            _ => {} // others not handle
+                    } else {
+                        let s = connections.remove(&id);
+                        if s.is_some() {
+                            let _ = s.unwrap().send(RpcMessage::Response(params)).await;
                         }
-                    },
-                    Err(_) => break,
+                    }
                 }
+                Ok(FutureResult::Stream(msg)) => {
+                    match msg {
+                        RpcMessage::Request(id, params, sender) => {
+                            let is_ws = sender.is_none();
+                            if !is_ws {
+                                connections.insert(id, sender.unwrap());
+                            }
+                            send.send(M::new_rpc(id, params, is_ws))
+                                .await
+                                .expect("Rpc to Outside channel closed");
+                        }
+                        RpcMessage::Open(id, sender) => {
+                            connections.insert(id, sender);
+                        }
+                        RpcMessage::Close(id) => {
+                            connections.remove(&id);
+                        }
+                        _ => {} // others not handle
+                    }
+                }
+                Err(_) => break,
             }
         }
     })

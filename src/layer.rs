@@ -1,8 +1,8 @@
-use futures::{select, FutureExt};
 use serde::{Deserialize, Serialize};
 use smol::future::FutureExt as SmolFutureExt;
 use smol::{
     channel::{self, Receiver, Sender},
+    future,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
@@ -153,6 +153,11 @@ fn layer_buffer_insert(map: &mut LayerBuffer, gid: GroupId, uid: u32, send: Send
     }
 }
 
+enum FutureResult {
+    Out(LayerSendMessage),
+    Stream(StreamMessage),
+}
+
 async fn run_receiver(
     default_gid: GroupId,
     default_layer: Layer,
@@ -185,165 +190,181 @@ async fn run_receiver(
     }
 
     loop {
-        select! {
-            msg = out_recv.recv().fuse() => match msg {
-                Ok(msg) => {
-                    debug!("DEBUG: recv from outside: {:?}", msg);
-                    match msg {
-                        LayerSendMessage::Upper(gid, data) => {
-                            uppers.get(&gid).map(|h| {
-                                let _ = h.iter().map(|(_u, sender)| {
-                                    let data = data.clone();
-                                    async move {
-                                        let _ = sender.send(StreamMessage::Data(data)).await;
-                                    }
-                                });
-                            });
-                        }
-                        LayerSendMessage::Lower(gid, data) => {
-                            lowers.get(&gid).map(|h| {
-                                let _ = h.iter().map(|(_u, sender)| {
-                                    let data = data.clone();
-                                    async move {
-                                        let _ = sender.send(StreamMessage::Data(data)).await;
-                                    }
-                                });
-                            });
-                        }
-                        LayerSendMessage::UpperJoin(gid) => {
-                            // TODO start a upper to listener.
-                            if layers.contains_key(&gid) {
-                                continue;
-                            }
-                            // let layer = Layer {
-                            //     public: config.public,
-                            //     white_list: config.white_list,
-                            //     black_list: config.black_list,
-                            //     white_group_list: config.white_group_list,
-                            //     black_group_list: config.black_group_list,
-                            //     upper: config.upper,
-                            // }
-                        }
-                        LayerSendMessage::UpperLeave(gid) => {
-                            // TODO remove a upper to listener.
-                        }
-                        LayerSendMessage::LowerJoin(gid, remote_gid, _uid, addr, join_data) => {
-                            let _ = layers.get_mut(&gid).map(|layer| {
-                                // handle to upper
-                                layer.white_list.push(addr.ip());
-                                let remote_public = layer.generate_remote_public(remote_gid, gid);
-
-                                // TODO if join data
-                                if !uppers.contains_key(&gid) {
-                                    smol::spawn(run_client(
-                                        remote_public.clone(),
-                                        addr,
-                                        send.clone(),
-                                        self_send.clone(),
-                                    )).detach();
+        match future::race(
+            async { out_recv.recv().await.map(|msg| FutureResult::Out(msg)) },
+            async { self_recv.recv().await.map(|msg| FutureResult::Stream(msg)) },
+        )
+        .await
+        {
+            Ok(FutureResult::Out(msg)) => {
+                match msg {
+                    LayerSendMessage::Upper(gid, data) => {
+                        uppers.get(&gid).map(|h| {
+                            let _ = h.iter().map(|(_u, sender)| {
+                                let data = data.clone();
+                                async move {
+                                    let _ = sender.send(StreamMessage::Data(data)).await;
                                 }
                             });
+                        });
+                    }
+                    LayerSendMessage::Lower(gid, data) => {
+                        lowers.get(&gid).map(|h| {
+                            let _ = h.iter().map(|(_u, sender)| {
+                                let data = data.clone();
+                                async move {
+                                    let _ = sender.send(StreamMessage::Data(data)).await;
+                                }
+                            });
+                        });
+                    }
+                    LayerSendMessage::UpperJoin(gid) => {
+                        // TODO start a upper to listener.
+                        if layers.contains_key(&gid) {
+                            continue;
                         }
-                        LayerSendMessage::LowerJoinResult(gid, remote_gid, uid, is_ok) => {
-                            // handle to lowers
-                            match tmp_lowers.get_mut(&gid) {
-                                Some(h) => {
-                                    match h.remove(&uid) {
-                                        Some(sender) => if !is_ok {
-                                            let _ = sender.send(
-                                                StreamMessage::Close(gid, uid, true)
-                                            ).await;
-                                        } else {
-                                            let layer = layers.get(&gid).unwrap();
-                                            let _ = sender.send(
-                                                StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))
-                                            ).await;
-                                            layer_buffer_insert(&mut lowers, gid, uid, sender);
-                                        }
-                                        _ => {}
+                        // let layer = Layer {
+                        //     public: config.public,
+                        //     white_list: config.white_list,
+                        //     black_list: config.black_list,
+                        //     white_group_list: config.white_group_list,
+                        //     black_group_list: config.black_group_list,
+                        //     upper: config.upper,
+                        // }
+                    }
+                    LayerSendMessage::UpperLeave(_gid) => {
+                        // TODO remove a upper to listener.
+                    }
+                    LayerSendMessage::LowerJoin(gid, remote_gid, _uid, addr, _join_data) => {
+                        let _ = layers.get_mut(&gid).map(|layer| {
+                            // handle to upper
+                            layer.white_list.push(addr.ip());
+                            let remote_public = layer.generate_remote_public(remote_gid, gid);
+
+                            // TODO if join data
+                            if !uppers.contains_key(&gid) {
+                                smol::spawn(run_client(
+                                    remote_public.clone(),
+                                    addr,
+                                    send.clone(),
+                                    self_send.clone(),
+                                ))
+                                .detach();
+                            }
+                        });
+                    }
+                    LayerSendMessage::LowerJoinResult(gid, remote_gid, uid, is_ok) => {
+                        // handle to lowers
+                        match tmp_lowers.get_mut(&gid) {
+                            Some(h) => match h.remove(&uid) {
+                                Some(sender) => {
+                                    if !is_ok {
+                                        let _ =
+                                            sender.send(StreamMessage::Close(gid, uid, true)).await;
+                                    } else {
+                                        let layer = layers.get(&gid).unwrap();
+                                        let _ = sender
+                                            .send(StreamMessage::Ok(
+                                                layer.generate_remote_public(remote_gid, gid),
+                                            ))
+                                            .await;
+                                        layer_buffer_insert(&mut lowers, gid, uid, sender);
                                     }
                                 }
                                 _ => {}
-                            }
+                            },
+                            _ => {}
                         }
                     }
-                },
-                Err(_) => break,
-            },
-            msg = self_recv.recv().fuse() => match msg {
-                Ok(msg) => {
-                    match msg {
-                        StreamMessage::Open(gid, remote_gid, uid, addr, sender, is_upper) => {
-                            debug!("DEBUG: layer: {}, uid: {} open ok!", remote_gid.short_show(), uid);
-                            if !layers.contains_key(&gid) {
-                                continue;
-                            }
-                            let layer = layers.get(&gid).unwrap();
+                }
+            }
+            Ok(FutureResult::Stream(msg)) => {
+                match msg {
+                    StreamMessage::Open(gid, remote_gid, uid, addr, sender, is_upper) => {
+                        debug!(
+                            "DEBUG: layer: {}, uid: {} open ok!",
+                            remote_gid.short_show(),
+                            uid
+                        );
+                        if !layers.contains_key(&gid) {
+                            continue;
+                        }
+                        let layer = layers.get(&gid).unwrap();
 
-                            if layer.black_contains(&addr, &remote_gid) {
-                                continue;
-                            }
+                        if layer.black_contains(&addr, &remote_gid) {
+                            continue;
+                        }
 
-                            let is_white = layer.white_contains(&addr, &remote_gid);
+                        let is_white = layer.white_contains(&addr, &remote_gid);
 
-                            let entry = if is_upper {
-                                if is_white {
-                                    // remove tmp_uppers
-                                    tmp_uppers.get_mut(&gid).map(|h| h.remove(&uid));
-                                    let _ = send.send(ReceiveMessage::Layer(
+                        let entry = if is_upper {
+                            if is_white {
+                                // remove tmp_uppers
+                                tmp_uppers.get_mut(&gid).map(|h| h.remove(&uid));
+                                let _ = send
+                                    .send(ReceiveMessage::Layer(
                                         LayerReceiveMessage::LowerJoinResult(
-                                            gid, remote_gid, uid, true
-                                        ))).await;
+                                            gid, remote_gid, uid, true,
+                                        ),
+                                    ))
+                                    .await;
 
-                                    &mut uppers
+                                &mut uppers
+                            } else {
+                                continue;
+                            }
+                        } else {
+                            if is_white {
+                                let _ = sender
+                                    .send(StreamMessage::Ok(
+                                        layer.generate_remote_public(remote_gid, gid),
+                                    ))
+                                    .await;
+
+                                &mut lowers
+                            } else {
+                                if layer.public {
+                                    let _ = send
+                                        .send(ReceiveMessage::Layer(
+                                            LayerReceiveMessage::LowerJoin(
+                                                gid,
+                                                remote_gid,
+                                                uid,
+                                                addr,
+                                                vec![],
+                                            ), // TODO
+                                        ))
+                                        .await;
+
+                                    &mut tmp_lowers
                                 } else {
                                     continue;
                                 }
-                            } else {
-                                if is_white {
-                                    let _ = sender.send(
-                                        StreamMessage::Ok(layer.generate_remote_public(remote_gid, gid))
-                                    ).await;
+                            }
+                        };
 
-                                    &mut lowers
-                                } else {
-                                    if layer.public {
-                                        let _ = send.send(
-                                            ReceiveMessage::Layer(
-                                                LayerReceiveMessage::LowerJoin(
-                                                    gid, remote_gid, uid, addr, vec![]) // TODO
-                                            )).await;
-
-                                        &mut tmp_lowers
-                                    } else {
-                                        continue;
-                                    }
-                                }
-                            };
-
-                            layer_buffer_insert(entry, remote_gid, uid, sender);
-                        },
-                        StreamMessage::Close(gid, uid, is_upper) => {
-                            let (entry, tmp_entry) = if is_upper {
-                                (&mut uppers, &mut tmp_uppers)
-                            } else {
-                                (&mut lowers, &mut tmp_lowers)
-                            };
-
-                            tmp_entry.get_mut(&gid).map(|h| {
-                                h.remove(&uid);
-                            });
-
-                            entry.get_mut(&gid).map(|h| {
-                                h.remove(&uid);
-                                // TODO new link to this entry
-                            });
-                        },
-                        _ => {}
+                        layer_buffer_insert(entry, remote_gid, uid, sender);
                     }
+                    StreamMessage::Close(gid, uid, is_upper) => {
+                        let (entry, tmp_entry) = if is_upper {
+                            (&mut uppers, &mut tmp_uppers)
+                        } else {
+                            (&mut lowers, &mut tmp_lowers)
+                        };
+
+                        tmp_entry.get_mut(&gid).map(|h| {
+                            h.remove(&uid);
+                        });
+
+                        entry.get_mut(&gid).map(|h| {
+                            h.remove(&uid);
+                            // TODO new link to this entry
+                        });
+                    }
+                    _ => {}
                 }
-                Err(_) => break,
             }
+            Err(_) => break,
         }
     }
 
@@ -439,7 +460,7 @@ async fn process_stream(
 
     // TODO Security DH exchange.
 
-    let (self_send, mut self_recv) = channel::unbounded();
+    let (self_send, self_recv) = channel::unbounded();
     let uid = rand::random::<u32>();
 
     let _ = server_send
@@ -448,57 +469,64 @@ async fn process_stream(
         ))
         .await;
 
-    let mut read_len = [0u8; 4];
-
-    loop {
-        select! {
-            msg = reader.read(&mut read_len).fuse() => match msg {
-                Ok(size) => {
-                    if size == 0 {
-                        break;
-                    }
-
-                    let len: usize = u32::from_be_bytes(read_len) as usize;
-                    let mut read_bytes = vec![0u8; len];
-                    while let Ok(bytes_size) = reader.read(&mut read_bytes).await {
-                        if bytes_size != len {
+    let _ = future::race(
+        async {
+            let mut read_len = [0u8; 4];
+            loop {
+                match reader.read(&mut read_len).await {
+                    Ok(size) => {
+                        if size == 0 {
                             break;
                         }
 
-                        let message = if is_upper {
-                            ReceiveMessage::Layer(LayerReceiveMessage::Upper(gid, read_bytes.clone()))
-                        } else {
-                            ReceiveMessage::Layer(LayerReceiveMessage::Lower(gid, read_bytes.clone()))
-                        };
-                        let _ = sender.send(message).await;
-                        break;
+                        let len: usize = u32::from_be_bytes(read_len) as usize;
+                        let mut read_bytes = vec![0u8; len];
+                        while let Ok(bytes_size) = reader.read(&mut read_bytes).await {
+                            if bytes_size != len {
+                                break;
+                            }
+
+                            let message = if is_upper {
+                                ReceiveMessage::Layer(LayerReceiveMessage::Upper(
+                                    gid,
+                                    read_bytes.clone(),
+                                ))
+                            } else {
+                                ReceiveMessage::Layer(LayerReceiveMessage::Lower(
+                                    gid,
+                                    read_bytes.clone(),
+                                ))
+                            };
+                            let _ = sender.send(message).await;
+                            break;
+                        }
+                        read_len = [0u8; 4];
                     }
-                    read_len = [0u8; 4];
+                    Err(_e) => break,
                 }
-                Err(_e) => break,
-            },
-            msg = self_recv.next().fuse() => match msg {
-                Some(msg) => {
-                    match msg {
-                        StreamMessage::Data(bytes) => {
-                            let len = bytes.len() as u32;
-                            writer.write(&(len.to_be_bytes())).await?;
-                            writer.write_all(&bytes[..]).await?;
-                        }
-                        StreamMessage::Ok(remote_public) => {
-                            debug!("DEBUG: send remote after verify");
-                            let remote_public_bytes = remote_public.to_bytes();
-                            let len = remote_public_bytes.len() as u32;
-                            writer.write(&(len.to_be_bytes())).await?;
-                            writer.write_all(&remote_public_bytes[..]).await?;
-                        }
-                        _ => break,
-                    }
-                },
-                None => break,
             }
-        }
-    }
+        },
+        async {
+            loop {
+                match self_recv.recv().await {
+                    Ok(StreamMessage::Data(bytes)) => {
+                        let len = bytes.len() as u32;
+                        let _ = writer.write(&(len.to_be_bytes())).await;
+                        let _ = writer.write_all(&bytes[..]).await;
+                    }
+                    Ok(StreamMessage::Ok(remote_public)) => {
+                        debug!("DEBUG: send remote after verify");
+                        let remote_public_bytes = remote_public.to_bytes();
+                        let len = remote_public_bytes.len() as u32;
+                        let _ = writer.write(&(len.to_be_bytes())).await;
+                        let _ = writer.write_all(&remote_public_bytes[..]).await;
+                    }
+                    _ => break,
+                }
+            }
+        },
+    )
+    .await;
 
     debug!("DEBUG: close layers: {}", addr);
     let _ = server_send
