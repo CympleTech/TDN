@@ -132,8 +132,14 @@ async fn run_client(
     send: Sender<ReceiveMessage>,
     self_send: Sender<StreamMessage>,
 ) -> Result<()> {
-    let stream = TcpStream::connect(addr).await?;
-    smol::spawn(process_stream(Some(remote_public), stream, send, self_send)).detach();
+    smol::spawn(async move {
+        if let Ok(stream) = TcpStream::connect(addr).await {
+            let _ = process_stream(Some(remote_public), stream, send, self_send).await;
+        } else {
+            info!("Layer cannot connect to {:?}", addr);
+        }
+    })
+    .detach();
 
     Ok(())
 }
