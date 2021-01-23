@@ -22,6 +22,11 @@ TDN is underlying network (including p2p, rpc, and other special transports) and
 ## Architecture
 ![TDN Groups And Layers](https://cypherlink.io/dist/images/TDN_groups_layers.jpg)
 
+## Pluggable library
+- [tdn-did](https://github.com/cypherlink/tdn-did) zero-knowledge distributed identity for TDN.
+- [tdn-storage](https://github.com/cypherlink/tdn-storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
+- [tdn-permission](https://github.com/cypherlink/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
+
 ### Core QA
 1. **What is Layers & Groups?**
 Simply `Group` is application, one application is one group, `Layer` is communication between apps. In the Group, users can define everything. The Layer is divided into upper and lower, upper is this application depends on others, lower is others depends on this. If app is an independent application that does not interact with other applications, then you can completely ignore Layer.
