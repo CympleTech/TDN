@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
 readme = "README.md"
@@ -19,20 +19,19 @@ default = ["dev"]
 dev = []
 
 [dependencies]
-tdn_types = { version = "0.3", path = "./types" }
-#chamomile = "0.3"
-chamomile = { path = "../chamomile" } # Dev
 smol = "1.2"
-futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
-serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
-postcard = { version = "0.5", default-features = false, features = ["alloc"] }
 toml = "0.5"
 rand = "0.7"
 log = "0.4"
 httparse = "1"
 mime = "0.3"
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
+serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
+postcard = { version = "0.5", default-features = false, features = ["alloc"] }
 async-tungstenite = { version = "0.10", default-features = false }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+tdn-types = { version = "0.3", path = "./types" }
+chamomile = { git = "https://github.com/cypherlink/chamomile", branch="main" }
 
 [dev-dependencies]
 tdn_permission = "0.2"

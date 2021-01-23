@@ -268,13 +268,14 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chamomile"
-version = "0.2.0"
+version = "0.3.0"
+source = "git+https://github.com/cypherlink/chamomile?branch=main#6ad11befc3ea82c39f47ce04dc8b4fab8d0672ba"
 dependencies = [
  "aes-soft",
  "bit-vec",
  "blake3",
  "block-modes",
- "chamomile_types 0.2.1",
+ "chamomile-types",
  "ed25519-dalek",
  "log",
  "rand",
@@ -284,10 +285,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "chamomile_types"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee0cb3210afbc5ced6edf9b484650ba49e965b1aeb94a75b2455dadf5f762cd"
+name = "chamomile-types"
+version = "0.3.0"
+source = "git+https://github.com/cypherlink/chamomile?branch=main#6ad11befc3ea82c39f47ce04dc8b4fab8d0672ba"
 dependencies = [
  "async-channel",
  "serde",
@@ -295,7 +295,9 @@ dependencies = [
 
 [[package]]
 name = "chamomile_types"
-version = "0.2.1"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ee0cb3210afbc5ced6edf9b484650ba49e965b1aeb94a75b2455dadf5f762cd"
 dependencies = [
  "async-channel",
  "serde",
@@ -967,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "tdn"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-tungstenite",
  "chamomile",
@@ -980,9 +982,22 @@ dependencies = [
  "serde",
  "serde_json",
  "smol",
+ "tdn-types",
  "tdn_permission",
- "tdn_types 0.3.0",
  "toml",
+]
+
+[[package]]
+name = "tdn-types"
+version = "0.3.0"
+dependencies = [
+ "async-channel",
+ "chamomile-types",
+ "dirs 3.0.1",
+ "lazy_static",
+ "serde",
+ "serde_json",
+ "sha3",
 ]
 
 [[package]]
@@ -994,7 +1009,7 @@ dependencies = [
  "async-channel",
  "postcard",
  "serde",
- "tdn_types 0.2.1",
+ "tdn_types",
 ]
 
 [[package]]
@@ -1003,21 +1018,8 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91c2009789ab9e55214d359cb0679824e3eaf1d71fcac68ad9818060209bbd77"
 dependencies = [
- "chamomile_types 0.2.0",
+ "chamomile_types",
  "dirs 2.0.2",
- "lazy_static",
- "serde",
- "serde_json",
- "sha3",
-]
-
-[[package]]
-name = "tdn_types"
-version = "0.3.0"
-dependencies = [
- "async-channel",
- "chamomile_types 0.2.1",
- "dirs 3.0.1",
  "lazy_static",
  "serde",
  "serde_json",

@@ -6,6 +6,7 @@
 TDN is underlying network (including p2p, rpc, and other special transports) and application framework built on `Groups` and `Layers`, we built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
 
 ## Example
+- install `nightly` rust.
 - `cargo run --example simple` Congratulation, you are running a trusted distributed network :)
 
 [more sample](./examples)

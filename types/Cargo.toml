@@ -1,5 +1,5 @@
 [package]
-name = "tdn_types"
+name = "tdn-types"
 version = "0.3.0"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
@@ -10,11 +10,10 @@ keywords = ["distributed", "blockchain", "infrastructure", "framework"]
 license = "MIT/Apache-2.0"
 
 [dependencies]
-#chamomile_types = "0.3"
-chamomile_types = { path = "../../chamomile/types" } # Dev
 async-channel = "1.5"
 lazy_static = "1"
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
-serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
 sha3 = "0.9"
 dirs = "3"
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
+serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
+chamomile-types = { git = "https://github.com/cypherlink/chamomile", branch="main" }
