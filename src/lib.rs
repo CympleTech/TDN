@@ -53,7 +53,7 @@ pub use tdn_types as types;
 pub mod prelude {
     pub use super::config::Config;
 
-    pub use tdn_types::group::GroupId;
+    pub use tdn_types::group::{GroupId, GROUP_LENGTH};
     pub use tdn_types::message::{
         GroupReceiveMessage, GroupSendMessage, StateRequest, StateResponse,
     };
@@ -185,8 +185,13 @@ pub mod prelude {
 
             while let Ok(message) = p2p_recv.recv().await {
                 match message {
-                    ChamomileReceiveMessage::StableConnect(peer_addr, data) => {
-                        let gid = Default::default();
+                    ChamomileReceiveMessage::StableConnect(peer_addr, mut data) => {
+                        let mut gid_bytes = [0u8; GROUP_LENGTH];
+                        if data.len() < GROUP_LENGTH {
+                            continue;
+                        }
+                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let gid = GroupId(gid_bytes);
 
                         if my_groups.contains(&gid) {
                             let _ =
@@ -198,8 +203,13 @@ pub mod prelude {
                                 layer_handle_recv_connect(gid, &out_send, peer_addr, data).await;
                         }
                     }
-                    ChamomileReceiveMessage::StableResult(peer_addr, is_ok, data) => {
-                        let gid = Default::default();
+                    ChamomileReceiveMessage::StableResult(peer_addr, is_ok, mut data) => {
+                        let mut gid_bytes = [0u8; GROUP_LENGTH];
+                        if data.len() < GROUP_LENGTH {
+                            continue;
+                        }
+                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let gid = GroupId(gid_bytes);
 
                         if my_groups.contains(&gid) {
                             let _ = group_handle_recv_stable_result(
@@ -222,8 +232,13 @@ pub mod prelude {
 
                         // layer handle it.
                     }
-                    ChamomileReceiveMessage::Data(peer_addr, data) => {
-                        let gid = Default::default();
+                    ChamomileReceiveMessage::Data(peer_addr, mut data) => {
+                        let mut gid_bytes = [0u8; GROUP_LENGTH];
+                        if data.len() < GROUP_LENGTH {
+                            continue;
+                        }
+                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let gid = GroupId(gid_bytes);
 
                         if my_groups.contains(&gid) {
                             let _ = group_handle_recv_data(&gid, &out_send, peer_addr, data).await;
@@ -232,18 +247,30 @@ pub mod prelude {
                             let _ = layer_handle_recv_data(gid, &out_send, peer_addr, data).await;
                         }
                     }
-                    ChamomileReceiveMessage::Stream(id, stream) => {
-                        let gid = Default::default();
+                    ChamomileReceiveMessage::Stream(id, stream, mut data) => {
+                        let mut gid_bytes = [0u8; GROUP_LENGTH];
+                        if data.len() < GROUP_LENGTH {
+                            continue;
+                        }
+                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let gid = GroupId(gid_bytes);
 
                         if my_groups.contains(&gid) {
-                            let _ = group_handle_recv_stream(&gid, &out_send, id, stream).await;
+                            let _ =
+                                group_handle_recv_stream(&gid, &out_send, id, stream, data).await;
                         } else {
                             // layer handle it.
-                            let _ = layer_handle_recv_stream(gid, &out_send, id, stream).await;
+                            let _ =
+                                layer_handle_recv_stream(gid, &out_send, id, stream, data).await;
                         }
                     }
-                    ChamomileReceiveMessage::Delivery(t, tid, is_ok) => {
-                        let gid = Default::default();
+                    ChamomileReceiveMessage::Delivery(t, tid, is_ok, mut data) => {
+                        let mut gid_bytes = [0u8; GROUP_LENGTH];
+                        if data.len() < GROUP_LENGTH {
+                            continue;
+                        }
+                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let gid = GroupId(gid_bytes);
 
                         if my_groups.contains(&gid) {
                             let _ =
@@ -251,9 +278,15 @@ pub mod prelude {
                                     .await;
                         } else {
                             // layer handle it.
-                            let _ =
-                                layer_handle_recv_delivery(gid, &out_send, t.into(), tid, is_ok)
-                                    .await;
+                            let _ = layer_handle_recv_delivery(
+                                gid,
+                                &out_send,
+                                t.into(),
+                                tid,
+                                is_ok,
+                                data,
+                            )
+                            .await;
                         }
                     }
                 }

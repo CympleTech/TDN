@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
-    group::GroupId,
+    group::{GroupId, GROUP_LENGTH},
     primitive::{
         PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
     },
@@ -36,6 +36,13 @@ pub struct Config {
 
 impl Config {
     pub fn split(self) -> (P2pConfig, RpcConfig) {
+        #[cfg(feature = "single")]
+        let delivery_length = 0;
+        #[cfg(feature = "multiple")]
+        let delivery_length = GROUP_LENGTH;
+        #[cfg(any(feature = "std", feature = "full"))]
+        let delivery_length = GROUP_LENGTH * 2;
+
         let Config {
             db_path,
             group_id: _, // DEBUG Not used ?
@@ -68,6 +75,7 @@ impl Config {
             block_peer_list: p2p_block_peer_list,
             permission: permission,
             only_stable_data: only_stable_data,
+            delivery_length: delivery_length,
         };
 
         let rpc_config = RpcConfig {
@@ -183,13 +191,13 @@ impl RawConfig {
             group_id: self
                 .group_id
                 .map(|s| {
-                    if s.len() != 64 {
+                    if s.len() != GROUP_LENGTH * 2 {
                         None
                     } else {
-                        let mut value = [0u8; 32];
+                        let mut value = [0u8; GROUP_LENGTH];
                         let mut is_ok = true;
 
-                        for i in 0..32 {
+                        for i in 0..GROUP_LENGTH {
                             let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16);
                             if res.is_err() {
                                 is_ok = false;

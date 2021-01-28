@@ -275,7 +275,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "chamomile"
 version = "0.3.0"
-source = "git+https://github.com/cypherlink/chamomile?branch=main#7dd2883fba28e58bbcc4a55e8e309e1f3868ac91"
+source = "git+https://github.com/cypherlink/chamomile?branch=main#7d9732b49f23b754a26f95824d8ce884824a0e81"
 dependencies = [
  "aes-soft",
  "bit-vec",
@@ -293,7 +293,7 @@ dependencies = [
 [[package]]
 name = "chamomile-types"
 version = "0.3.0"
-source = "git+https://github.com/cypherlink/chamomile?branch=main#7dd2883fba28e58bbcc4a55e8e309e1f3868ac91"
+source = "git+https://github.com/cypherlink/chamomile?branch=main#7d9732b49f23b754a26f95824d8ce884824a0e81"
 dependencies = [
  "async-channel",
  "serde",

@@ -8,16 +8,17 @@ use tdn_types::{
 
 #[inline]
 pub(crate) async fn group_handle_send(
-    _gid: &GroupId,
+    gid: &GroupId,
     p2p_send: &Sender<SendMessage>,
     msg: GroupSendMessage,
 ) -> std::result::Result<(), SendError<SendMessage>> {
-    // TODO gid serialize data to msg data.
+    // gid serialize data to msg data.
+    let mut bytes = gid.0.to_vec();
     match msg {
         GroupSendMessage::StableConnect(tid, peer_addr, addr, data) => {
-            //
+            bytes.extend(data);
             p2p_send
-                .send(SendMessage::StableConnect(tid, peer_addr, addr, data))
+                .send(SendMessage::StableConnect(tid, peer_addr, addr, bytes))
                 .await
         }
         GroupSendMessage::StableDisconnect(peer_addr) => {
@@ -25,25 +26,29 @@ pub(crate) async fn group_handle_send(
                 .send(SendMessage::StableDisconnect(peer_addr))
                 .await
         }
-        GroupSendMessage::StableResult(tid, peer_addr, is_ok, is_force, result) => {
-            //
+        GroupSendMessage::StableResult(tid, peer_addr, is_ok, is_force, data) => {
+            bytes.extend(data);
             p2p_send
                 .send(SendMessage::StableResult(
-                    tid, peer_addr, is_ok, is_force, result,
+                    tid, peer_addr, is_ok, is_force, bytes,
                 ))
                 .await
         }
         GroupSendMessage::Event(tid, peer_addr, data) => {
-            //
-            p2p_send.send(SendMessage::Data(tid, peer_addr, data)).await
+            bytes.extend(data);
+            p2p_send
+                .send(SendMessage::Data(tid, peer_addr, bytes))
+                .await
         }
         GroupSendMessage::Broadcast(broadcast, data) => {
-            //
-            p2p_send.send(SendMessage::Broadcast(broadcast, data)).await
+            bytes.extend(data);
+            p2p_send
+                .send(SendMessage::Broadcast(broadcast, bytes))
+                .await
         }
-        GroupSendMessage::Stream(id, stream) => {
-            //
-            p2p_send.send(SendMessage::Stream(id, stream)).await
+        GroupSendMessage::Stream(id, stream, data) => {
+            bytes.extend(data);
+            p2p_send.send(SendMessage::Stream(id, stream, bytes)).await
         }
         GroupSendMessage::Connect(addr) => p2p_send.send(SendMessage::Connect(addr)).await,
         GroupSendMessage::DisConnect(addr) => p2p_send.send(SendMessage::DisConnect(addr)).await,
@@ -151,8 +156,9 @@ pub(crate) async fn group_handle_recv_stream(
     out_send: &Sender<ReceiveMessage>,
     uid: u32,
     stream_type: StreamType,
+    data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::Stream(uid, stream_type);
+    let gmsg = GroupReceiveMessage::Stream(uid, stream_type, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);

@@ -40,7 +40,7 @@ pub enum GroupSendMessage {
     Broadcast(Broadcast, Vec<u8>),
     /// Apply for build a stream between nodes.
     /// params: `u32` stream symbol, and `StreamType`.
-    Stream(u32, StreamType),
+    Stream(u32, StreamType, Vec<u8>),
     /// Request for return the network current state info.
     /// params: request type, and return channel's sender (async).
     NetworkState(StateRequest, Sender<StateResponse>),
@@ -63,7 +63,7 @@ pub enum GroupReceiveMessage {
     Event(PeerAddr, Vec<u8>),
     /// Apply for build a stream between nodes.
     /// params: `u32` stream symbol, and `StreamType`.
-    Stream(u32, StreamType),
+    Stream(u32, StreamType, Vec<u8>),
     /// Message sended delivery feedback. type has Event, StableConnect, StableResult.
     /// params: `delivery_type`, `delivery_id`, `is_sended`.
     Delivery(DeliveryType, u64, bool),
@@ -86,7 +86,7 @@ pub enum LayerSendMessage {
     Event(u64, PeerAddr, Vec<u8>),
     /// Apply for build a stream between nodes.
     /// params: `u32` stream symbol, and `StreamType`.
-    Stream(u32, StreamType),
+    Stream(u32, StreamType, Vec<u8>),
 }
 
 /// channel message receive from TDN Layers.
@@ -98,14 +98,15 @@ pub enum LayerReceiveMessage {
     /// layer connect result. it will be stable connection.
     /// params: `is_ok`, `data`.
     Result(PeerAddr, bool, Vec<u8>),
-    /// layer connection leave.
+    /// layer connection leave. when peer leave, you need handle it by yourself.
+    /// it will make from_group_id, to_group_id all set my_group_id.
     Leave(PeerAddr),
     /// layer send message.
     /// params: `data`.
     Event(PeerAddr, Vec<u8>),
     /// Apply for build a stream between nodes.
     /// params: `u32` stream symbol, and `StreamType`.
-    Stream(u32, StreamType),
+    Stream(u32, StreamType, Vec<u8>),
     /// Message sended delivery feedback. type has Event, Connect, Result.
     /// params: `delivery_type`, `delivery_id`, `is_sended`.
     Delivery(DeliveryType, u64, bool),
@@ -129,7 +130,7 @@ pub enum SendMessage {
 pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(GroupReceiveMessage),
-    /// Layer: LayerMessage.
+    /// Layer: LayerMessage. Take care of `Leave`.
     Layer(GroupId, LayerReceiveMessage),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
@@ -182,7 +183,7 @@ pub enum SendMessage {
     /// Group: GroupMessage.
     Group(GroupId, GroupSendMessage),
     /// Layer: LayerMessage.
-    /// params: sender's id, receiver's, msg.
+    /// params: sender's id, receiver's, msg. Take care of `Leave`.
     Layer(GroupId, GroupId, LayerSendMessage),
     /// RPC: connection uid, request params, is websocket.
     Rpc(GroupId, u64, RpcParam, bool),
