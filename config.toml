@@ -29,59 +29,26 @@ p2p_addr = "0.0.0.0:7364"
 p2p_default_transport = "tcp"
 
 ## P2P bootstrap seed IPs.
-## Example: p2p_black_list = ["1.1.1.1:7364", "192.168.0.1:7364"]
+## Example: p2p_blocklist = ["1.1.1.1:7364", "192.168.0.1:7364"]
 p2p_bootstrap = []
 
-## P2P Blacklist(IP),  uncomment below to change.
-## Example: p2p_black_list = ["1.1.1.1", "192.168.0.1"]
-#p2p_black_list = []
+## P2P Blocklist(IP),  uncomment below to change.
+## Example: p2p_blocklist = ["1.1.1.1", "192.168.0.1"]
+#p2p_blocklist = []
 
-## P2P Whitelist(ID),  uncomment below to change.
-## Example: p2p_white_peer_list = [
+## P2P Allowlist(ID),  uncomment below to change.
+## Example: p2p_allow_peer_list = [
 ##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
 ##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
 ##          ]
-#p2p_white_peer_list = []
+#p2p_allow_peer_list = []
 
 ## P2P Blocklist (ID),  uncomment below to change.
-## Example: p2p_black_peer_list = [
+## Example: p2p_block_peer_list = [
 ##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
 ##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
 ##          ]
-#p2p_black_peer_list = []
-
-## Layer define if others can use it as upper layer. if false, only whitelist can use. default is true.
-#layer_public = true
-
-## Layer define upper layer's seeds (IP, GroupId).
-## Example: layer_upper = [
-##              { addr = "0.0.0.0:7000", group_id = "0000000000000000000000000000000000000000000000000000000000000000" },
-##              { addr = "0.0.0.0:7001", group_id = "1111111111111111111111111111111111111111111111111111111111111111" },
-##          ]
-layer_upper = []
-
-
-## Layer Whitelist(IP),  uncomment below to change.
-## Example: layer_white_list = ["1.1.1.1", "192.168.0.1"]
-#layer_white_list = ["127.0.0.1"]
-
-# Layer blacklist(IP),  uncomment below to change.
-# Example: layer_black_list = ["1.1.1.1", "192.168.0.1"]
-#layer_black_list = []
-
-## Layer whitelist(Group),  uncomment below to change.
-## Example: layer_white_group_list = [
-##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
-##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
-##          ]
-#layer_white_group_list = []
-
-## Layer blacklist(Group),  uncomment below to change.
-## Example: layer_black_group_list = [
-##              "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4",
-##              "b9f86efea43016debe9436c2d98fa273789ee81b511bf623e16de0b4c83176a6",
-##          ]
-#layer_black_group_list = []
+#p2p_block_peer_list = []
 
 ## RPC listen address, default is 127.0.0.1:8000, uncomment below to change.
 ## Example: rpc_addr = "127.0.0.1:8000"

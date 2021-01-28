@@ -24,8 +24,8 @@ pub struct Config {
 
     pub p2p_addr: SocketAddr,
     pub p2p_transport: String,
-    pub p2p_white_list: Vec<SocketAddr>,
-    pub p2p_black_list: Vec<IpAddr>,
+    pub p2p_allowlist: Vec<SocketAddr>,
+    pub p2p_blocklist: Vec<IpAddr>,
     pub p2p_white_peer_list: Vec<PeerAddr>,
     pub p2p_black_peer_list: Vec<PeerAddr>,
 
@@ -44,8 +44,8 @@ impl Config {
             only_stable_data,
             p2p_addr,
             p2p_transport,
-            p2p_white_list,
-            p2p_black_list,
+            p2p_allowlist,
+            p2p_blocklist,
             p2p_white_peer_list,
             p2p_black_peer_list,
 
@@ -62,8 +62,8 @@ impl Config {
             },
             addr: p2p_addr,
             transport: p2p_transport,
-            white_list: p2p_white_list,
-            black_list: p2p_black_list,
+            allowlist: p2p_allowlist,
+            blocklist: p2p_blocklist,
             white_peer_list: p2p_white_peer_list,
             black_peer_list: p2p_black_peer_list,
             permission: permission,
@@ -89,8 +89,8 @@ impl Config {
             only_stable_data: false, // default is permissionless
             p2p_addr: p2p_addr,
             p2p_transport: P2P_TRANSPORT.to_owned(),
-            p2p_white_list: vec![],
-            p2p_black_list: vec![],
+            p2p_allowlist: vec![],
+            p2p_blocklist: vec![],
             p2p_white_peer_list: vec![],
             p2p_black_peer_list: vec![],
 
@@ -167,7 +167,7 @@ pub struct RawConfig {
     pub p2p_addr: Option<SocketAddr>,
     pub p2p_default_transport: Option<String>,
     pub p2p_bootstrap: Vec<SocketAddr>,
-    pub p2p_black_list: Option<Vec<IpAddr>>,
+    pub p2p_blocklist: Option<Vec<IpAddr>>,
     pub p2p_white_peer_list: Option<Vec<String>>,
     pub p2p_black_peer_list: Option<Vec<String>>,
 
@@ -216,8 +216,8 @@ impl RawConfig {
             p2p_transport: self
                 .p2p_default_transport
                 .unwrap_or(P2P_TRANSPORT.to_owned()),
-            p2p_white_list: self.p2p_bootstrap,
-            p2p_black_list: self.p2p_black_list.unwrap_or(vec![]),
+            p2p_allowlist: self.p2p_bootstrap,
+            p2p_blocklist: self.p2p_blocklist.unwrap_or(vec![]),
             p2p_white_peer_list: self
                 .p2p_white_peer_list
                 .map(|ss| {
