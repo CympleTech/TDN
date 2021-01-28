@@ -204,14 +204,3 @@ pub enum ReceiveMessage {
 
 /// packaging the rpc message. not open to ouside.
 pub struct RpcSendMessage(pub u64, pub RpcParam, pub bool);
-
-/// generic layer message for code reduce.
-pub trait RpcMessage: Send {
-    fn new_rpc(uid: u64, param: RpcParam, is_ws: bool) -> Self;
-}
-
-impl RpcMessage for ReceiveMessage {
-    fn new_rpc(uid: u64, param: RpcParam, is_ws: bool) -> Self {
-        ReceiveMessage::Rpc(uid, param, is_ws)
-    }
-}
