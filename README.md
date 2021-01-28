@@ -20,7 +20,7 @@ TDN is underlying network (including p2p, rpc, and other special transports) and
 - Trust can be passed on and accumulated
 
 ## 4-type Applications
-TDN can build 4-type for applications.
+TDN can build 4-type network for applications.
 Use `feature` to control. (Tip: one group, is one chain, is one application)
 
 - **single**. Support only one group, and no layers. Like `Bitcoin`.
