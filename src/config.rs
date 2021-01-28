@@ -26,8 +26,8 @@ pub struct Config {
     pub p2p_transport: String,
     pub p2p_allowlist: Vec<SocketAddr>,
     pub p2p_blocklist: Vec<IpAddr>,
-    pub p2p_white_peer_list: Vec<PeerAddr>,
-    pub p2p_black_peer_list: Vec<PeerAddr>,
+    pub p2p_allow_peer_list: Vec<PeerAddr>,
+    pub p2p_block_peer_list: Vec<PeerAddr>,
 
     pub rpc_addr: SocketAddr,
     pub rpc_ws: Option<SocketAddr>,
@@ -46,8 +46,8 @@ impl Config {
             p2p_transport,
             p2p_allowlist,
             p2p_blocklist,
-            p2p_white_peer_list,
-            p2p_black_peer_list,
+            p2p_allow_peer_list,
+            p2p_block_peer_list,
 
             rpc_addr,
             rpc_ws,
@@ -64,8 +64,8 @@ impl Config {
             transport: p2p_transport,
             allowlist: p2p_allowlist,
             blocklist: p2p_blocklist,
-            white_peer_list: p2p_white_peer_list,
-            black_peer_list: p2p_black_peer_list,
+            allow_peer_list: p2p_allow_peer_list,
+            block_peer_list: p2p_block_peer_list,
             permission: permission,
             only_stable_data: only_stable_data,
         };
@@ -91,8 +91,8 @@ impl Config {
             p2p_transport: P2P_TRANSPORT.to_owned(),
             p2p_allowlist: vec![],
             p2p_blocklist: vec![],
-            p2p_white_peer_list: vec![],
-            p2p_black_peer_list: vec![],
+            p2p_allow_peer_list: vec![],
+            p2p_block_peer_list: vec![],
 
             rpc_addr: rpc_addr,
             rpc_ws: None,
@@ -168,8 +168,8 @@ pub struct RawConfig {
     pub p2p_default_transport: Option<String>,
     pub p2p_bootstrap: Vec<SocketAddr>,
     pub p2p_blocklist: Option<Vec<IpAddr>>,
-    pub p2p_white_peer_list: Option<Vec<String>>,
-    pub p2p_black_peer_list: Option<Vec<String>>,
+    pub p2p_allow_peer_list: Option<Vec<String>>,
+    pub p2p_block_peer_list: Option<Vec<String>>,
 
     pub rpc_addr: Option<SocketAddr>,
     pub rpc_ws: Option<SocketAddr>,
@@ -218,22 +218,22 @@ impl RawConfig {
                 .unwrap_or(P2P_TRANSPORT.to_owned()),
             p2p_allowlist: self.p2p_bootstrap,
             p2p_blocklist: self.p2p_blocklist.unwrap_or(vec![]),
-            p2p_white_peer_list: self
-                .p2p_white_peer_list
+            p2p_allow_peer_list: self
+                .p2p_allow_peer_list
                 .map(|ss| {
                     ss.iter()
                         .map(|s| {
-                            PeerAddr::from_hex(s).expect("invalid peer id in p2p white peer list")
+                            PeerAddr::from_hex(s).expect("invalid peer id in p2p allow peer list")
                         })
                         .collect()
                 })
                 .unwrap_or(vec![]),
-            p2p_black_peer_list: self
-                .p2p_black_peer_list
+            p2p_block_peer_list: self
+                .p2p_block_peer_list
                 .map(|ss| {
                     ss.iter()
                         .map(|s| {
-                            PeerAddr::from_hex(s).expect("invalid group id in p2p black peer list")
+                            PeerAddr::from_hex(s).expect("invalid group id in p2p block peer list")
                         })
                         .collect()
                 })

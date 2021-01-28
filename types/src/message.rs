@@ -17,7 +17,7 @@ pub enum GroupSendMessage {
     StableDisconnect(PeerAddr),
     /// when peer request for stable, outside decide connect or not.
     /// params: `delivery_id`, `peer_id`, `is_connect`, `is_force_close`, `result info`.
-    /// if `is_connect` is true, it will add to white directly list.
+    /// if `is_connect` is true, it will add to allow directly list.
     /// we want to build a better network, add a `is_force_close`.
     /// if `is_connect` is false, but `is_force_close` if true, we
     /// will use this peer to build our DHT for better connection.
