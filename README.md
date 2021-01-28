@@ -19,6 +19,15 @@ TDN is underlying network (including p2p, rpc, and other special transports) and
 - Applications can communicate with others
 - Trust can be passed on and accumulated
 
+## 4-type Applications
+TDN can build 4-type for applications.
+Use `feature` to control. (Tip: one group, is one chain, is one application)
+
+- **single**. Support only one group, and no layers. Like `Bitcoin`.
+- **std** (default). Support only one group, and multiple layers (cross-chain, Interactive with other groups).
+- **multiple**. Support many groups (in one runtime, support many applications), and no layers. Like `Ethereum`.
+- **full**. Support many groups, and multiple layers.
+
 ## Architecture
 ![TDN Groups And Layers](https://cypherlink.io/dist/images/TDN_groups_layers.jpg)
 
