@@ -1,3 +1,4 @@
+use chamomile_types::message::DeliveryType as P2pDeliveryType;
 use lazy_static::lazy_static;
 use std::path::PathBuf;
 
@@ -6,12 +7,6 @@ pub const P2P_ADDR: &str = "0.0.0.0:7364";
 
 /// P2P default transport.
 pub const P2P_TRANSPORT: &str = "tcp";
-
-/// Layer default binding addr.
-pub const LAYER_ADDR: &str = "0.0.0.0:7000";
-
-/// Layer default lower on-off (whether public).
-pub const LAYER_PUBLIC_DEFAULT: bool = true;
 
 /// RPC default binding addr.
 pub const RPC_ADDR: &str = "127.0.0.1:8000";
@@ -82,6 +77,37 @@ pub fn vec_check_push<T: Eq + PartialEq>(vec: &mut Vec<T>, item: T) {
     }
 
     vec.push(item);
+}
+
+/// message delivery feedback type, include three type,
+/// `Connect`, `Result`, `Event`.
+#[derive(Debug, Clone)]
+pub enum DeliveryType {
+    Event,
+    Connect,
+    Result,
+}
+
+impl Into<P2pDeliveryType> for DeliveryType {
+    #[inline]
+    fn into(self) -> P2pDeliveryType {
+        match self {
+            DeliveryType::Event => P2pDeliveryType::Data,
+            DeliveryType::Connect => P2pDeliveryType::StableConnect,
+            DeliveryType::Result => P2pDeliveryType::StableResult,
+        }
+    }
+}
+
+impl Into<DeliveryType> for P2pDeliveryType {
+    #[inline]
+    fn into(self) -> DeliveryType {
+        match self {
+            P2pDeliveryType::Data => DeliveryType::Event,
+            P2pDeliveryType::StableConnect => DeliveryType::Connect,
+            P2pDeliveryType::StableResult => DeliveryType::Result,
+        }
+    }
 }
 
 /// Helper: this is the group/layer/rpc handle result in the network.

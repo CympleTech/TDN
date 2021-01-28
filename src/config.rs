@@ -5,16 +5,14 @@ use smol::fs;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 
+use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
     group::GroupId,
     primitive::{
-        PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, LAYER_ADDR, LAYER_PUBLIC_DEFAULT,
-        P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
+        PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_STORAGE_DIR, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
     },
 };
 
-use crate::layer::LayerConfig;
-use crate::p2p::P2pConfig;
 use crate::rpc::RpcConfig;
 
 /// load config from config file.
@@ -31,21 +29,13 @@ pub struct Config {
     pub p2p_white_peer_list: Vec<PeerAddr>,
     pub p2p_black_peer_list: Vec<PeerAddr>,
 
-    pub layer_addr: SocketAddr,
-    pub layer_public: bool,
-    pub layer_upper: Vec<(SocketAddr, GroupId)>,
-    pub layer_white_list: Vec<IpAddr>,
-    pub layer_black_list: Vec<IpAddr>,
-    pub layer_white_group_list: Vec<GroupId>,
-    pub layer_black_group_list: Vec<GroupId>,
-
     pub rpc_addr: SocketAddr,
     pub rpc_ws: Option<SocketAddr>,
     pub rpc_index: Option<PathBuf>,
 }
 
 impl Config {
-    pub fn split(self) -> (P2pConfig, LayerConfig, RpcConfig) {
+    pub fn split(self) -> (P2pConfig, RpcConfig) {
         let Config {
             db_path,
             group_id: _, // DEBUG Not used ?
@@ -58,14 +48,6 @@ impl Config {
             p2p_black_list,
             p2p_white_peer_list,
             p2p_black_peer_list,
-
-            layer_addr,
-            layer_public,
-            layer_upper,
-            layer_white_list,
-            layer_black_list,
-            layer_white_group_list,
-            layer_black_group_list,
 
             rpc_addr,
             rpc_ws,
@@ -88,28 +70,18 @@ impl Config {
             only_stable_data: only_stable_data,
         };
 
-        let layer_config = LayerConfig {
-            addr: layer_addr,
-            public: layer_public,
-            upper: layer_upper,
-            white_list: layer_white_list,
-            black_list: layer_black_list,
-            white_group_list: layer_white_group_list,
-            black_group_list: layer_black_group_list,
-        };
-
         let rpc_config = RpcConfig {
             addr: rpc_addr,
             ws: rpc_ws,
             index: rpc_index,
         };
 
-        (p2p_config, layer_config, rpc_config)
+        (p2p_config, rpc_config)
     }
 }
 
 impl Config {
-    pub fn with_addr(p2p_addr: SocketAddr, layer_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
+    pub fn with_addr(p2p_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
         Config {
             db_path: None,
             group_id: GroupId::default(),
@@ -122,14 +94,6 @@ impl Config {
             p2p_white_peer_list: vec![],
             p2p_black_peer_list: vec![],
 
-            layer_addr: layer_addr,
-            layer_public: LAYER_PUBLIC_DEFAULT,
-            layer_upper: vec![],
-            layer_white_list: vec![],
-            layer_black_list: vec![],
-            layer_white_group_list: vec![],
-            layer_black_group_list: vec![],
-
             rpc_addr: rpc_addr,
             rpc_ws: None,
             rpc_index: None,
@@ -137,11 +101,7 @@ impl Config {
     }
 
     pub fn default() -> Self {
-        Config::with_addr(
-            P2P_ADDR.parse().unwrap(),
-            LAYER_ADDR.parse().unwrap(),
-            RPC_ADDR.parse().unwrap(),
-        )
+        Config::with_addr(P2P_ADDR.parse().unwrap(), RPC_ADDR.parse().unwrap())
     }
 
     pub async fn load() -> Self {
@@ -211,14 +171,6 @@ pub struct RawConfig {
     pub p2p_white_peer_list: Option<Vec<String>>,
     pub p2p_black_peer_list: Option<Vec<String>>,
 
-    pub layer_addr: Option<SocketAddr>,
-    pub layer_public: Option<bool>,
-    pub layer_upper: Option<Vec<RawUpper>>,
-    pub layer_white_list: Option<Vec<IpAddr>>,
-    pub layer_black_list: Option<Vec<IpAddr>>,
-    pub layer_white_group_list: Option<Vec<String>>,
-    pub layer_black_group_list: Option<Vec<String>>,
-
     pub rpc_addr: Option<SocketAddr>,
     pub rpc_ws: Option<SocketAddr>,
     pub rpc_index: Option<PathBuf>,
@@ -286,47 +238,6 @@ impl RawConfig {
                         .collect()
                 })
                 .unwrap_or(vec![]),
-            layer_addr: self.layer_addr.unwrap_or(LAYER_ADDR.parse().unwrap()),
-            layer_public: self.layer_public.unwrap_or(LAYER_PUBLIC_DEFAULT),
-            layer_upper: self
-                .layer_upper
-                .map(|ss| {
-                    ss.iter()
-                        .map(|RawUpper { addr, group_id }| {
-                            (
-                                *addr,
-                                GroupId::from_hex(group_id)
-                                    .expect("invalid group id in layer upper"),
-                            )
-                        })
-                        .collect()
-                })
-                .unwrap_or(vec![]),
-            layer_white_list: self.layer_white_list.unwrap_or(vec![]),
-            layer_black_list: self.layer_black_list.unwrap_or(vec![]),
-            layer_white_group_list: self
-                .layer_white_group_list
-                .map(|ss| {
-                    ss.iter()
-                        .map(|s| {
-                            GroupId::from_hex(s)
-                                .expect("invalid group id in layer white group list")
-                        })
-                        .collect()
-                })
-                .unwrap_or(vec![]),
-            layer_black_group_list: self
-                .layer_black_group_list
-                .map(|ss| {
-                    ss.iter()
-                        .map(|s| {
-                            GroupId::from_hex(s)
-                                .expect("invalid group id in layer black group list")
-                        })
-                        .collect()
-                })
-                .unwrap_or(vec![]),
-
             rpc_addr: self.rpc_addr.unwrap_or(RPC_ADDR.parse().unwrap()),
             rpc_ws: self.rpc_ws,
             rpc_index: self.rpc_index,

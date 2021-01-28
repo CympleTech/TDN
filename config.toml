@@ -50,14 +50,11 @@ p2p_bootstrap = []
 ##          ]
 #p2p_black_peer_list = []
 
-## Layer listen address, default is 0.0.0.0:7000,  uncomment below to change.
-#layer_addr = "0.0.0.0:7000"
-
 ## Layer define if others can use it as upper layer. if false, only whitelist can use. default is true.
 #layer_public = true
 
 ## Layer define upper layer's seeds (IP, GroupId).
-## Example: layer_upper = [       
+## Example: layer_upper = [
 ##              { addr = "0.0.0.0:7000", group_id = "0000000000000000000000000000000000000000000000000000000000000000" },
 ##              { addr = "0.0.0.0:7001", group_id = "1111111111111111111111111111111111111111111111111111111111111111" },
 ##          ]

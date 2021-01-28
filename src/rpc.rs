@@ -11,7 +11,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use tdn_types::{
-    message::{RpcMessage as RpcMessageTrait, RpcSendMessage},
+    message::{ReceiveMessage, RpcSendMessage},
     primitive::Result,
     rpc::RpcParam,
 };
@@ -37,9 +37,9 @@ fn rpc_send_channel() -> (Sender<RpcSendMessage>, Receiver<RpcSendMessage>) {
     channel::unbounded()
 }
 
-pub(crate) async fn start<M: 'static + RpcMessageTrait>(
+pub(crate) async fn start(
     config: RpcConfig,
-    send: Sender<M>,
+    send: Sender<ReceiveMessage>,
 ) -> Result<Sender<RpcSendMessage>> {
     let (out_send, out_recv) = rpc_send_channel();
 
@@ -56,8 +56,8 @@ enum FutureResult {
     Stream(RpcMessage),
 }
 
-async fn listen<M: 'static + RpcMessageTrait>(
-    send: Sender<M>,
+async fn listen(
+    send: Sender<ReceiveMessage>,
     out_recv: Receiver<RpcSendMessage>,
     self_recv: Receiver<RpcMessage>,
 ) -> Result<()> {
@@ -92,7 +92,7 @@ async fn listen<M: 'static + RpcMessageTrait>(
                             if !is_ws {
                                 connections.insert(id, sender.unwrap());
                             }
-                            send.send(M::new_rpc(id, params, is_ws))
+                            send.send(ReceiveMessage::Rpc(id, params, is_ws))
                                 .await
                                 .expect("Rpc to Outside channel closed");
                         }

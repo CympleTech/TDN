@@ -969,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "tdn"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "async-tungstenite",
  "chamomile",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "tdn-types"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "async-channel",
  "chamomile-types",

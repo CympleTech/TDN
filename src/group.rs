@@ -2,31 +2,30 @@ use chamomile::prelude::SendMessage;
 use smol::channel::{SendError, Sender};
 use tdn_types::{
     group::GroupId,
-    message::{LayerReceiveMessage, LayerSendMessage, ReceiveMessage},
+    message::{GroupReceiveMessage, GroupSendMessage, ReceiveMessage},
     primitive::{DeliveryType, PeerAddr, Result, StreamType},
 };
 
 #[inline]
-pub(crate) async fn layer_handle_send(
-    _fgid: &GroupId,
-    _tgid: GroupId,
+pub(crate) async fn group_handle_send(
+    _gid: &GroupId,
     p2p_send: &Sender<SendMessage>,
-    msg: LayerSendMessage,
+    msg: GroupSendMessage,
 ) -> std::result::Result<(), SendError<SendMessage>> {
-    // TODO fgid, tgid serialize data to msg data.
+    // TODO gid serialize data to msg data.
     match msg {
-        LayerSendMessage::Connect(tid, peer_addr, _domain, addr, data) => {
+        GroupSendMessage::StableConnect(tid, peer_addr, addr, data) => {
             //
             p2p_send
                 .send(SendMessage::StableConnect(tid, peer_addr, addr, data))
                 .await
         }
-        LayerSendMessage::Disconnect(peer_addr) => {
+        GroupSendMessage::StableDisconnect(peer_addr) => {
             p2p_send
                 .send(SendMessage::StableDisconnect(peer_addr))
                 .await
         }
-        LayerSendMessage::Result(tid, peer_addr, is_ok, is_force, result) => {
+        GroupSendMessage::StableResult(tid, peer_addr, is_ok, is_force, result) => {
             //
             p2p_send
                 .send(SendMessage::StableResult(
@@ -34,32 +33,39 @@ pub(crate) async fn layer_handle_send(
                 ))
                 .await
         }
-        LayerSendMessage::Event(tid, peer_addr, data) => {
+        GroupSendMessage::Event(tid, peer_addr, data) => {
             //
             p2p_send.send(SendMessage::Data(tid, peer_addr, data)).await
         }
-        LayerSendMessage::Stream(id, stream) => {
+        GroupSendMessage::Broadcast(broadcast, data) => {
+            //
+            p2p_send.send(SendMessage::Broadcast(broadcast, data)).await
+        }
+        GroupSendMessage::Stream(id, stream) => {
             //
             p2p_send.send(SendMessage::Stream(id, stream)).await
+        }
+        GroupSendMessage::Connect(addr) => p2p_send.send(SendMessage::Connect(addr)).await,
+        GroupSendMessage::DisConnect(addr) => p2p_send.send(SendMessage::DisConnect(addr)).await,
+        GroupSendMessage::NetworkState(req, sender) => {
+            p2p_send.send(SendMessage::NetworkState(req, sender)).await
         }
     }
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_connect(
-    fgid: GroupId,
+pub(crate) async fn group_handle_recv_stable_connect(
+    _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Connect(peer_addr, data);
-
-    let _tgid: GroupId = Default::default();
+    let gmsg = GroupReceiveMessage::StableConnect(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Group(gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
 
     out_send
         .send(msg)
@@ -71,21 +77,19 @@ pub(crate) async fn layer_handle_recv_connect(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_result(
-    fgid: GroupId,
+pub(crate) async fn group_handle_recv_stable_result(
+    _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
     is_ok: bool,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Result(peer_addr, is_ok, data);
-
-    let _tgid: GroupId = Default::default();
+    let gmsg = GroupReceiveMessage::StableResult(peer_addr, is_ok, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Group(gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
 
     out_send
         .send(msg)
@@ -97,19 +101,17 @@ pub(crate) async fn layer_handle_recv_result(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_leave(
-    fgid: GroupId,
+pub(crate) async fn group_handle_recv_stable_leave(
+    _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Leave(peer_addr);
-
-    let _tgid: GroupId = Default::default();
+    let gmsg = GroupReceiveMessage::StableLeave(peer_addr);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Group(gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
 
     out_send
         .send(msg)
@@ -121,20 +123,18 @@ pub(crate) async fn layer_handle_recv_leave(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_data(
-    fgid: GroupId,
+pub(crate) async fn group_handle_recv_data(
+    _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Event(peer_addr, data);
-
-    let _tgid: GroupId = Default::default();
+    let gmsg = GroupReceiveMessage::Event(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Group(gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
 
     out_send
         .send(msg)
@@ -146,20 +146,18 @@ pub(crate) async fn layer_handle_recv_data(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_stream(
-    fgid: GroupId,
+pub(crate) async fn group_handle_recv_stream(
+    _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     uid: u32,
     stream_type: StreamType,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Stream(uid, stream_type);
-
-    let _tgid: GroupId = Default::default();
+    let gmsg = GroupReceiveMessage::Stream(uid, stream_type);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Group(gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
 
     out_send
         .send(msg)
@@ -171,21 +169,19 @@ pub(crate) async fn layer_handle_recv_stream(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_delivery(
-    fgid: GroupId,
+pub(crate) async fn group_handle_recv_delivery(
+    _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     delivery_type: DeliveryType,
     tid: u64,
     is_sended: bool,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Delivery(delivery_type, tid, is_sended);
-
-    let _tgid: GroupId = Default::default();
+    let gmsg = GroupReceiveMessage::Delivery(delivery_type, tid, is_sended);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Group(gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
 
     out_send
         .send(msg)
