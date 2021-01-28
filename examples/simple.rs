@@ -35,34 +35,26 @@ fn main() {
                     GroupReceiveMessage::Event(peer, _data) => {
                         println!("receive group event from {}", peer.short_show());
                     }
-                    GroupReceiveMessage::Stream(..) => {
-                        //
-                    }
+                    _ => {}
                 },
-                ReceiveMessage::Layer(msg) => match msg {
-                    LayerReceiveMessage::LowerJoin(gid, remote_gid, uid, addr, join_data) => {
+                ReceiveMessage::Layer(gid, msg) => match msg {
+                    LayerReceiveMessage::Connect(peer, _data) => {
                         println!(
-                            "Layer Join: {}, Addr: {}, join addr: {:?}",
+                            "Layer Join: {}, Addr: {}.",
                             gid.short_show(),
-                            addr,
-                            join_data
+                            peer.short_show()
                         );
-                        let _ = send
-                            .send(SendMessage::Layer(LayerSendMessage::LowerJoinResult(
-                                gid, remote_gid, uid, true,
-                            )))
-                            .await;
                     }
-                    LayerReceiveMessage::LowerJoinResult(_gid, remote_gid, _uid, is_ok) => {
-                        println!("Layer: {}, Join Result: {}", remote_gid.short_show(), is_ok);
+                    LayerReceiveMessage::Result(..) => {
+                        //
                     }
                     _ => {}
                 },
                 ReceiveMessage::Rpc(uid, params, is_ws) => {
                     if let Ok(HandleResult {
                         mut rpcs,
-                        groups,
-                        layers,
+                        groups: _,
+                        layers: _,
                     }) = rpc_handler.handle(params).await
                     {
                         loop {

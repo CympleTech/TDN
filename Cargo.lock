@@ -294,16 +294,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chamomile_types"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee0cb3210afbc5ced6edf9b484650ba49e965b1aeb94a75b2455dadf5f762cd"
-dependencies = [
- "async-channel",
- "serde",
-]
-
-[[package]]
 name = "cipher"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -374,16 +364,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "dirs"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13aea89a5c93364a98e9b37b2fa237effbb694d5cfe01c5b70941f7eb087d5e3"
-dependencies = [
- "cfg-if 0.1.10",
- "dirs-sys",
 ]
 
 [[package]]
@@ -983,7 +963,6 @@ dependencies = [
  "serde_json",
  "smol",
  "tdn-types",
- "tdn_permission",
  "toml",
 ]
 
@@ -993,33 +972,7 @@ version = "0.4.0"
 dependencies = [
  "async-channel",
  "chamomile-types",
- "dirs 3.0.1",
- "lazy_static",
- "serde",
- "serde_json",
- "sha3",
-]
-
-[[package]]
-name = "tdn_permission"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "557cd2a42eb0b334ba6645584fc57f08f036aa92599362c9920ddedf2027c82b"
-dependencies = [
- "async-channel",
- "postcard",
- "serde",
- "tdn_types",
-]
-
-[[package]]
-name = "tdn_types"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91c2009789ab9e55214d359cb0679824e3eaf1d71fcac68ad9818060209bbd77"
-dependencies = [
- "chamomile_types",
- "dirs 2.0.2",
+ "dirs",
  "lazy_static",
  "serde",
  "serde_json",

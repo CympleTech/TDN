@@ -37,4 +37,4 @@ tdn-types = { version = "0.4", path = "./types", default-features = false }
 chamomile = { git = "https://github.com/cypherlink/chamomile", branch="main" }
 
 [dev-dependencies]
-tdn_permission = "0.2"
+#tdn_permission = "0.2"
