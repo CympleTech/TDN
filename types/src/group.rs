@@ -2,7 +2,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
-use crate::message::SendType;
+use crate::message::RecvType;
 use crate::primitive::{new_io_error, HandleResult, PeerAddr, Result};
 
 pub const GROUP_LENGTH: usize = 32;
@@ -74,7 +74,7 @@ pub trait Group {
     fn guard(&self, addr: &PeerAddr) -> bool;
 
     /// when receive group message, handle it, and return HandleResult.
-    fn handle(&mut self, msg: SendType) -> Result<HandleResult>;
+    fn handle(&mut self, msg: RecvType) -> Result<HandleResult>;
 }
 
 /// Helper: this is the interface of the Peer in the network.
