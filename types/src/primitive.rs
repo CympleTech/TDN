@@ -159,7 +159,7 @@ impl<'a> HandleResult {
         }
     }
 
-    pub fn netwrok(m: crate::message::NetworkType) -> Self {
+    pub fn network(m: crate::message::NetworkType) -> Self {
         HandleResult {
             rpcs: vec![],
             groups: vec![],
