@@ -118,6 +118,8 @@ pub struct HandleResult {
     pub groups: Vec<crate::message::SendType>,
     /// layer tasks: [LayerSendMessage]
     pub layers: Vec<crate::message::SendType>,
+    /// network tasks: [NetworkType]
+    pub networks: Vec<crate::message::NetworkType>,
 }
 
 impl<'a> HandleResult {
@@ -126,6 +128,7 @@ impl<'a> HandleResult {
             rpcs: vec![],
             groups: vec![],
             layers: vec![],
+            networks: vec![],
         }
     }
 
@@ -134,6 +137,7 @@ impl<'a> HandleResult {
             rpcs: vec![p],
             groups: vec![],
             layers: vec![],
+            networks: vec![],
         }
     }
 
@@ -142,6 +146,7 @@ impl<'a> HandleResult {
             rpcs: vec![],
             groups: vec![m],
             layers: vec![],
+            networks: vec![],
         }
     }
 
@@ -150,6 +155,16 @@ impl<'a> HandleResult {
             rpcs: vec![],
             groups: vec![],
             layers: vec![m],
+            networks: vec![],
+        }
+    }
+
+    pub fn netwrok(m: crate::message::NetworkType) -> Self {
+        HandleResult {
+            rpcs: vec![],
+            groups: vec![],
+            layers: vec![],
+            networks: vec![m],
         }
     }
 }

@@ -231,9 +231,11 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                             rpcs,
                             groups,
                             layers,
+                            networks,
                         }) => {
                             new_results.groups = groups;
                             new_results.layers = layers;
+                            new_results.networks = networks;
 
                             for params in rpcs {
                                 new_results.rpcs.push(rpc_response(id, method, params));
