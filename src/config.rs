@@ -18,7 +18,7 @@ use crate::rpc::RpcConfig;
 /// load config from config file.
 pub struct Config {
     pub db_path: Option<PathBuf>,
-    pub group_id: GroupId,
+    pub group_ids: Vec<GroupId>,
     pub permission: bool,
     pub only_stable_data: bool,
 
@@ -35,7 +35,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn split(self) -> (P2pConfig, RpcConfig) {
+    pub fn split(self) -> (Vec<GroupId>, P2pConfig, RpcConfig) {
         #[cfg(feature = "single")]
         let delivery_length = 0;
         #[cfg(feature = "multiple")]
@@ -45,7 +45,7 @@ impl Config {
 
         let Config {
             db_path,
-            group_id: _, // DEBUG Not used ?
+            group_ids,
 
             permission,
             only_stable_data,
@@ -84,7 +84,7 @@ impl Config {
             index: rpc_index,
         };
 
-        (p2p_config, rpc_config)
+        (group_ids, p2p_config, rpc_config)
     }
 }
 
@@ -92,7 +92,7 @@ impl Config {
     pub fn with_addr(p2p_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
         Config {
             db_path: None,
-            group_id: GroupId::default(),
+            group_ids: vec![GroupId::default()],
             permission: false,       // default is permissionless
             only_stable_data: false, // default is permissionless
             p2p_addr: p2p_addr,
@@ -188,7 +188,7 @@ impl RawConfig {
     fn parse(self) -> Config {
         Config {
             db_path: self.db_path,
-            group_id: self
+            group_ids: vec![self
                 .group_id
                 .map(|s| {
                     if s.len() != GROUP_LENGTH * 2 {
@@ -217,7 +217,7 @@ impl RawConfig {
                     self.group_symbol
                         .map(|s| GroupId::from_symbol(s))
                         .unwrap_or(GroupId::default()),
-                ),
+                )],
             permission: self.permission.unwrap_or(false),
             only_stable_data: self.only_stable_data.unwrap_or(false),
             p2p_addr: self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),

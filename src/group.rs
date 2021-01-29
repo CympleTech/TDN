@@ -2,31 +2,31 @@ use chamomile::prelude::SendMessage;
 use smol::channel::{SendError, Sender};
 use tdn_types::{
     group::GroupId,
-    message::{GroupReceiveMessage, GroupSendMessage, ReceiveMessage},
+    message::{ReceiveMessage, RecvType, SendType},
     primitive::{DeliveryType, PeerAddr, Result, StreamType},
 };
 
 #[inline]
 pub(crate) async fn group_handle_send(
-    gid: &GroupId,
+    gid: GroupId,
     p2p_send: &Sender<SendMessage>,
-    msg: GroupSendMessage,
+    msg: SendType,
 ) -> std::result::Result<(), SendError<SendMessage>> {
     // gid serialize data to msg data.
     let mut bytes = gid.0.to_vec();
     match msg {
-        GroupSendMessage::StableConnect(tid, peer_addr, addr, data) => {
+        SendType::Connect(tid, peer_addr, _domain, addr, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::StableConnect(tid, peer_addr, addr, bytes))
                 .await
         }
-        GroupSendMessage::StableDisconnect(peer_addr) => {
+        SendType::Disconnect(peer_addr) => {
             p2p_send
                 .send(SendMessage::StableDisconnect(peer_addr))
                 .await
         }
-        GroupSendMessage::StableResult(tid, peer_addr, is_ok, is_force, data) => {
+        SendType::Result(tid, peer_addr, is_ok, is_force, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::StableResult(
@@ -34,26 +34,15 @@ pub(crate) async fn group_handle_send(
                 ))
                 .await
         }
-        GroupSendMessage::Event(tid, peer_addr, data) => {
+        SendType::Event(tid, peer_addr, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::Data(tid, peer_addr, bytes))
                 .await
         }
-        GroupSendMessage::Broadcast(broadcast, data) => {
-            bytes.extend(data);
-            p2p_send
-                .send(SendMessage::Broadcast(broadcast, bytes))
-                .await
-        }
-        GroupSendMessage::Stream(id, stream, data) => {
+        SendType::Stream(id, stream, data) => {
             bytes.extend(data);
             p2p_send.send(SendMessage::Stream(id, stream, bytes)).await
-        }
-        GroupSendMessage::Connect(addr) => p2p_send.send(SendMessage::Connect(addr)).await,
-        GroupSendMessage::DisConnect(addr) => p2p_send.send(SendMessage::DisConnect(addr)).await,
-        GroupSendMessage::NetworkState(req, sender) => {
-            p2p_send.send(SendMessage::NetworkState(req, sender)).await
         }
     }
 }
@@ -65,7 +54,7 @@ pub(crate) async fn group_handle_recv_stable_connect(
     peer_addr: PeerAddr,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::StableConnect(peer_addr, data);
+    let gmsg = RecvType::Connect(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -89,7 +78,7 @@ pub(crate) async fn group_handle_recv_stable_result(
     is_ok: bool,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::StableResult(peer_addr, is_ok, data);
+    let gmsg = RecvType::Result(peer_addr, is_ok, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -111,7 +100,7 @@ pub(crate) async fn group_handle_recv_stable_leave(
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::StableLeave(peer_addr);
+    let gmsg = RecvType::Leave(peer_addr);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -134,7 +123,7 @@ pub(crate) async fn group_handle_recv_data(
     peer_addr: PeerAddr,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::Event(peer_addr, data);
+    let gmsg = RecvType::Event(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -158,7 +147,7 @@ pub(crate) async fn group_handle_recv_stream(
     stream_type: StreamType,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::Stream(uid, stream_type, data);
+    let gmsg = RecvType::Stream(uid, stream_type, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -182,7 +171,7 @@ pub(crate) async fn group_handle_recv_delivery(
     tid: u64,
     is_sended: bool,
 ) -> Result<()> {
-    let gmsg = GroupReceiveMessage::Delivery(delivery_type, tid, is_sended);
+    let gmsg = RecvType::Delivery(delivery_type, tid, is_sended);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);

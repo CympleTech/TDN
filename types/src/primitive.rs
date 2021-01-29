@@ -115,9 +115,9 @@ pub struct HandleResult {
     /// rpc tasks: [(method, params)].
     pub rpcs: Vec<crate::rpc::RpcParam>,
     /// group tasks: [GroupSendMessage]
-    pub groups: Vec<crate::message::GroupSendMessage>,
+    pub groups: Vec<crate::message::SendType>,
     /// layer tasks: [LayerSendMessage]
-    pub layers: Vec<crate::message::LayerSendMessage>,
+    pub layers: Vec<crate::message::SendType>,
 }
 
 impl<'a> HandleResult {
@@ -137,7 +137,7 @@ impl<'a> HandleResult {
         }
     }
 
-    pub fn group(m: crate::message::GroupSendMessage) -> Self {
+    pub fn group(m: crate::message::SendType) -> Self {
         HandleResult {
             rpcs: vec![],
             groups: vec![m],
@@ -145,7 +145,7 @@ impl<'a> HandleResult {
         }
     }
 
-    pub fn layer(m: crate::message::LayerSendMessage) -> Self {
+    pub fn layer(m: crate::message::SendType) -> Self {
         HandleResult {
             rpcs: vec![],
             groups: vec![],

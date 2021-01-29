@@ -2,33 +2,33 @@ use chamomile::prelude::SendMessage;
 use smol::channel::{SendError, Sender};
 use tdn_types::{
     group::{GroupId, GROUP_LENGTH},
-    message::{LayerReceiveMessage, LayerSendMessage, ReceiveMessage},
+    message::{ReceiveMessage, RecvType, SendType},
     primitive::{new_io_error, DeliveryType, PeerAddr, Result, StreamType},
 };
 
 #[inline]
 pub(crate) async fn layer_handle_send(
-    fgid: &GroupId,
+    fgid: GroupId,
     tgid: GroupId,
     p2p_send: &Sender<SendMessage>,
-    msg: LayerSendMessage,
+    msg: SendType,
 ) -> std::result::Result<(), SendError<SendMessage>> {
     // fgid, tgid serialize data to msg data.
     let mut bytes = tgid.0.to_vec();
     bytes.extend(&fgid.0);
     match msg {
-        LayerSendMessage::Connect(tid, peer_addr, _domain, addr, data) => {
+        SendType::Connect(tid, peer_addr, _domain, addr, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::StableConnect(tid, peer_addr, addr, bytes))
                 .await
         }
-        LayerSendMessage::Disconnect(peer_addr) => {
+        SendType::Disconnect(peer_addr) => {
             p2p_send
                 .send(SendMessage::StableDisconnect(peer_addr))
                 .await
         }
-        LayerSendMessage::Result(tid, peer_addr, is_ok, is_force, data) => {
+        SendType::Result(tid, peer_addr, is_ok, is_force, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::StableResult(
@@ -36,13 +36,13 @@ pub(crate) async fn layer_handle_send(
                 ))
                 .await
         }
-        LayerSendMessage::Event(tid, peer_addr, data) => {
+        SendType::Event(tid, peer_addr, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::Data(tid, peer_addr, bytes))
                 .await
         }
-        LayerSendMessage::Stream(id, stream, data) => {
+        SendType::Stream(id, stream, data) => {
             bytes.extend(data);
             p2p_send.send(SendMessage::Stream(id, stream, bytes)).await
         }
@@ -62,7 +62,7 @@ pub(crate) async fn layer_handle_recv_connect(
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
     let _tgid = GroupId(gid_bytes);
-    let gmsg = LayerReceiveMessage::Connect(peer_addr, data);
+    let gmsg = RecvType::Connect(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Layer(fgid, gmsg);
@@ -92,7 +92,7 @@ pub(crate) async fn layer_handle_recv_result(
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
     let _tgid = GroupId(gid_bytes);
-    let gmsg = LayerReceiveMessage::Result(peer_addr, is_ok, data);
+    let gmsg = RecvType::Result(peer_addr, is_ok, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Layer(fgid, gmsg);
@@ -114,7 +114,7 @@ pub(crate) async fn layer_handle_recv_leave(
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
 ) -> Result<()> {
-    let gmsg = LayerReceiveMessage::Leave(peer_addr);
+    let gmsg = RecvType::Leave(peer_addr);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Layer(fgid, gmsg);
@@ -143,7 +143,7 @@ pub(crate) async fn layer_handle_recv_data(
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
     let _tgid = GroupId(gid_bytes);
-    let gmsg = LayerReceiveMessage::Event(peer_addr, data);
+    let gmsg = RecvType::Event(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Layer(fgid, gmsg);
@@ -173,7 +173,7 @@ pub(crate) async fn layer_handle_recv_stream(
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
     let _tgid = GroupId(gid_bytes);
-    let gmsg = LayerReceiveMessage::Stream(uid, stream_type, data);
+    let gmsg = RecvType::Stream(uid, stream_type, data);
 
     let _tgid: GroupId = Default::default();
 
@@ -206,7 +206,7 @@ pub(crate) async fn layer_handle_recv_delivery(
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
     let _tgid = GroupId(gid_bytes);
-    let gmsg = LayerReceiveMessage::Delivery(delivery_type, tid, is_sended);
+    let gmsg = RecvType::Delivery(delivery_type, tid, is_sended);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Layer(fgid, gmsg);
