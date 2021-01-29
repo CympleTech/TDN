@@ -114,7 +114,7 @@ pub mod prelude {
     }
 
     async fn start_main(
-        _gid: GroupId,
+        gid: GroupId,
         out_send: Sender<ReceiveMessage>,
         self_recv: Receiver<SendMessage>,
         config: Config,
@@ -132,7 +132,7 @@ pub mod prelude {
 
         // handle outside msg.
         smol::spawn(async move {
-            let my_groups: Vec<GroupId> = Vec::new();
+            let my_groups: Vec<GroupId> = vec![gid];
 
             while let Ok(message) = self_recv.recv().await {
                 match message {
@@ -178,7 +178,7 @@ pub mod prelude {
 
         // handle chamomile send msg.
         smol::spawn(async move {
-            let my_groups: Vec<GroupId> = Vec::new();
+            let my_groups: Vec<GroupId> = vec![gid];
 
             // if group's inner message, from_group in our groups.
             // if layer's message,       from_group not in our groups.
