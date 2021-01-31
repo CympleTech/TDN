@@ -156,7 +156,7 @@ pub mod prelude {
                             continue;
                         }
 
-                        group_handle_send(&group_id, &p2p_send, msg)
+                        group_handle_send(group_id, &p2p_send, msg)
                             .await
                             .map_err(|e| error!("Chamomile channel: {:?}", e))
                             .expect("Chamomile channel closed");
@@ -189,14 +189,14 @@ pub mod prelude {
                             continue;
                         }
 
-                        layer_handle_send(&fgid, tgid, &p2p_send, msg)
+                        layer_handle_send(fgid, tgid, &p2p_send, msg)
                             .await
                             .map_err(|e| error!("Chamomile channel: {:?}", e))
                             .expect("Chamomile channel closed");
                     }
                     #[cfg(any(feature = "multiple", feature = "full"))]
                     SendMessage::AddGroup(gid) => {
-                        let group_lock = my_groups_1.write().await;
+                        let mut group_lock = my_groups_1.write().await;
                         if !group_lock.contains(&gid) {
                             group_lock.push(gid);
                         }
@@ -204,7 +204,7 @@ pub mod prelude {
                     }
                     #[cfg(any(feature = "multiple", feature = "full"))]
                     SendMessage::DelGroup(gid) => {
-                        let group_lock = my_groups_1.write().await;
+                        let mut group_lock = my_groups_1.write().await;
                         let mut need_remove: Vec<usize> = vec![];
                         for (k, i) in group_lock.iter().enumerate() {
                             if i == &gid {
@@ -289,6 +289,7 @@ pub mod prelude {
                         } else {
                             drop(group_lock);
                             // layer handle it.
+                            #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
                                 layer_handle_recv_connect(gid, &out_send, peer_addr, data).await;
                         }
@@ -315,6 +316,7 @@ pub mod prelude {
                         } else {
                             drop(group_lock);
                             // layer handle it.
+                            #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
                                 layer_handle_recv_result(gid, &out_send, peer_addr, is_ok, data)
                                     .await;
@@ -325,6 +327,7 @@ pub mod prelude {
                         for gid in group_lock.iter() {
                             let _ =
                                 group_handle_recv_stable_leave(&gid, &out_send, peer_addr).await;
+                            #[cfg(any(feature = "std", feature = "full"))]
                             let _ = layer_handle_recv_leave(*gid, &out_send, peer_addr).await;
                         }
                         drop(group_lock);
@@ -348,6 +351,7 @@ pub mod prelude {
                         } else {
                             drop(group_lock);
                             // layer handle it.
+                            #[cfg(any(feature = "std", feature = "full"))]
                             let _ = layer_handle_recv_data(gid, &out_send, peer_addr, data).await;
                         }
                     }
@@ -371,6 +375,7 @@ pub mod prelude {
                         } else {
                             drop(group_lock);
                             // layer handle it.
+                            #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
                                 layer_handle_recv_stream(gid, &out_send, id, stream, data).await;
                         }
@@ -396,6 +401,7 @@ pub mod prelude {
                         } else {
                             drop(group_lock);
                             // layer handle it.
+                            #[cfg(any(feature = "std", feature = "full"))]
                             let _ = layer_handle_recv_delivery(
                                 gid,
                                 &out_send,

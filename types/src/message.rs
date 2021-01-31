@@ -1,10 +1,12 @@
 use async_channel::Sender;
 use std::net::SocketAddr;
 
-use crate::group::GroupId;
 use crate::primitive::{Broadcast, DeliveryType, PeerAddr, StreamType};
 use crate::rpc::RpcParam;
 pub use chamomile_types::message::{StateRequest, StateResponse};
+
+#[cfg(not(feature = "single"))]
+use crate::group::GroupId;
 
 /// channel message send to TDN Group.
 #[derive(Debug, Clone)]
@@ -108,6 +110,8 @@ pub enum SendMessage {
     Group(SendType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
+    /// Network: Control the Network state.
+    Network(NetworkType),
 }
 
 /// channel message receive from TDN for single version.
@@ -131,7 +135,9 @@ pub enum SendMessage {
     /// Group: GroupMessage.
     Group(GroupId, SendType),
     /// RPC: connection uid, request params, is websocket.
-    Rpc(GroupId, u64, RpcParam, bool),
+    Rpc(u64, RpcParam, bool),
+    /// Network: Control the Network state.
+    Network(NetworkType),
 }
 
 /// channel message receive from TDN for multiple version.
@@ -141,7 +147,7 @@ pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
-    Rpc(GroupId, u64, RpcParam, bool),
+    Rpc(u64, RpcParam, bool),
 }
 
 /// channel message send to TDN for full version.
@@ -158,7 +164,9 @@ pub enum SendMessage {
     /// params: sender's id, receiver's, msg. Take care of `Leave`.
     Layer(GroupId, GroupId, SendType),
     /// RPC: connection uid, request params, is websocket.
-    Rpc(GroupId, u64, RpcParam, bool),
+    Rpc(u64, RpcParam, bool),
+    /// Network: Control the Network state.
+    Network(NetworkType),
 }
 
 /// channel message receive from TDN for full version.
@@ -171,7 +179,7 @@ pub enum ReceiveMessage {
     /// params: receiver's id, sender's, msg.
     Layer(GroupId, GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
-    Rpc(GroupId, u64, RpcParam, bool),
+    Rpc(u64, RpcParam, bool),
 }
 
 /// packaging the rpc message. not open to ouside.
