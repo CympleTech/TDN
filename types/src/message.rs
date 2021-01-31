@@ -176,7 +176,7 @@ pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(GroupId, RecvType),
     /// Layer: LayerMessage.
-    /// params: receiver's id, sender's, msg.
+    /// params: sender's, receiver's, msg.
     Layer(GroupId, GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),

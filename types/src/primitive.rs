@@ -110,16 +110,29 @@ impl Into<DeliveryType> for P2pDeliveryType {
     }
 }
 
+#[cfg(not(feature = "single"))]
+use crate::group::GroupId;
+use crate::message::{NetworkType, SendType};
+use crate::rpc::RpcParam;
+
 /// Helper: this is the group/layer/rpc handle result in the network.
 pub struct HandleResult {
     /// rpc tasks: [(method, params)].
-    pub rpcs: Vec<crate::rpc::RpcParam>,
+    pub rpcs: Vec<RpcParam>,
     /// group tasks: [GroupSendMessage]
-    pub groups: Vec<crate::message::SendType>,
+    #[cfg(any(feature = "single", feature = "std"))]
+    pub groups: Vec<SendType>,
+    /// group tasks: [GroupSendMessage]
+    #[cfg(any(feature = "full", feature = "multiple"))]
+    pub groups: Vec<(GroupId, SendType)>,
     /// layer tasks: [LayerSendMessage]
-    pub layers: Vec<crate::message::SendType>,
+    #[cfg(feature = "std")]
+    pub layers: Vec<(GroupId, SendType)>,
+    /// layer tasks: [LayerSendMessage]
+    #[cfg(feature = "full")]
+    pub layers: Vec<(GroupId, GroupId, SendType)>,
     /// network tasks: [NetworkType]
-    pub networks: Vec<crate::message::NetworkType>,
+    pub networks: Vec<NetworkType>,
 }
 
 impl<'a> HandleResult {
@@ -127,42 +140,69 @@ impl<'a> HandleResult {
         HandleResult {
             rpcs: vec![],
             groups: vec![],
+            #[cfg(any(feature = "full", feature = "std"))]
             layers: vec![],
             networks: vec![],
         }
     }
 
-    pub fn rpc(p: crate::rpc::RpcParam) -> Self {
+    pub fn rpc(p: RpcParam) -> Self {
         HandleResult {
             rpcs: vec![p],
             groups: vec![],
+            #[cfg(any(feature = "full", feature = "std"))]
             layers: vec![],
             networks: vec![],
         }
     }
 
-    pub fn group(m: crate::message::SendType) -> Self {
+    #[cfg(any(feature = "single", feature = "std"))]
+    pub fn group(m: SendType) -> Self {
         HandleResult {
             rpcs: vec![],
             groups: vec![m],
+            #[cfg(feature = "std")]
             layers: vec![],
             networks: vec![],
         }
     }
 
-    pub fn layer(m: crate::message::SendType) -> Self {
+    #[cfg(any(feature = "multiple", feature = "full"))]
+    pub fn group(gid: GroupId, m: SendType) -> Self {
         HandleResult {
             rpcs: vec![],
-            groups: vec![],
-            layers: vec![m],
+            groups: vec![(gid, m)],
+            #[cfg(feature = "full")]
+            layers: vec![],
             networks: vec![],
         }
     }
 
-    pub fn network(m: crate::message::NetworkType) -> Self {
+    #[cfg(feature = "std")]
+    pub fn layer(gid: GroupId, m: SendType) -> Self {
         HandleResult {
             rpcs: vec![],
             groups: vec![],
+            layers: vec![(gid, m)],
+            networks: vec![],
+        }
+    }
+
+    #[cfg(feature = "full")]
+    pub fn layer(fgid: GroupId, tgid: GroupId, m: SendType) -> Self {
+        HandleResult {
+            rpcs: vec![],
+            groups: vec![],
+            layers: vec![(fgid, tgid, m)],
+            networks: vec![],
+        }
+    }
+
+    pub fn network(m: NetworkType) -> Self {
+        HandleResult {
+            rpcs: vec![],
+            groups: vec![],
+            #[cfg(any(feature = "full", feature = "std"))]
             layers: vec![],
             networks: vec![m],
         }

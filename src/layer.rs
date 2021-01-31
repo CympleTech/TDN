@@ -51,7 +51,7 @@ pub(crate) async fn layer_handle_send(
 
 #[inline]
 pub(crate) async fn layer_handle_recv_connect(
-    fgid: GroupId,
+    _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
     mut data: Vec<u8>,
@@ -61,7 +61,7 @@ pub(crate) async fn layer_handle_recv_connect(
         return Err(new_io_error("layer message serialize length error"));
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-    let _tgid = GroupId(gid_bytes);
+    let fgid = GroupId(gid_bytes);
     let gmsg = RecvType::Connect(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
@@ -80,7 +80,7 @@ pub(crate) async fn layer_handle_recv_connect(
 
 #[inline]
 pub(crate) async fn layer_handle_recv_result(
-    fgid: GroupId,
+    _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
     is_ok: bool,
@@ -91,7 +91,7 @@ pub(crate) async fn layer_handle_recv_result(
         return Err(new_io_error("layer message serialize length error"));
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-    let _tgid = GroupId(gid_bytes);
+    let fgid = GroupId(gid_bytes);
     let gmsg = RecvType::Result(peer_addr, is_ok, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
@@ -110,16 +110,16 @@ pub(crate) async fn layer_handle_recv_result(
 
 #[inline]
 pub(crate) async fn layer_handle_recv_leave(
-    fgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
 ) -> Result<()> {
     let gmsg = RecvType::Leave(peer_addr);
 
     #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    let msg = ReceiveMessage::Layer(tgid, gmsg);
     #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, fgid, gmsg);
+    let msg = ReceiveMessage::Layer(tgid, tgid, gmsg);
 
     out_send
         .send(msg)
@@ -132,7 +132,7 @@ pub(crate) async fn layer_handle_recv_leave(
 
 #[inline]
 pub(crate) async fn layer_handle_recv_data(
-    fgid: GroupId,
+    _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
     mut data: Vec<u8>,
@@ -142,7 +142,7 @@ pub(crate) async fn layer_handle_recv_data(
         return Err(new_io_error("layer message serialize length error"));
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-    let _tgid = GroupId(gid_bytes);
+    let fgid = GroupId(gid_bytes);
     let gmsg = RecvType::Event(peer_addr, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
@@ -161,7 +161,7 @@ pub(crate) async fn layer_handle_recv_data(
 
 #[inline]
 pub(crate) async fn layer_handle_recv_stream(
-    fgid: GroupId,
+    _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     uid: u32,
     stream_type: StreamType,
@@ -172,7 +172,7 @@ pub(crate) async fn layer_handle_recv_stream(
         return Err(new_io_error("layer message serialize length error"));
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-    let _tgid = GroupId(gid_bytes);
+    let fgid = GroupId(gid_bytes);
     let gmsg = RecvType::Stream(uid, stream_type, data);
 
     let _tgid: GroupId = Default::default();
@@ -193,7 +193,7 @@ pub(crate) async fn layer_handle_recv_stream(
 
 #[inline]
 pub(crate) async fn layer_handle_recv_delivery(
-    fgid: GroupId,
+    _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     delivery_type: DeliveryType,
     tid: u64,
@@ -205,7 +205,7 @@ pub(crate) async fn layer_handle_recv_delivery(
         return Err(new_io_error("layer message serialize length error"));
     }
     gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-    let _tgid = GroupId(gid_bytes);
+    let fgid = GroupId(gid_bytes);
     let gmsg = RecvType::Delivery(delivery_type, tid, is_sended);
 
     #[cfg(any(feature = "single", feature = "std"))]

@@ -188,11 +188,21 @@ type RpcResult<'a> = std::result::Result<HandleResult, RpcError<'a>>;
 type BoxFuture<'a, RpcResult> = Pin<Box<dyn Future<Output = RpcResult> + Send + 'a>>;
 
 pub trait FutFn<S>: Send + Sync + 'static {
+    #[cfg(any(feature = "single", feature = "std"))]
     fn call<'a>(&'a self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<'a, RpcResult<'a>>;
+
+    #[cfg(any(feature = "multiple", feature = "full"))]
+    fn call<'a>(
+        &'a self,
+        gid: crate::group::GroupId,
+        params: Vec<RpcParam>,
+        s: Arc<S>,
+    ) -> BoxFuture<'a, RpcResult<'a>>;
 }
 
 pub(crate) type DynFutFn<S> = dyn FutFn<S>;
 
+#[cfg(any(feature = "single", feature = "std"))]
 impl<S, F: Send + Sync + 'static, Fut> FutFn<S> for F
 where
     F: Fn(Vec<RpcParam>, Arc<S>) -> Fut,
@@ -200,6 +210,23 @@ where
 {
     fn call<'a>(&'a self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<'a, RpcResult<'a>> {
         let fut = (self)(params, s);
+        Box::pin(async move { fut.await })
+    }
+}
+
+#[cfg(any(feature = "multiple", feature = "full"))]
+impl<S, F: Send + Sync + 'static, Fut> FutFn<S> for F
+where
+    F: Fn(crate::group::GroupId, Vec<RpcParam>, Arc<S>) -> Fut,
+    Fut: Future<Output = RpcResult<'static>> + Send + 'static,
+{
+    fn call<'a>(
+        &'a self,
+        gid: crate::group::GroupId,
+        params: Vec<RpcParam>,
+        s: Arc<S>,
+    ) -> BoxFuture<'a, RpcResult<'a>> {
+        let fut = (self)(gid, params, s);
         Box::pin(async move { fut.await })
     }
 }
@@ -222,10 +249,59 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         let method = method_s.as_str().unwrap();
         let mut new_results = HandleResult::new();
 
+        #[cfg(any(feature = "multiple", feature = "full"))]
+        let group = if let Some(group_id) = param
+            .get("gid")
+            .and_then(|gid_v| gid_v.as_str())
+            .and_then(|group_hex| crate::group::GroupId::from_hex(group_hex).ok())
+        {
+            group_id
+        } else {
+            new_results.rpcs.push(RpcError::InvalidRequest.json(id));
+            return Ok(new_results);
+        };
+
         if let RpcParam::Array(params) = param["params"].take() {
             match self.fns.get(method) {
                 Some(f) => {
+                    #[cfg(any(feature = "single", feature = "std"))]
                     let res = f.call(params, self.state.clone()).await;
+
+                    #[cfg(any(feature = "multiple", feature = "full"))]
+                    let res = f.call(group, params, self.state.clone()).await;
+
+                    #[cfg(any(feature = "single", feature = "multiple"))]
+                    match res {
+                        Ok(HandleResult {
+                            rpcs,
+                            groups,
+                            networks,
+                        }) => {
+                            new_results.groups = groups;
+                            new_results.networks = networks;
+
+                            for params in rpcs {
+                                #[cfg(feature = "single")]
+                                new_results.rpcs.push(rpc_response(id, method, params));
+
+                                #[cfg(feature = "multiple")]
+                                new_results
+                                    .rpcs
+                                    .push(rpc_response(id, method, params, group));
+                            }
+                        }
+                        Err(err) => {
+                            let mut res = err.json(id);
+                            res["method"] = method.into();
+                            #[cfg(feature = "multiple")]
+                            let _ = res.as_object_mut().map(|v| {
+                                v.insert("gid".into(), group.to_hex().into());
+                            });
+                            new_results.rpcs.push(res);
+                        }
+                    }
+
+                    #[cfg(any(feature = "full", feature = "std"))]
                     match res {
                         Ok(HandleResult {
                             rpcs,
@@ -238,12 +314,22 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                             new_results.networks = networks;
 
                             for params in rpcs {
+                                #[cfg(feature = "std")]
                                 new_results.rpcs.push(rpc_response(id, method, params));
+
+                                #[cfg(feature = "full")]
+                                new_results
+                                    .rpcs
+                                    .push(rpc_response(id, method, params, group));
                             }
                         }
                         Err(err) => {
                             let mut res = err.json(id);
                             res["method"] = method.into();
+                            #[cfg(feature = "full")]
+                            let _ = res.as_object_mut().map(|v| {
+                                v.insert("gid".into(), group.to_hex().into());
+                            });
                             new_results.rpcs.push(res);
                         }
                     }
@@ -260,10 +346,27 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
     }
 }
 
+#[cfg(any(feature = "single", feature = "std"))]
 pub fn rpc_response(id: u64, method: &str, params: RpcParam) -> RpcParam {
     json!({
         "jsonrpc": "2.0",
         "id": id,
+        "method": method,
+        "result": params
+    })
+}
+
+#[cfg(any(feature = "multiple", feature = "full"))]
+pub fn rpc_response(
+    id: u64,
+    method: &str,
+    params: RpcParam,
+    group_id: crate::group::GroupId,
+) -> RpcParam {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "gid": group_id.to_hex(),
         "method": method,
         "result": params
     })
