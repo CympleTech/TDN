@@ -422,8 +422,8 @@ pub mod prelude {
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             let _ = layer_handle_recv_delivery(
+                                tgid, // Assuming it is remote sended.
                                 fgid,
-                                tgid,
                                 &out_send,
                                 t.into(),
                                 tid,

@@ -19,7 +19,6 @@ pub(crate) async fn layer_handle_send(
     match msg {
         SendType::Connect(tid, peer_addr, _domain, addr, data) => {
             bytes.extend(data);
-            println!("TDN: CONNECT: {:?}", peer_addr);
             p2p_send
                 .send(SendMessage::StableConnect(tid, peer_addr, addr, bytes))
                 .await
