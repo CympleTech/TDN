@@ -74,6 +74,12 @@ pub enum NetworkType {
     /// Request for return the network current state info.
     /// params: request type, and return channel's sender (async).
     NetworkState(StateRequest, Sender<StateResponse>),
+    /// add group to TDN control. multiple group use.
+    #[cfg(any(feature = "multiple", feature = "full"))]
+    AddGroup(GroupId),
+    /// remove group from TDN control. multiple group use.
+    #[cfg(any(feature = "multiple", feature = "full"))]
+    DelGroup(GroupId),
 }
 
 /// channel message send to TDN for std version.
@@ -128,10 +134,6 @@ pub enum ReceiveMessage {
 #[cfg(feature = "multiple")]
 #[derive(Debug, Clone)]
 pub enum SendMessage {
-    /// add group to TDN control. multiple group use.
-    AddGroup(GroupId),
-    /// remove group from TDN control. multiple group use.
-    DelGroup(GroupId),
     /// Group: GroupMessage.
     Group(GroupId, SendType),
     /// RPC: connection uid, request params, is websocket.
@@ -154,10 +156,6 @@ pub enum ReceiveMessage {
 #[cfg(feature = "full")]
 #[derive(Debug, Clone)]
 pub enum SendMessage {
-    /// add group to TDN control. multiple group use.
-    AddGroup(GroupId),
-    /// remove group from TDN control. multiple group use.
-    DelGroup(GroupId),
     /// Group: GroupMessage.
     Group(GroupId, SendType),
     /// Layer: LayerMessage.

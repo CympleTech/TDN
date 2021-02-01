@@ -14,6 +14,7 @@ pub(crate) async fn group_handle_send(
 ) -> std::result::Result<(), SendError<SendMessage>> {
     // gid serialize data to msg data.
     let mut bytes = gid.0.to_vec();
+    bytes.extend(&gid.0); // double it, meaning from/to is same group.
     match msg {
         SendType::Connect(tid, peer_addr, _domain, addr, data) => {
             bytes.extend(data);

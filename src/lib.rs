@@ -185,7 +185,7 @@ pub mod prelude {
                     }
                     #[cfg(feature = "full")]
                     SendMessage::Layer(fgid, tgid, msg) => {
-                        if !my_groups_1.read().await.contains(&tgid) {
+                        if !my_groups_1.read().await.contains(&fgid) {
                             continue;
                         }
 
@@ -193,28 +193,6 @@ pub mod prelude {
                             .await
                             .map_err(|e| error!("Chamomile channel: {:?}", e))
                             .expect("Chamomile channel closed");
-                    }
-                    #[cfg(any(feature = "multiple", feature = "full"))]
-                    SendMessage::AddGroup(gid) => {
-                        let mut group_lock = my_groups_1.write().await;
-                        if !group_lock.contains(&gid) {
-                            group_lock.push(gid);
-                        }
-                        drop(group_lock);
-                    }
-                    #[cfg(any(feature = "multiple", feature = "full"))]
-                    SendMessage::DelGroup(gid) => {
-                        let mut group_lock = my_groups_1.write().await;
-                        let mut need_remove: Vec<usize> = vec![];
-                        for (k, i) in group_lock.iter().enumerate() {
-                            if i == &gid {
-                                need_remove.push(k);
-                            }
-                        }
-                        for i in need_remove.iter().rev() {
-                            group_lock.remove(*i);
-                        }
-                        drop(group_lock);
                     }
                     SendMessage::Network(nmsg) => match nmsg {
                         NetworkType::Broadcast(broadcast, data) => {
@@ -255,6 +233,28 @@ pub mod prelude {
                                 .map_err(|e| error!("Chamomile channel: {:?}", e))
                                 .expect("Chamomile channel closed");
                         }
+                        #[cfg(any(feature = "multiple", feature = "full"))]
+                        NetworkType::AddGroup(gid) => {
+                            let mut group_lock = my_groups_1.write().await;
+                            if !group_lock.contains(&gid) {
+                                group_lock.push(gid);
+                            }
+                            drop(group_lock);
+                        }
+                        #[cfg(any(feature = "multiple", feature = "full"))]
+                        NetworkType::DelGroup(gid) => {
+                            let mut group_lock = my_groups_1.write().await;
+                            let mut need_remove: Vec<usize> = vec![];
+                            for (k, i) in group_lock.iter().enumerate() {
+                                if i == &gid {
+                                    need_remove.push(k);
+                                }
+                            }
+                            for i in need_remove.iter().rev() {
+                                group_lock.remove(*i);
+                            }
+                            drop(group_lock);
+                        }
                     },
                 }
             }
@@ -269,57 +269,65 @@ pub mod prelude {
             while let Ok(message) = p2p_recv.recv().await {
                 match message {
                     ChamomileReceiveMessage::StableConnect(peer_addr, mut data) => {
-                        let mut gid_bytes = [0u8; GROUP_LENGTH];
-                        if data.len() < GROUP_LENGTH {
+                        if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
-                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let gid = GroupId(gid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
                             continue;
                         }
 
-                        if group_lock.contains(&gid) {
+                        if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
                             let _ =
-                                group_handle_recv_stable_connect(&gid, &out_send, peer_addr, data)
+                                group_handle_recv_stable_connect(&fgid, &out_send, peer_addr, data)
                                     .await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
-                                layer_handle_recv_connect(gid, &out_send, peer_addr, data).await;
+                                layer_handle_recv_connect(fgid, tgid, &out_send, peer_addr, data)
+                                    .await;
                         }
                     }
                     ChamomileReceiveMessage::StableResult(peer_addr, is_ok, mut data) => {
-                        let mut gid_bytes = [0u8; GROUP_LENGTH];
-                        if data.len() < GROUP_LENGTH {
+                        if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
-                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let gid = GroupId(gid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
                             continue;
                         }
 
-                        if group_lock.contains(&gid) {
+                        if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
                             let _ = group_handle_recv_stable_result(
-                                &gid, &out_send, peer_addr, is_ok, data,
+                                &fgid, &out_send, peer_addr, is_ok, data,
                             )
                             .await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ =
-                                layer_handle_recv_result(gid, &out_send, peer_addr, is_ok, data)
-                                    .await;
+                            let _ = layer_handle_recv_result(
+                                fgid, tgid, &out_send, peer_addr, is_ok, data,
+                            )
+                            .await;
                         }
                     }
                     ChamomileReceiveMessage::StableLeave(peer_addr) => {
@@ -333,82 +341,93 @@ pub mod prelude {
                         drop(group_lock);
                     }
                     ChamomileReceiveMessage::Data(peer_addr, mut data) => {
-                        let mut gid_bytes = [0u8; GROUP_LENGTH];
-                        if data.len() < GROUP_LENGTH {
+                        if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
-                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let gid = GroupId(gid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
                             continue;
                         }
 
-                        if group_lock.contains(&gid) {
+                        if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
-                            let _ = group_handle_recv_data(&gid, &out_send, peer_addr, data).await;
+                            let _ = group_handle_recv_data(&fgid, &out_send, peer_addr, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_recv_data(gid, &out_send, peer_addr, data).await;
+                            let _ = layer_handle_recv_data(fgid, tgid, &out_send, peer_addr, data)
+                                .await;
                         }
                     }
                     ChamomileReceiveMessage::Stream(id, stream, mut data) => {
-                        let mut gid_bytes = [0u8; GROUP_LENGTH];
-                        if data.len() < GROUP_LENGTH {
+                        if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
-                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let gid = GroupId(gid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
                             continue;
                         }
 
-                        if group_lock.contains(&gid) {
+                        if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
                             let _ =
-                                group_handle_recv_stream(&gid, &out_send, id, stream, data).await;
+                                group_handle_recv_stream(&fgid, &out_send, id, stream, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
-                                layer_handle_recv_stream(gid, &out_send, id, stream, data).await;
+                                layer_handle_recv_stream(fgid, tgid, &out_send, id, stream, data)
+                                    .await;
                         }
                     }
                     ChamomileReceiveMessage::Delivery(t, tid, is_ok, mut data) => {
-                        let mut gid_bytes = [0u8; GROUP_LENGTH];
-                        if data.len() < GROUP_LENGTH {
+                        if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
-                        gid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let gid = GroupId(gid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
                             continue;
                         }
 
-                        if group_lock.contains(&gid) {
+                        if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
                             let _ =
-                                group_handle_recv_delivery(&gid, &out_send, t.into(), tid, is_ok)
+                                group_handle_recv_delivery(&fgid, &out_send, t.into(), tid, is_ok)
                                     .await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             let _ = layer_handle_recv_delivery(
-                                gid,
+                                fgid,
+                                tgid,
                                 &out_send,
                                 t.into(),
                                 tid,
                                 is_ok,
-                                data,
                             )
                             .await;
                         }
