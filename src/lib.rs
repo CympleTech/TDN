@@ -152,10 +152,6 @@ pub mod prelude {
                     }
                     #[cfg(any(feature = "multiple", feature = "full"))]
                     SendMessage::Group(group_id, msg) => {
-                        if !my_groups_1.read().await.contains(&group_id) {
-                            continue;
-                        }
-
                         group_handle_send(group_id, &p2p_send, msg)
                             .await
                             .map_err(|e| error!("Chamomile channel: {:?}", e))
@@ -185,10 +181,6 @@ pub mod prelude {
                     }
                     #[cfg(feature = "full")]
                     SendMessage::Layer(fgid, tgid, msg) => {
-                        if !my_groups_1.read().await.contains(&fgid) {
-                            continue;
-                        }
-
                         layer_handle_send(fgid, tgid, &p2p_send, msg)
                             .await
                             .map_err(|e| error!("Chamomile channel: {:?}", e))
@@ -314,7 +306,8 @@ pub mod prelude {
                             continue;
                         }
 
-                        if fgid == tgid && group_lock.contains(&fgid) {
+                        let is_me = group_lock.contains(&fgid);
+                        if fgid == tgid && is_me {
                             drop(group_lock);
                             let _ = group_handle_recv_stable_result(
                                 &fgid, &out_send, peer_addr, is_ok, data,
@@ -324,10 +317,13 @@ pub mod prelude {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_recv_result(
-                                fgid, tgid, &out_send, peer_addr, is_ok, data,
-                            )
-                            .await;
+                            {
+                                let (ff, tt) = if is_me { (tgid, fgid) } else { (fgid, tgid) };
+                                let _ = layer_handle_recv_result(
+                                    ff, tt, &out_send, peer_addr, is_ok, data,
+                                )
+                                .await;
+                            }
                         }
                     }
                     ChamomileReceiveMessage::StableLeave(peer_addr) => {
