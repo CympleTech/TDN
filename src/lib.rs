@@ -118,7 +118,7 @@ pub mod prelude {
         self_recv: Receiver<SendMessage>,
         config: Config,
     ) -> Result<PeerAddr> {
-        let (group_ids, p2p_config, rpc_config) = config.split();
+        let (_secret, group_ids, p2p_config, rpc_config) = config.split();
 
         // start chamomile network & inner rpc.
         let ((peer_id, p2p_send, p2p_recv), rpc_sender) = future::try_zip(

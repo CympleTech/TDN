@@ -28,6 +28,7 @@ rand = "0.7"
 log = "0.4"
 httparse = "1"
 mime = "0.3"
+blake3 = "0.3"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
 postcard = { version = "0.5", default-features = false, features = ["alloc"] }

@@ -14,6 +14,8 @@ pub const RPC_ADDR: &str = "127.0.0.1:8000";
 /// Configure file name
 pub const CONFIG_FILE_NAME: &str = "config.toml";
 
+pub const DEFAULT_SECRET: [u8; 32] = [0u8; 32];
+
 pub const DEFAULT_STORAGE_DIR_NAME: &str = ".tdn";
 
 lazy_static! {
