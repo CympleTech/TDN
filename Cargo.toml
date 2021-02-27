@@ -36,6 +36,7 @@ async-tungstenite = { version = "0.10", default-features = false }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 tdn-types = { version = "0.4", path = "./types", default-features = false }
 chamomile = { git = "https://github.com/cypherlink/chamomile", branch="main" }
+#chamomile = { path = "../chamomile" }
 
 [dev-dependencies]
 #tdn_permission = "0.2"

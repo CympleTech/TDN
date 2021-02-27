@@ -58,15 +58,8 @@ pub fn new_io_error(info: &str) -> std::io::Error {
 
 #[inline]
 pub fn vec_remove_item<T: Eq + PartialEq>(vec: &mut Vec<T>, item: &T) {
-    let mut need_remove: Vec<usize> = vec![];
-    for (k, i) in vec.iter().enumerate() {
-        if i == item {
-            need_remove.push(k);
-        }
-    }
-
-    for i in need_remove.iter().rev() {
-        vec.remove(*i);
+    if let Some(pos) = vec.iter().position(|x| x == item) {
+        vec.remove(pos);
     }
 }
 

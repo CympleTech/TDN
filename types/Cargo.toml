@@ -24,3 +24,4 @@ dirs = "3"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
 chamomile-types = { git = "https://github.com/cypherlink/chamomile", branch="main" }
+#chamomile-types = { path = "../../chamomile/types" }
