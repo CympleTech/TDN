@@ -23,29 +23,29 @@ fn main() {
         while let Ok(message) = out_recv.recv().await {
             match message {
                 ReceiveMessage::Group(msg) => match msg {
-                    GroupReceiveMessage::StableConnect(peer, _data) => {
+                    RecvType::Connect(peer, _data) => {
                         println!("receive group peer {} join", peer.short_show());
                     }
-                    GroupReceiveMessage::StableResult(..) => {
+                    RecvType::Result(..) => {
                         //
                     }
-                    GroupReceiveMessage::StableLeave(peer) => {
+                    RecvType::Leave(peer) => {
                         println!("receive group peer {} leave", peer.short_show());
                     }
-                    GroupReceiveMessage::Event(peer, _data) => {
+                    RecvType::Event(peer, _data) => {
                         println!("receive group event from {}", peer.short_show());
                     }
                     _ => {}
                 },
                 ReceiveMessage::Layer(gid, msg) => match msg {
-                    LayerReceiveMessage::Connect(peer, _data) => {
+                    RecvType::Connect(peer, _data) => {
                         println!(
                             "Layer Join: {}, Addr: {}.",
                             gid.short_show(),
                             peer.short_show()
                         );
                     }
-                    LayerReceiveMessage::Result(..) => {
+                    RecvType::Result(..) => {
                         //
                     }
                     _ => {}
@@ -55,6 +55,7 @@ fn main() {
                         mut rpcs,
                         groups: _,
                         layers: _,
+                        networks: _,
                     }) = rpc_handler.handle(params).await
                     {
                         loop {
