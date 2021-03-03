@@ -49,7 +49,7 @@ pub(crate) async fn group_handle_send(
 }
 
 #[inline]
-pub(crate) async fn group_handle_recv_stable_connect(
+pub(crate) async fn group_handle_connect(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
@@ -72,7 +72,30 @@ pub(crate) async fn group_handle_recv_stable_connect(
 }
 
 #[inline]
-pub(crate) async fn group_handle_recv_stable_result(
+pub(crate) async fn group_handle_result_connect(
+    _gid: &GroupId,
+    out_send: &Sender<ReceiveMessage>,
+    peer_addr: PeerAddr,
+    data: Vec<u8>,
+) -> Result<()> {
+    let gmsg = RecvType::ResultConnect(peer_addr, data);
+
+    #[cfg(any(feature = "single", feature = "std"))]
+    let msg = ReceiveMessage::Group(gmsg);
+    #[cfg(any(feature = "multiple", feature = "full"))]
+    let msg = ReceiveMessage::Group(*_gid, gmsg);
+
+    out_send
+        .send(msg)
+        .await
+        .map_err(|e| error!("Outside channel: {:?}", e))
+        .expect("Outside channel closed");
+
+    Ok(())
+}
+
+#[inline]
+pub(crate) async fn group_handle_result(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
@@ -96,7 +119,7 @@ pub(crate) async fn group_handle_recv_stable_result(
 }
 
 #[inline]
-pub(crate) async fn group_handle_recv_stable_leave(
+pub(crate) async fn group_handle_leave(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
@@ -118,7 +141,7 @@ pub(crate) async fn group_handle_recv_stable_leave(
 }
 
 #[inline]
-pub(crate) async fn group_handle_recv_data(
+pub(crate) async fn group_handle_data(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
@@ -141,7 +164,7 @@ pub(crate) async fn group_handle_recv_data(
 }
 
 #[inline]
-pub(crate) async fn group_handle_recv_stream(
+pub(crate) async fn group_handle_stream(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     uid: u32,
@@ -165,7 +188,7 @@ pub(crate) async fn group_handle_recv_stream(
 }
 
 #[inline]
-pub(crate) async fn group_handle_recv_delivery(
+pub(crate) async fn group_handle_delivery(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
     delivery_type: DeliveryType,

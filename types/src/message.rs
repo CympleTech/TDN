@@ -43,6 +43,9 @@ pub enum RecvType {
     /// when peer a stable connect result.
     /// params: `peer_id`, `is_ok` and `result_data`.
     Result(PeerAddr, bool, Vec<u8>),
+    /// when peer agree a connect, but network is closed,
+    /// create a result connect to it.
+    ResultConnect(PeerAddr, Vec<u8>),
     /// when a stable connected peer leave, send from TDN to outside.
     /// params: `peer_id`.
     Leave(PeerAddr),

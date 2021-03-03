@@ -278,15 +278,41 @@ pub mod prelude {
 
                         if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
-                            let _ =
-                                group_handle_recv_stable_connect(&fgid, &out_send, peer_addr, data)
-                                    .await;
+                            let _ = group_handle_connect(&fgid, &out_send, peer_addr, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
-                                layer_handle_recv_connect(fgid, tgid, &out_send, peer_addr, data)
+                                layer_handle_connect(fgid, tgid, &out_send, peer_addr, data).await;
+                        }
+                    }
+                    ChamomileReceiveMessage::ResultConnect(peer_addr, mut data) => {
+                        if data.len() < GROUP_LENGTH * 2 {
+                            continue;
+                        }
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
+
+                        let group_lock = my_groups.read().await;
+                        if group_lock.len() == 0 {
+                            continue;
+                        }
+
+                        if fgid == tgid && group_lock.contains(&fgid) {
+                            drop(group_lock);
+                            let _ = group_handle_result_connect(&fgid, &out_send, peer_addr, data)
+                                .await;
+                        } else {
+                            drop(group_lock);
+                            // layer handle it.
+                            #[cfg(any(feature = "std", feature = "full"))]
+                            let _ =
+                                layer_handle_result_connect(fgid, tgid, &out_send, peer_addr, data)
                                     .await;
                         }
                     }
@@ -309,30 +335,26 @@ pub mod prelude {
                         let is_me = group_lock.contains(&fgid);
                         if fgid == tgid && is_me {
                             drop(group_lock);
-                            let _ = group_handle_recv_stable_result(
-                                &fgid, &out_send, peer_addr, is_ok, data,
-                            )
-                            .await;
+                            let _ =
+                                group_handle_result(&fgid, &out_send, peer_addr, is_ok, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             {
                                 let (ff, tt) = if is_me { (tgid, fgid) } else { (fgid, tgid) };
-                                let _ = layer_handle_recv_result(
-                                    ff, tt, &out_send, peer_addr, is_ok, data,
-                                )
-                                .await;
+                                let _ =
+                                    layer_handle_result(ff, tt, &out_send, peer_addr, is_ok, data)
+                                        .await;
                             }
                         }
                     }
                     ChamomileReceiveMessage::StableLeave(peer_addr) => {
                         let group_lock = my_groups.read().await;
                         for gid in group_lock.iter() {
-                            let _ =
-                                group_handle_recv_stable_leave(&gid, &out_send, peer_addr).await;
+                            let _ = group_handle_leave(&gid, &out_send, peer_addr).await;
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_recv_leave(*gid, &out_send, peer_addr).await;
+                            let _ = layer_handle_leave(*gid, &out_send, peer_addr).await;
                         }
                         drop(group_lock);
                     }
@@ -354,13 +376,12 @@ pub mod prelude {
 
                         if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
-                            let _ = group_handle_recv_data(&fgid, &out_send, peer_addr, data).await;
+                            let _ = group_handle_data(&fgid, &out_send, peer_addr, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_recv_data(fgid, tgid, &out_send, peer_addr, data)
-                                .await;
+                            let _ = layer_handle_data(fgid, tgid, &out_send, peer_addr, data).await;
                         }
                     }
                     ChamomileReceiveMessage::Stream(id, stream, mut data) => {
@@ -381,15 +402,13 @@ pub mod prelude {
 
                         if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
-                            let _ =
-                                group_handle_recv_stream(&fgid, &out_send, id, stream, data).await;
+                            let _ = group_handle_stream(&fgid, &out_send, id, stream, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             let _ =
-                                layer_handle_recv_stream(fgid, tgid, &out_send, id, stream, data)
-                                    .await;
+                                layer_handle_stream(fgid, tgid, &out_send, id, stream, data).await;
                         }
                     }
                     ChamomileReceiveMessage::Delivery(t, tid, is_ok, mut data) => {
@@ -411,13 +430,12 @@ pub mod prelude {
                         if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
                             let _ =
-                                group_handle_recv_delivery(&fgid, &out_send, t.into(), tid, is_ok)
-                                    .await;
+                                group_handle_delivery(&fgid, &out_send, t.into(), tid, is_ok).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_recv_delivery(
+                            let _ = layer_handle_delivery(
                                 tgid, // Assuming it is remote sended.
                                 fgid,
                                 &out_send,

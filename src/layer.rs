@@ -50,7 +50,7 @@ pub(crate) async fn layer_handle_send(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_connect(
+pub(crate) async fn layer_handle_connect(
     fgid: GroupId,
     _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
@@ -74,7 +74,31 @@ pub(crate) async fn layer_handle_recv_connect(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_result(
+pub(crate) async fn layer_handle_result_connect(
+    fgid: GroupId,
+    _tgid: GroupId,
+    out_send: &Sender<ReceiveMessage>,
+    peer_addr: PeerAddr,
+    data: Vec<u8>,
+) -> Result<()> {
+    let gmsg = RecvType::ResultConnect(peer_addr, data);
+
+    #[cfg(any(feature = "single", feature = "std"))]
+    let msg = ReceiveMessage::Layer(fgid, gmsg);
+    #[cfg(any(feature = "multiple", feature = "full"))]
+    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+
+    out_send
+        .send(msg)
+        .await
+        .map_err(|e| error!("Outside channel: {:?}", e))
+        .expect("Outside channel closed");
+
+    Ok(())
+}
+
+#[inline]
+pub(crate) async fn layer_handle_result(
     fgid: GroupId,
     _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
@@ -99,7 +123,7 @@ pub(crate) async fn layer_handle_recv_result(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_leave(
+pub(crate) async fn layer_handle_leave(
     fgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_addr: PeerAddr,
@@ -121,7 +145,7 @@ pub(crate) async fn layer_handle_recv_leave(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_data(
+pub(crate) async fn layer_handle_data(
     fgid: GroupId,
     _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
@@ -145,7 +169,7 @@ pub(crate) async fn layer_handle_recv_data(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_stream(
+pub(crate) async fn layer_handle_stream(
     fgid: GroupId,
     _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
@@ -170,7 +194,7 @@ pub(crate) async fn layer_handle_recv_stream(
 }
 
 #[inline]
-pub(crate) async fn layer_handle_recv_delivery(
+pub(crate) async fn layer_handle_delivery(
     fgid: GroupId,
     _tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
