@@ -70,6 +70,9 @@ fn main() {
                         }
                     }
                 }
+                ReceiveMessage::NetworkLost => {
+                    println!("No network connections");
+                }
             }
         }
     });

@@ -225,6 +225,13 @@ pub mod prelude {
                                 .map_err(|e| error!("Chamomile channel: {:?}", e))
                                 .expect("Chamomile channel closed");
                         }
+                        NetworkType::NetworkReboot => {
+                            p2p_send
+                                .send(ChamomileSendMessage::NetworkReboot)
+                                .await
+                                .map_err(|e| error!("Chamomile channel: {:?}", e))
+                                .expect("Chamomile channel closed");
+                        }
                         #[cfg(any(feature = "multiple", feature = "full"))]
                         NetworkType::AddGroup(gid) => {
                             let mut group_lock = my_groups_1.write().await;
@@ -445,6 +452,13 @@ pub mod prelude {
                             )
                             .await;
                         }
+                    }
+                    ChamomileReceiveMessage::NetworkLost => {
+                        out_send
+                            .send(ReceiveMessage::NetworkLost)
+                            .await
+                            .map_err(|e| error!("Outside channel: {:?}", e))
+                            .expect("Outside channel closed");
                     }
                 }
             }

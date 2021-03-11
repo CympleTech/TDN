@@ -10,21 +10,25 @@ fn main() {
         while let Ok(message) = out_recv.recv().await {
             match message {
                 ReceiveMessage::Group(msg) => match msg {
-                    GroupReceiveMessage::StableConnect(peer, data) => {
-                        group.join(peer, addr, data, send.clone()).await;
+                    RecvType::Connect(peer, data) => {
+                        group.join(peer, data, send.clone()).await;
                     }
-                    GroupReceiveMessage::StableResult(..) => {
+                    RecvType::Result(..) => {
                         //
                     }
-                    GroupReceiveMessage::StableLeave(peer) => {
+                    RecvType::ResultConnect(peer, data) => {
+                        group.join(peer, data, send.clone()).await;
+                    }
+                    RecvType::Leave(peer) => {
                         group.leave(&peer);
                     }
-                    GroupReceiveMessage::Event(peer, _data) => {
+                    RecvType::Event(peer, _data) => {
                         println!("receive group event from {}", peer.short_show());
                     }
-                    GroupReceiveMessage::Stream(..) => {
+                    RecvType::Stream(..) => {
                         //
                     }
+                    _ => {}
                 },
                 _ => {}
             }

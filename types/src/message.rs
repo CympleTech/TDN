@@ -77,6 +77,8 @@ pub enum NetworkType {
     /// Request for return the network current state info.
     /// params: request type, and return channel's sender (async).
     NetworkState(StateRequest, Sender<StateResponse>),
+    /// When receive `ReceiveMessage::NetworkLost`, want to reboot network, it can use.
+    NetworkReboot,
     /// add group to TDN control. multiple group use.
     #[cfg(any(feature = "multiple", feature = "full"))]
     AddGroup(GroupId),
@@ -109,6 +111,8 @@ pub enum ReceiveMessage {
     Layer(GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
+    /// when network lost all DHT network and direct stables. will tell outside.
+    NetworkLost,
 }
 
 /// channel message send to TDN for single version.
@@ -131,6 +135,8 @@ pub enum ReceiveMessage {
     Group(RecvType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
+    /// when network lost all DHT network and direct stables. will tell outside.
+    NetworkLost,
 }
 
 /// channel message send to TDN for multiple version.
@@ -153,6 +159,8 @@ pub enum ReceiveMessage {
     Group(GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
+    /// when network lost all DHT network and direct stables. will tell outside.
+    NetworkLost,
 }
 
 /// channel message send to TDN for full version.
@@ -181,6 +189,8 @@ pub enum ReceiveMessage {
     Layer(GroupId, GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
+    /// when network lost all DHT network and direct stables. will tell outside.
+    NetworkLost,
 }
 
 /// packaging the rpc message. not open to ouside.
