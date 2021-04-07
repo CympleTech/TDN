@@ -134,6 +134,7 @@ impl<'a> HandleResult {
     pub fn new() -> Self {
         HandleResult {
             rpcs: vec![],
+            #[cfg(any(feature = "single", feature = "std"))]
             groups: vec![],
             #[cfg(any(feature = "full", feature = "std"))]
             layers: vec![],
@@ -144,6 +145,7 @@ impl<'a> HandleResult {
     pub fn rpc(p: RpcParam) -> Self {
         HandleResult {
             rpcs: vec![p],
+            #[cfg(any(feature = "single", feature = "std"))]
             groups: vec![],
             #[cfg(any(feature = "full", feature = "std"))]
             layers: vec![],
@@ -196,6 +198,7 @@ impl<'a> HandleResult {
     pub fn network(m: NetworkType) -> Self {
         HandleResult {
             rpcs: vec![],
+            #[cfg(any(feature = "single", feature = "std"))]
             groups: vec![],
             #[cfg(any(feature = "full", feature = "std"))]
             layers: vec![],
