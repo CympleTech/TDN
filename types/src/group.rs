@@ -89,7 +89,33 @@ pub trait Peer {
 }
 
 /// Helper: this is the EventId in the network.
-pub struct EventId(pub [u8; 64]);
+#[derive(Copy, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
+pub struct EventId(pub [u8; 32]);
+
+impl EventId {
+    pub fn from_hex(s: impl ToString) -> Result<EventId> {
+        let s = s.to_string();
+        if s.len() != 64 {
+            return Err(new_io_error("Hex is invalid"));
+        }
+
+        let mut value = [0u8; 32];
+
+        for i in 0..(s.len() / 2) {
+            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)
+                .map_err(|_e| new_io_error("Hex is invalid"))?;
+            value[i] = res;
+        }
+
+        Ok(EventId(value))
+    }
+
+    pub fn to_hex(&self) -> String {
+        let mut hex = String::new();
+        hex.extend(self.0.iter().map(|byte| format!("{:02x?}", byte)));
+        hex
+    }
+}
 
 /// Helper: this is the interface of the Event in the network.
 pub trait Event: Clone + Send + Debug + Eq + Ord + Serialize + DeserializeOwned {
