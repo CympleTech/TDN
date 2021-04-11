@@ -10,34 +10,34 @@ pub type RpcParam = Value;
 use crate::primitive::{HandleResult, Result};
 
 #[derive(Debug, Clone)]
-pub enum RpcError<'a> {
+pub enum RpcError {
     ParseError,
     InvalidRequest,
     InvalidVersion,
     InvalidResponse,
-    MethodNotFound(&'a str),
-    Custom(&'a str),
+    MethodNotFound(String),
+    Custom(String),
 }
 
-impl<'a> From<std::option::NoneError> for RpcError<'a> {
-    fn from(_e: std::option::NoneError) -> RpcError<'a> {
-        RpcError::Custom("Option None Error")
+impl From<std::option::NoneError> for RpcError {
+    fn from(_e: std::option::NoneError) -> RpcError {
+        RpcError::Custom("Option None Error".to_owned())
     }
 }
 
-impl<'a> Into<std::io::Error> for RpcError<'a> {
+impl Into<std::io::Error> for RpcError {
     fn into(self) -> std::io::Error {
         std::io::Error::new(std::io::ErrorKind::Other, "RPC Error")
     }
 }
 
-impl<'a> From<std::io::Error> for RpcError<'a> {
-    fn from(_e: std::io::Error) -> RpcError<'a> {
-        RpcError::Custom("IO Error")
+impl From<std::io::Error> for RpcError {
+    fn from(e: std::io::Error) -> RpcError {
+        RpcError::Custom(format!("{}", e))
     }
 }
 
-impl<'a> RpcError<'a> {
+impl RpcError {
     pub fn json(&self, id: u64) -> RpcParam {
         match self {
             RpcError::ParseError => json!({
@@ -91,9 +91,7 @@ impl<'a> RpcError<'a> {
     }
 }
 
-pub fn parse_jsonrpc<'a>(
-    json_string: String,
-) -> std::result::Result<RpcParam, (RpcError<'a>, u64)> {
+pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcError, u64)> {
     match serde_json::from_str::<RpcParam>(&json_string) {
         Ok(mut value) => {
             let id_res = value
@@ -178,26 +176,26 @@ pub fn parse_jsonrpc<'a>(
 ///     _ => {}
 /// }
 /// ````
-pub struct RpcHandler<S: 'static + Send + Sync> {
+pub struct RpcHandler<S: Send + Sync> {
     state: Arc<S>,
     fns: HashMap<&'static str, Box<DynFutFn<S>>>,
     //fns: HashMap<&'static str, BoxFuture<'static, RpcResult<'static>>>,
 }
 
-type RpcResult<'a> = std::result::Result<HandleResult, RpcError<'a>>;
-type BoxFuture<'a, RpcResult> = Pin<Box<dyn Future<Output = RpcResult> + Send + 'a>>;
+type RpcResult = std::result::Result<HandleResult, RpcError>;
+type BoxFuture<RpcResult> = Pin<Box<dyn Future<Output = RpcResult> + Send>>;
 
 pub trait FutFn<S>: Send + Sync + 'static {
     #[cfg(any(feature = "single", feature = "std"))]
-    fn call<'a>(&'a self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<'a, RpcResult<'a>>;
+    fn call(&self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<RpcResult>;
 
     #[cfg(any(feature = "multiple", feature = "full"))]
-    fn call<'a>(
-        &'a self,
+    fn call(
+        &self,
         gid: crate::group::GroupId,
         params: Vec<RpcParam>,
         s: Arc<S>,
-    ) -> BoxFuture<'a, RpcResult<'a>>;
+    ) -> BoxFuture<RpcResult>;
 }
 
 pub(crate) type DynFutFn<S> = dyn FutFn<S>;
@@ -206,9 +204,9 @@ pub(crate) type DynFutFn<S> = dyn FutFn<S>;
 impl<S, F: Send + Sync + 'static, Fut> FutFn<S> for F
 where
     F: Fn(Vec<RpcParam>, Arc<S>) -> Fut,
-    Fut: Future<Output = RpcResult<'static>> + Send + 'static,
+    Fut: Future<Output = RpcResult> + Send + 'static,
 {
-    fn call<'a>(&'a self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<'a, RpcResult<'a>> {
+    fn call(&self, params: Vec<RpcParam>, s: Arc<S>) -> BoxFuture<RpcResult> {
         let fut = (self)(params, s);
         Box::pin(async move { fut.await })
     }
@@ -218,14 +216,14 @@ where
 impl<S, F: Send + Sync + 'static, Fut> FutFn<S> for F
 where
     F: Fn(crate::group::GroupId, Vec<RpcParam>, Arc<S>) -> Fut,
-    Fut: Future<Output = RpcResult<'static>> + Send + 'static,
+    Fut: Future<Output = RpcResult> + Send + 'static,
 {
-    fn call<'a>(
-        &'a self,
+    fn call(
+        &self,
         gid: crate::group::GroupId,
         params: Vec<RpcParam>,
         s: Arc<S>,
-    ) -> BoxFuture<'a, RpcResult<'a>> {
+    ) -> BoxFuture<RpcResult> {
         let fut = (self)(gid, params, s);
         Box::pin(async move { fut.await })
     }
@@ -336,7 +334,7 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                 }
                 None => new_results
                     .rpcs
-                    .push(RpcError::MethodNotFound(method).json(id)),
+                    .push(RpcError::MethodNotFound(method.to_owned()).json(id)),
             }
         } else {
             new_results.rpcs.push(RpcError::InvalidRequest.json(id))
