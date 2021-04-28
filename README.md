@@ -37,8 +37,8 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - [tdn-permission](https://github.com/cypherlink/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
 
 ## Projects used it
-- [ESSE](https://github.com/CympleTech/esse) An open source encrypted peer-to-peer system. Own data, own privacy.
-- [group-chat](https://github.com/CympleTech/group-chat) Group Chat for ESSE and TDN Ecological.
+- [ESSE](https://github.com/CympleTech/esse) **full feature** An open source encrypted peer-to-peer system. Own data, own privacy.
+- [group-chat](https://github.com/CympleTech/group-chat) **multiple feature** Group Chat for ESSE and TDN Ecological.
 
 ### Core QA
 1. **What is Layers & Groups?**
