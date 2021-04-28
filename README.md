@@ -36,6 +36,10 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - [tdn-storage](https://github.com/cypherlink/tdn-storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
 - [tdn-permission](https://github.com/cypherlink/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
 
+## Projects used it
+- [ESSE](https://github.com/CympleTech/esse) An open source encrypted peer-to-peer system. Own data, own privacy.
+- [group-chat](https://github.com/CympleTech/group-chat) Group Chat for ESSE and TDN Ecological.
+
 ### Core QA
 1. **What is Layers & Groups?**
 Simply `Group` is application, one application is one group, `Layer` is communication between apps. In the Group, users can define everything. The Layer is divided into upper and lower, upper is this application depends on others, lower is others depends on this. If app is an independent application that does not interact with other applications, then you can completely ignore Layer.
