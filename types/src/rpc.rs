@@ -279,6 +279,12 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                             new_results.networks = networks;
 
                             for params in rpcs {
+                                // check when params is complete jsonrpc result.
+                                if params.is_object() && params.get("jsonrpc").is_some() {
+                                    new_results.rpcs.push(params);
+                                    continue;
+                                }
+
                                 #[cfg(feature = "single")]
                                 new_results.rpcs.push(rpc_response(id, method, params));
 
@@ -312,6 +318,12 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                             new_results.networks = networks;
 
                             for params in rpcs {
+                                // check when params is complete jsonrpc result.
+                                if params.is_object() && params.get("jsonrpc").is_some() {
+                                    new_results.rpcs.push(params);
+                                    continue;
+                                }
+
                                 #[cfg(feature = "std")]
                                 new_results.rpcs.push(rpc_response(id, method, params));
 
