@@ -64,6 +64,12 @@ impl Debug for GroupId {
     }
 }
 
+impl Into<PeerAddr> for GroupId {
+    fn into(self) -> PeerAddr {
+        chamomile_types::types::PeerId(self.0)
+    }
+}
+
 /// Helper: this is the interface of the Group in the network.
 /// Group id's data structure is defined by TDN,
 pub trait Group {
