@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use tdn::prelude::*;
-use tdn::types::rpc::{json, RpcHandler};
+use tdn::types::rpc::{json, RpcError, RpcHandler, RpcParam};
 
 struct State(u32);
 
@@ -10,10 +10,14 @@ fn main() {
         println!("Example: peer id: {:?}", peer_addr);
 
         let mut rpc_handler = RpcHandler::new(State(1));
-        rpc_handler.add_method("echo", |params, state: Arc<State>| async move {
-            assert_eq!(1, state.0);
-            Ok(HandleResult::rpc(json!(params)))
-        });
+        rpc_handler.add_method(
+            "echo",
+            |params: Vec<RpcParam>, state: Arc<State>| async move {
+                let _value = params[0].as_str().ok_or(RpcError::ParseError)?;
+                assert_eq!(1, state.0);
+                Ok(HandleResult::rpc(json!(params)))
+            },
+        );
 
         rpc_handler.add_method("say_hello", |_params, state: Arc<State>| async move {
             assert_eq!(1, state.0);

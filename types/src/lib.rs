@@ -1,5 +1,4 @@
 //! Helper, When building the application, it is impossible to determine the data structure of the layers application, you can use this trait to constrain
-#![feature(try_trait_v2)]
 
 pub mod group;
 pub mod message;
