@@ -19,6 +19,12 @@ pub enum RpcError {
     Custom(String),
 }
 
+impl std::ops::FromResidual<std::option::Option<std::convert::Infallible>> for RpcError {
+    fn from_residual(_e: std::option::Option<std::convert::Infallible>) -> RpcError {
+        RpcError::Custom("Option None Error".to_owned())
+    }
+}
+
 impl Into<std::io::Error> for RpcError {
     fn into(self) -> std::io::Error {
         std::io::Error::new(std::io::ErrorKind::Other, "RPC Error")
