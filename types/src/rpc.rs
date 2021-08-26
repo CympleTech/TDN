@@ -19,12 +19,6 @@ pub enum RpcError {
     Custom(String),
 }
 
-impl From<std::option::NoneError> for RpcError {
-    fn from(_e: std::option::NoneError) -> RpcError {
-        RpcError::Custom("Option None Error".to_owned())
-    }
-}
-
 impl Into<std::io::Error> for RpcError {
     fn into(self) -> std::io::Error {
         std::io::Error::new(std::io::ErrorKind::Other, "RPC Error")

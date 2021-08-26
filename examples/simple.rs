@@ -7,7 +7,7 @@ struct State(u32);
 fn main() {
     smol::block_on(async {
         let (peer_addr, send, out_recv) = start().await.unwrap();
-        println!("Example: peer id: {}", peer_addr.short_show());
+        println!("Example: peer id: {:?}", peer_addr);
 
         let mut rpc_handler = RpcHandler::new(State(1));
         rpc_handler.add_method("echo", |params, state: Arc<State>| async move {
