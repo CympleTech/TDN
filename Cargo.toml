@@ -16,26 +16,26 @@ members = [
 
 [features]
 default = ["std"]
-std = ["tdn-types/std"]           # standard : one group       , multiple layers.
-single = ["tdn-types/single"]     # signle   : one group       , no Layers.
-multiple = ["tdn-types/multiple"] # multiple : multiple groups , no layers.
-full = ["tdn-types/full"]         # full     : multiple groups , multiple layers.
+std = ["tdn_types/std"]           # standard : one group       , multiple layers.
+single = ["tdn_types/single"]     # signle   : one group       , no Layers.
+multiple = ["tdn_types/multiple"] # multiple : multiple groups , no layers.
+full = ["tdn_types/full"]         # full     : multiple groups , multiple layers.
 
 [dependencies]
 smol = "1.2"
 toml = "0.5"
 rand = "0.7"
 log = "0.4"
-httparse = "1"
+httparse = "1.5"
 mime = "0.3"
-blake3 = "0.3"
+blake3 = "1.0"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
-postcard = { version = "0.5", default-features = false, features = ["alloc"] }
-async-tungstenite = { version = "0.10", default-features = false }
+postcard = { version = "0.7", default-features = false, features = ["alloc"] }
+async-tungstenite = { version = "0.14", default-features = false }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
-tdn-types = { version = "0.4", path = "./types", default-features = false }
-chamomile = { git = "https://github.com/cypherlink/chamomile", branch="main" }
+tdn_types = { version = "0.4", path = "./types", default-features = false }
+chamomile = "0.4"
 #chamomile = { path = "../chamomile" }
 
 [dev-dependencies]

@@ -11,8 +11,7 @@ use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
     group::{GroupId, GROUP_LENGTH},
     primitive::{
-        PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, DEFAULT_STORAGE_DIR, P2P_ADDR,
-        P2P_TRANSPORT, RPC_ADDR,
+        PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
     },
 };
 
@@ -70,7 +69,7 @@ impl Config {
             db_dir: if let Some(path) = db_path {
                 path
             } else {
-                DEFAULT_STORAGE_DIR.clone()
+                PathBuf::from("./") // Default is current directory.
             },
             addr: p2p_addr,
             transport: p2p_transport,
@@ -119,7 +118,7 @@ impl Config {
     }
 
     pub async fn load() -> Self {
-        let string = load_file_string(DEFAULT_STORAGE_DIR.clone()).await;
+        let string = load_file_string(PathBuf::from("./")).await;
 
         match string {
             Ok(string) => {
@@ -171,7 +170,7 @@ impl Config {
     }
 
     pub async fn load_custom<S: SeSerialize + SeDeserializeOwned>() -> Option<S> {
-        let string = load_file_string(DEFAULT_STORAGE_DIR.clone()).await;
+        let string = load_file_string(PathBuf::from("./")).await;
         match string {
             Ok(string) => toml::from_str::<S>(&string).ok(),
             Err(_) => None,

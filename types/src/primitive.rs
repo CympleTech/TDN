@@ -1,6 +1,4 @@
 use chamomile_types::message::DeliveryType as P2pDeliveryType;
-use lazy_static::lazy_static;
-use std::path::PathBuf;
 
 /// P2P default binding addr.
 pub const P2P_ADDR: &str = "0.0.0.0:7364";
@@ -17,25 +15,6 @@ pub const CONFIG_FILE_NAME: &str = "config.toml";
 pub const DEFAULT_SECRET: [u8; 32] = [0u8; 32];
 
 pub const DEFAULT_STORAGE_DIR_NAME: &str = ".tdn";
-
-lazy_static! {
-    pub static ref DEFAULT_STORAGE_DIR: PathBuf = {
-        #[cfg(feature = "dev")]
-        let mut path = PathBuf::from("./");
-
-        #[cfg(not(feature = "dev"))]
-        let mut path = if dirs::home_dir().is_some() {
-            dirs::home_dir().unwrap()
-        } else {
-            PathBuf::from("./")
-        };
-
-        path.push(DEFAULT_STORAGE_DIR_NAME);
-        let _ = std::fs::create_dir_all(&path)
-            .expect(&format!("Cannot Build Storage Path: {:?}", path));
-        path
-    };
-}
 
 /// Type: PeerAddr
 pub type PeerAddr = chamomile_types::types::PeerId;
