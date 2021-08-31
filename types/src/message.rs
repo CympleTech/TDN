@@ -1,5 +1,5 @@
-use async_channel::Sender;
 use std::net::SocketAddr;
+use tokio::sync::mpsc::Sender;
 
 use crate::primitive::{Broadcast, DeliveryType, PeerAddr, StreamType};
 use crate::rpc::RpcParam;
@@ -9,7 +9,7 @@ pub use chamomile_types::message::{StateRequest, StateResponse};
 use crate::group::GroupId;
 
 /// channel message send to TDN Group.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum SendType {
     /// when need stable connect to a peer, send to TDN from outside.
     /// params: `delivery_id`, `peer_id`, `option_domain`, `option_socket_addr` and peer `join_data`.
@@ -35,7 +35,7 @@ pub enum SendType {
 }
 
 /// channel message receive from TDN Group.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum RecvType {
     /// when peer what a stable connection, send from TDN to outside.
     /// params: `peer_id`, and peer `connect_info`.
@@ -89,7 +89,7 @@ pub enum NetworkType {
 
 /// channel message send to TDN for std version.
 #[cfg(feature = "std")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum SendMessage {
     /// Group: GroupMessage.
     Group(SendType),
@@ -103,7 +103,7 @@ pub enum SendMessage {
 
 /// channel message receive from TDN for std version.
 #[cfg(feature = "std")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(RecvType),
@@ -141,7 +141,7 @@ pub enum ReceiveMessage {
 
 /// channel message send to TDN for multiple version.
 #[cfg(feature = "multiple")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum SendMessage {
     /// Group: GroupMessage.
     Group(GroupId, SendType),
@@ -153,7 +153,7 @@ pub enum SendMessage {
 
 /// channel message receive from TDN for multiple version.
 #[cfg(feature = "multiple")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(GroupId, RecvType),
@@ -165,7 +165,7 @@ pub enum ReceiveMessage {
 
 /// channel message send to TDN for full version.
 #[cfg(feature = "full")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum SendMessage {
     /// Group: GroupMessage.
     Group(GroupId, SendType),
@@ -180,7 +180,7 @@ pub enum SendMessage {
 
 /// channel message receive from TDN for full version.
 #[cfg(feature = "full")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(GroupId, RecvType),
@@ -194,4 +194,5 @@ pub enum ReceiveMessage {
 }
 
 /// packaging the rpc message. not open to ouside.
+#[derive(Debug)]
 pub struct RpcSendMessage(pub u64, pub RpcParam, pub bool);

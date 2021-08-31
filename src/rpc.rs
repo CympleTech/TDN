@@ -1,14 +1,14 @@
 mod http;
 mod ws;
 
-use smol::{
-    channel::{self, Receiver, Sender},
-    future,
-    net::TcpListener,
-};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use tokio::{
+    net::TcpListener,
+    select,
+    sync::mpsc::{self, Receiver, Sender},
+};
 
 use tdn_types::{
     message::{ReceiveMessage, RpcSendMessage},
@@ -22,6 +22,7 @@ pub struct RpcConfig {
     pub index: Option<PathBuf>,
 }
 
+#[derive(Debug)]
 pub(crate) enum RpcMessage {
     Open(u64, Sender<RpcMessage>),
     Close(u64),
@@ -30,11 +31,11 @@ pub(crate) enum RpcMessage {
 }
 
 fn rpc_channel() -> (Sender<RpcMessage>, Receiver<RpcMessage>) {
-    channel::unbounded()
+    mpsc::channel(128)
 }
 
 fn rpc_send_channel() -> (Sender<RpcSendMessage>, Receiver<RpcSendMessage>) {
-    channel::unbounded()
+    mpsc::channel(128)
 }
 
 pub(crate) async fn start(
@@ -58,20 +59,20 @@ enum FutureResult {
 
 async fn listen(
     send: Sender<ReceiveMessage>,
-    out_recv: Receiver<RpcSendMessage>,
-    self_recv: Receiver<RpcMessage>,
+    mut out_recv: Receiver<RpcSendMessage>,
+    mut self_recv: Receiver<RpcMessage>,
 ) -> Result<()> {
-    smol::spawn(async move {
+    tokio::spawn(async move {
         let mut connections: HashMap<u64, Sender<RpcMessage>> = HashMap::new();
 
         loop {
-            match future::race(
-                async { out_recv.recv().await.map(|msg| FutureResult::Out(msg)) },
-                async { self_recv.recv().await.map(|msg| FutureResult::Stream(msg)) },
-            )
-            .await
-            {
-                Ok(FutureResult::Out(msg)) => {
+            let res = select! {
+                v = async { out_recv.recv().await.map(|msg| FutureResult::Out(msg)) } => v,
+                v = async { self_recv.recv().await.map(|msg| FutureResult::Stream(msg)) } => v
+            };
+
+            match res {
+                Some(FutureResult::Out(msg)) => {
                     let RpcSendMessage(id, params, is_ws) = msg;
                     if is_ws {
                         let s = connections.get(&id);
@@ -85,7 +86,7 @@ async fn listen(
                         }
                     }
                 }
-                Ok(FutureResult::Stream(msg)) => {
+                Some(FutureResult::Stream(msg)) => {
                     match msg {
                         RpcMessage::Request(id, params, sender) => {
                             let is_ws = sender.is_none();
@@ -105,36 +106,33 @@ async fn listen(
                         _ => {} // others not handle
                     }
                 }
-                Err(_) => break,
+                None => break,
             }
         }
-    })
-    .detach();
+    });
 
     Ok(())
 }
 
 async fn server(send: Sender<RpcMessage>, config: RpcConfig) -> Result<()> {
-    smol::spawn(http::http_listen(
+    tokio::spawn(http::http_listen(
         config.index.clone(),
         send.clone(),
         TcpListener::bind(config.addr).await.map_err(|e| {
             error!("RPC HTTP listen {:?}", e);
             std::io::Error::new(std::io::ErrorKind::Other, "TCP Listen")
         })?,
-    ))
-    .detach();
+    ));
 
     // ws
     if config.ws.is_some() {
-        smol::spawn(ws::ws_listen(
+        tokio::spawn(ws::ws_listen(
             send,
             TcpListener::bind(config.ws.unwrap()).await.map_err(|e| {
                 error!("RPC WS listen {:?}", e);
                 std::io::Error::new(std::io::ErrorKind::Other, "TCP Listen")
             })?,
-        ))
-        .detach();
+        ));
     }
 
     Ok(())

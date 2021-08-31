@@ -1,10 +1,10 @@
 use chamomile::prelude::SendMessage;
-use smol::channel::{SendError, Sender};
 use tdn_types::{
     group::GroupId,
     message::{ReceiveMessage, RecvType, SendType},
     primitive::{DeliveryType, PeerAddr, Result, StreamType},
 };
+use tokio::sync::mpsc::{error::SendError, Sender};
 
 #[inline]
 pub(crate) async fn group_handle_send(

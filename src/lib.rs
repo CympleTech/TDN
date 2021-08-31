@@ -44,8 +44,6 @@ mod layer;
 // public mod
 pub mod error;
 
-// re-export smol
-pub use smol;
 // re-export tdn_types
 pub use tdn_types as types;
 
@@ -63,14 +61,14 @@ pub mod prelude {
         start as chamomile_start, ReceiveMessage as ChamomileReceiveMessage,
         SendMessage as ChamomileSendMessage,
     };
-    use smol::{
-        channel::{self, Receiver, Sender},
-        future,
-        io::Result,
-        lock::RwLock,
-    };
     use std::sync::Arc;
     use tdn_types::message::RpcSendMessage;
+    use tokio::{
+        io::Result,
+        join,
+        sync::mpsc::{self, Receiver, Sender},
+        sync::RwLock,
+    };
 
     use super::group::*;
     use super::rpc::start as rpc_start;
@@ -80,12 +78,12 @@ pub mod prelude {
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_send_channel() -> (Sender<SendMessage>, Receiver<SendMessage>) {
-        channel::unbounded()
+        mpsc::channel(128)
     }
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_receive_channel() -> (Sender<ReceiveMessage>, Receiver<ReceiveMessage>) {
-        channel::unbounded()
+        mpsc::channel(128)
     }
 
     /// start a service, use config.toml file.
@@ -115,25 +113,26 @@ pub mod prelude {
 
     async fn start_main(
         out_send: Sender<ReceiveMessage>,
-        self_recv: Receiver<SendMessage>,
+        mut self_recv: Receiver<SendMessage>,
         config: Config,
     ) -> Result<PeerAddr> {
         let (_secret, group_ids, p2p_config, rpc_config) = config.split();
 
         // start chamomile network & inner rpc.
-        let ((peer_id, p2p_send, p2p_recv), rpc_sender) = future::try_zip(
+        let (res1, res2) = join!(
             chamomile_start(p2p_config),
             rpc_start(rpc_config, out_send.clone()),
-        )
-        .await?;
+        );
+        let (peer_id, p2p_send, mut p2p_recv) = res1?;
+        let rpc_sender = res2?;
 
         debug!("chamomile & jsonrpc service started");
         let my_groups = Arc::new(RwLock::new(group_ids));
         let my_groups_1 = my_groups.clone();
 
         // handle outside msg.
-        smol::spawn(async move {
-            while let Ok(message) = self_recv.recv().await {
+        tokio::spawn(async move {
+            while let Some(message) = self_recv.recv().await {
                 match message {
                     #[cfg(any(feature = "single", feature = "std"))]
                     SendMessage::Group(msg) => {
@@ -257,15 +256,14 @@ pub mod prelude {
                     },
                 }
             }
-        })
-        .detach();
+        });
 
         // handle chamomile send msg.
-        smol::spawn(async move {
+        tokio::spawn(async move {
             // if group's inner message, from_group in our groups.
             // if layer's message,       from_group not in our groups.
 
-            while let Ok(message) = p2p_recv.recv().await {
+            while let Some(message) = p2p_recv.recv().await {
                 match message {
                     ChamomileReceiveMessage::StableConnect(peer_addr, mut data) => {
                         if data.len() < GROUP_LENGTH * 2 {
@@ -462,8 +460,7 @@ pub mod prelude {
                     }
                 }
             }
-        })
-        .detach();
+        });
 
         Ok(peer_id)
     }

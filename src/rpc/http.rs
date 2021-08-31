@@ -1,15 +1,14 @@
 use rand::prelude::*;
-use smol::{
-    channel::Sender,
-    fs,
-    io::Result,
-    lock::RwLock,
-    net::{TcpListener, TcpStream},
-    prelude::*,
-};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::{
+    fs,
+    io::{AsyncReadExt, AsyncWriteExt, Result},
+    net::{TcpListener, TcpStream},
+    sync::mpsc::Sender,
+    sync::RwLock,
+};
 //use std::time::Duration;
 
 use tdn_types::rpc::parse_jsonrpc;
@@ -31,13 +30,12 @@ pub(crate) async fn http_listen(
     let homelink = Arc::new(RwLock::new(homepage));
 
     while let Ok((stream, addr)) = listener.accept().await {
-        smol::spawn(http_connection(
+        tokio::spawn(http_connection(
             homelink.clone(),
             send.clone(),
             stream,
             addr,
-        ))
-        .detach();
+        ));
     }
 
     Ok(())
@@ -95,7 +93,7 @@ async fn http_connection(
 ) -> Result<()> {
     debug!("DEBUG: HTTP connection established: {}", addr);
     let id: u64 = rand::thread_rng().gen();
-    let (s_send, s_recv) = rpc_channel();
+    let (s_send, mut s_recv) = rpc_channel();
 
     let mut buf = vec![];
 
@@ -136,11 +134,11 @@ async fn http_connection(
                 .write(format!("{}{}", res, err.json(id).to_string()).as_bytes())
                 .await?;
             let _ = stream.flush().await;
-            stream.shutdown(std::net::Shutdown::Both)?;
+            stream.shutdown().await?;
         }
     }
 
-    while let Ok(msg) = s_recv.recv().await {
+    while let Some(msg) = s_recv.recv().await {
         let param = match msg {
             RpcMessage::Response(param) => param,
             _ => Default::default(),
@@ -149,7 +147,7 @@ async fn http_connection(
             .write(format!("{}{}", res, param.to_string()).as_bytes())
             .await?;
         let _ = stream.flush().await;
-        stream.shutdown(std::net::Shutdown::Both)?;
+        stream.shutdown().await?;
         break;
     }
 

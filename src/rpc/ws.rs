@@ -1,13 +1,13 @@
-use async_tungstenite::{accept_async, tungstenite::protocol::Message as WsMessage};
 use rand::prelude::*;
-use smol::{
-    channel::{RecvError, Sender},
-    future,
-    io::Result,
-    net::{TcpListener, TcpStream},
-};
 use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
+use tokio::{
+    io::Result,
+    net::{TcpListener, TcpStream},
+    select,
+    sync::mpsc::Sender,
+};
+use tokio_tungstenite::{accept_async, tungstenite::protocol::Message as WsMessage};
 
 use tdn_types::rpc::parse_jsonrpc;
 
@@ -17,7 +17,7 @@ use super::{rpc_channel, RpcMessage};
 
 pub(crate) async fn ws_listen(send: Sender<RpcMessage>, listener: TcpListener) -> Result<()> {
     while let Ok((stream, addr)) = listener.accept().await {
-        smol::spawn(ws_connection(send.clone(), stream, addr)).detach();
+        tokio::spawn(ws_connection(send.clone(), stream, addr));
     }
 
     Ok(())
@@ -38,7 +38,7 @@ async fn ws_connection(
         .map_err(|_e| Error::new(ErrorKind::Other, "Accept WebSocket Failure!"))?;
     debug!("DEBUG: WebSocket connection established: {}", addr);
     let id: u64 = rand::thread_rng().gen();
-    let (s_send, s_recv) = rpc_channel();
+    let (s_send, mut s_recv) = rpc_channel();
     send.send(RpcMessage::Open(id, s_send))
         .await
         .expect("Ws to Rpc channel closed");
@@ -46,20 +46,19 @@ async fn ws_connection(
     let (mut writer, mut reader) = ws_stream.split();
 
     loop {
-        match future::race(
-            async { s_recv.recv().await.map(|msg| FutureResult::Out(msg)) },
-            async {
+        let res = select! {
+            v = async { s_recv.recv().await.map(|msg| FutureResult::Out(msg)) } => v,
+            v = async {
                 reader
                     .next()
                     .await
                     .map(|msg| msg.map(|msg| FutureResult::Stream(msg)).ok())
                     .flatten()
-                    .ok_or(RecvError)
-            },
-        )
-        .await
-        {
-            Ok(FutureResult::Out(msg)) => {
+            } => v,
+        };
+
+        match res {
+            Some(FutureResult::Out(msg)) => {
                 let param = match msg {
                     RpcMessage::Response(param) => param,
                     _ => Default::default(),
@@ -67,7 +66,7 @@ async fn ws_connection(
                 let s = WsMessage::from(param.to_string());
                 let _ = writer.send(s).await;
             }
-            Ok(FutureResult::Stream(msg)) => {
+            Some(FutureResult::Stream(msg)) => {
                 let msg = msg.to_text().unwrap();
                 match parse_jsonrpc(msg.to_owned()) {
                     Ok(rpc_param) => {
@@ -81,7 +80,7 @@ async fn ws_connection(
                     }
                 }
             }
-            Err(_) => break,
+            None => break,
         }
     }
 

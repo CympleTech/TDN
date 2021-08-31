@@ -3,9 +3,9 @@ use rand::{thread_rng, Rng};
 use serde::de::DeserializeOwned as SeDeserializeOwned;
 use serde::ser::Serialize as SeSerialize;
 use serde::{Deserialize, Serialize};
-use smol::fs;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
+use tokio::fs;
 
 use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
