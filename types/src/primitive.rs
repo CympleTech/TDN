@@ -3,8 +3,8 @@ use chamomile_types::message::DeliveryType as P2pDeliveryType;
 /// P2P default binding addr.
 pub const P2P_ADDR: &str = "0.0.0.0:7364";
 
-/// P2P default transport.
-pub const P2P_TRANSPORT: &str = "tcp";
+/// P2P default transport: QUIC.
+pub const P2P_TRANSPORT: &str = "quic";
 
 /// RPC default binding addr.
 pub const RPC_ADDR: &str = "127.0.0.1:8000";
