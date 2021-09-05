@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.5.2"
+version = "0.5.3"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2018"
 readme = "README.md"
@@ -32,8 +32,6 @@ blake3 = "1.0"
 tokio-tungstenite = "0.15"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
-serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
-postcard = { version = "0.7", default-features = false, features = ["alloc"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 tdn_types = { version = "0.5", path = "./types", default-features = false }
 

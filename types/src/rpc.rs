@@ -31,6 +31,12 @@ impl From<std::io::Error> for RpcError {
     }
 }
 
+impl From<bincode::ErrorKind> for RpcError {
+    fn from(e: bincode::ErrorKind) -> RpcError {
+        RpcError::Custom(format!("{}", e))
+    }
+}
+
 impl RpcError {
     pub fn json(&self, id: u64) -> RpcParam {
         match self {
