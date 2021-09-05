@@ -31,8 +31,8 @@ impl From<std::io::Error> for RpcError {
     }
 }
 
-impl From<bincode::ErrorKind> for RpcError {
-    fn from(e: bincode::ErrorKind) -> RpcError {
+impl From<bincode::Error> for RpcError {
+    fn from(e: bincode::Error) -> RpcError {
         RpcError::Custom(format!("{}", e))
     }
 }
