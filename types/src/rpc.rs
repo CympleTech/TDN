@@ -37,6 +37,12 @@ impl From<bincode::Error> for RpcError {
     }
 }
 
+impl From<anyhow::Error> for RpcError {
+    fn from(e: anyhow::Error) -> RpcError {
+        RpcError::Custom(format!("{}", e))
+    }
+}
+
 impl RpcError {
     pub fn json(&self, id: u64) -> RpcParam {
         match self {
