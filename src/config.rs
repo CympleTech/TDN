@@ -288,7 +288,7 @@ impl RawConfig {
 
 async fn load_file_string(mut path: PathBuf) -> Result<String> {
     path.push(CONFIG_FILE_NAME);
-    fs::read_to_string(path).await
+    Ok(fs::read_to_string(path).await?)
 }
 
 fn generate_config_string(secret: &str) -> String {

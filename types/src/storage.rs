@@ -1,5 +1,5 @@
+use crate::primitive::Result;
 use serde::{de::DeserializeOwned, Serialize};
-use crate::primitive::{new_io_error, Result};
 
 pub trait Storage: 'static + Send + Sync {
     type Key: 'static + Send + Sync;
@@ -13,6 +13,6 @@ pub trait Storage: 'static + Send + Sync {
     fn delete<T: Serialize + DeserializeOwned>(&self, key: &Self::Key) -> Result<T>;
 
     fn keystore(&self, _key: &Self::Key, _passed: &[u8], _secret: &[u8]) -> Result<()> {
-        Err(new_io_error("unimplemented"))
+        Err(anyhow::anyhow!("unimplemented"))
     }
 }

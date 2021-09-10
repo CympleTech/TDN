@@ -1,9 +1,8 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use sha3::{Digest, Sha3_256};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 use crate::message::RecvType;
-use crate::primitive::{new_io_error, HandleResult, PeerAddr, Result};
+use crate::primitive::{HandleResult, PeerAddr, Result};
 
 pub const GROUP_LENGTH: usize = 32;
 
@@ -25,24 +24,20 @@ impl GroupId {
 
     pub fn from_symbol(s: impl ToString) -> GroupId {
         let s = s.to_string();
-        let mut sha = Sha3_256::new();
-        sha.update(&s);
-        let mut peer_bytes = [0u8; GROUP_LENGTH];
-        peer_bytes.copy_from_slice(&sha.finalize()[..]);
-        GroupId(peer_bytes)
+        let bytes = blake3::hash(s.as_bytes());
+        GroupId(*bytes.as_bytes())
     }
 
     pub fn from_hex(s: impl ToString) -> Result<GroupId> {
         let s = s.to_string();
         if s.len() != GROUP_LENGTH * 2 {
-            return Err(new_io_error("Hex is invalid"));
+            return Err(anyhow::anyhow!("Hex is invalid"));
         }
 
         let mut value = [0u8; GROUP_LENGTH];
 
         for i in 0..(s.len() / 2) {
-            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)
-                .map_err(|_e| new_io_error("Hex is invalid"))?;
+            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)?;
             value[i] = res;
         }
 
@@ -102,14 +97,13 @@ impl EventId {
     pub fn from_hex(s: impl ToString) -> Result<EventId> {
         let s = s.to_string();
         if s.len() != 64 {
-            return Err(new_io_error("Hex is invalid"));
+            return Err(anyhow::anyhow!("Hex is invalid"));
         }
 
         let mut value = [0u8; 32];
 
         for i in 0..(s.len() / 2) {
-            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)
-                .map_err(|_e| new_io_error("Hex is invalid"))?;
+            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)?;
             value[i] = res;
         }
 

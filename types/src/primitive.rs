@@ -28,7 +28,7 @@ pub use chamomile_types::message::StreamType;
 /// Type: P2P transport stream type.
 pub use chamomile_types::types::TransportStream;
 
-pub type Result<T> = std::io::Result<T>;
+pub type Result<T> = anyhow::Result<T>;
 
 #[inline]
 pub fn new_io_error(info: &str) -> std::io::Error {

@@ -55,7 +55,7 @@ pub mod prelude {
     pub use tdn_types::message::{NetworkType, RecvType, SendType, StateRequest, StateResponse};
 
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
-    pub use tdn_types::primitive::{Broadcast, HandleResult, PeerAddr};
+    pub use tdn_types::primitive::{Broadcast, HandleResult, PeerAddr, Result};
 
     use chamomile::prelude::{
         start as chamomile_start, ReceiveMessage as ChamomileReceiveMessage,
@@ -64,7 +64,6 @@ pub mod prelude {
     use std::sync::Arc;
     use tdn_types::message::RpcSendMessage;
     use tokio::{
-        io::Result,
         join,
         sync::mpsc::{self, Receiver, Sender},
         sync::RwLock,
