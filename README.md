@@ -40,6 +40,11 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - [ESSE](https://github.com/CympleTech/esse) - **full-type** - An open source encrypted peer-to-peer system. Own data, own privacy.
 - [group-chat](https://github.com/CympleTech/group-chat) - **multiple-type** - Group Chat for ESSE and TDN Ecological.
 
+## For more information, please visit:
+- Discord: https://discord.gg/vXHunEZ293
+- Twitter: https://twitter.com/cypherlink_io
+- E-mail: contact@cypherlink.io
+
 ### Core QA
 1. **What is Layers & Groups?**
 Simply `Group` is application, one application is one group, `Layer` is communication between apps. In the Group, users can define everything. The Layer is divided into upper and lower, upper is this application depends on others, lower is others depends on this. If app is an independent application that does not interact with other applications, then you can completely ignore Layer.
