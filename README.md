@@ -41,7 +41,7 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - [group-chat](https://github.com/CympleTech/group-chat) - **multiple-type** - Group Chat for ESSE and TDN Ecological.
 
 ## For more information, please visit:
-- Discord: https://discord.gg/vXHunEZ293
+- Discord: https://discord.gg/r8fKNXagMy
 - Twitter: https://twitter.com/cypherlink_io
 - E-mail: contact@cypherlink.io
 
