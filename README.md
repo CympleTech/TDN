@@ -1,7 +1,7 @@
 [![crate](https://img.shields.io/badge/crates.io-v0.5.7-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.5.7-blue.svg)](https://docs.rs/tdn)
 
 # TDN - Trusted Distributed Network
-*Blockchain infrastructure framework for security and trusted distributed interactive.*
+*Future network infrastructure framework for security and trusted distributed interactive.*
 
 TDN is underlying network (including p2p, rpc, and other special transports) and application framework built on `Groups` and `Layers`, we built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
 
