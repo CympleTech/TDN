@@ -326,7 +326,7 @@ only_stable_data = false
 p2p_addr = "0.0.0.0:7364"
 
 ## P2P transport include: quic, tcp, udt, rtp, default is quic.
-p2p_default_transport = "quic"
+p2p_default_transport = "tcp"
 
 ## P2P bootstrap seed IPs.
 ## Example: p2p_blocklist = ["1.1.1.1:7364", "192.168.0.1:7364"]

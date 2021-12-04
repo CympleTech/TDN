@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.5.7"
+version = "0.5.8"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2021"
 readme = "README.md"
@@ -28,8 +28,8 @@ rand = "0.7"
 log = "0.4"
 httparse = "1.5"
 mime = "0.3"
-blake3 = "1.0"
-tokio-tungstenite = "0.15"
+blake3 = "1.2"
+tokio-tungstenite = "0.16"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
