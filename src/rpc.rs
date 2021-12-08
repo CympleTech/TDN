@@ -75,9 +75,15 @@ async fn listen(
                 Some(FutureResult::Out(msg)) => {
                     let RpcSendMessage(id, params, is_ws) = msg;
                     if is_ws {
-                        let s = connections.get(&id);
-                        if s.is_some() {
-                            let _ = s.unwrap().send(RpcMessage::Response(params)).await;
+                        if id == 0 {
+                            // default send to all.
+                            for (_, s) in &connections {
+                                let _ = s.send(RpcMessage::Response(params.clone())).await;
+                            }
+                        } else {
+                            if let Some(s) = connections.get(&id) {
+                                let _ = s.send(RpcMessage::Response(params)).await;
+                            }
                         }
                     } else {
                         let s = connections.remove(&id);

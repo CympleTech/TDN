@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.5.8"
+version = "0.5.9"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2021"
 readme = "README.md"
