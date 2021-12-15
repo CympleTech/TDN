@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.5.9"
+version = "0.6.0"
 authors = ["Contact <contact@cypherlink.io>"]
 edition = "2021"
 readme = "README.md"
@@ -22,7 +22,7 @@ multiple = ["tdn_types/multiple"] # multiple : multiple groups , no layers.
 full = ["tdn_types/full"]         # full     : multiple groups , multiple layers.
 
 [dependencies]
-chamomile = "0.6"
+chamomile = "0.7"
 toml = "0.5"
 rand = "0.7"
 log = "0.4"
@@ -33,7 +33,7 @@ tokio-tungstenite = "0.16"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
-tdn_types = { version = "0.5", path = "./types", default-features = false }
+tdn_types = { version = "0.6", path = "./types", default-features = false }
 
 [dev-dependencies]
 #tdn_permission = "0.2"

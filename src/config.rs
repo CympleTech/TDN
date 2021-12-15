@@ -10,9 +10,7 @@ use tokio::fs;
 use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
     group::{GroupId, GROUP_LENGTH},
-    primitive::{
-        PeerAddr, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, P2P_TRANSPORT, RPC_ADDR,
-    },
+    primitive::{Peer, PeerId, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, RPC_ADDR},
 };
 
 use crate::rpc::RpcConfig;
@@ -25,12 +23,11 @@ pub struct Config {
     pub permission: bool,
     pub only_stable_data: bool,
 
-    pub p2p_addr: SocketAddr,
-    pub p2p_transport: String,
-    pub p2p_allowlist: Vec<SocketAddr>,
+    pub p2p_peer: Peer,
+    pub p2p_allowlist: Vec<Peer>,
     pub p2p_blocklist: Vec<IpAddr>,
-    pub p2p_allow_peer_list: Vec<PeerAddr>,
-    pub p2p_block_peer_list: Vec<PeerAddr>,
+    pub p2p_allow_peer_list: Vec<PeerId>,
+    pub p2p_block_peer_list: Vec<PeerId>,
 
     pub rpc_addr: SocketAddr,
     pub rpc_ws: Option<SocketAddr>,
@@ -53,8 +50,7 @@ impl Config {
 
             permission,
             only_stable_data,
-            p2p_addr,
-            p2p_transport,
+            p2p_peer,
             p2p_allowlist,
             p2p_blocklist,
             p2p_allow_peer_list,
@@ -71,9 +67,8 @@ impl Config {
             } else {
                 PathBuf::from("./") // Default is current directory.
             },
-            addr: p2p_addr,
-            transport: p2p_transport,
-            allowlist: p2p_allowlist,
+            peer: p2p_peer.into(),
+            allowlist: p2p_allowlist.iter().map(|p| (p.clone()).into()).collect(),
             blocklist: p2p_blocklist,
             allow_peer_list: p2p_allow_peer_list,
             block_peer_list: p2p_block_peer_list,
@@ -100,8 +95,7 @@ impl Config {
             group_ids: vec![GroupId::default()],
             permission: false,       // default is permissionless
             only_stable_data: false, // default is permissionless
-            p2p_addr: p2p_addr,
-            p2p_transport: P2P_TRANSPORT.to_owned(),
+            p2p_peer: Peer::socket(p2p_addr),
             p2p_allowlist: vec![],
             p2p_blocklist: vec![],
             p2p_allow_peer_list: vec![],
@@ -253,18 +247,22 @@ impl RawConfig {
                 )],
             permission: self.permission.unwrap_or(false),
             only_stable_data: self.only_stable_data.unwrap_or(false),
-            p2p_addr: self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),
-            p2p_transport: self
-                .p2p_default_transport
-                .unwrap_or(P2P_TRANSPORT.to_owned()),
-            p2p_allowlist: self.p2p_bootstrap,
+            p2p_peer: Peer::socket_transport(
+                self.p2p_addr.unwrap_or(P2P_ADDR.parse().unwrap()),
+                &self.p2p_default_transport.unwrap_or(String::new()),
+            ),
+            p2p_allowlist: self
+                .p2p_bootstrap
+                .iter()
+                .map(|s| Peer::socket(*s))
+                .collect(),
             p2p_blocklist: self.p2p_blocklist.unwrap_or(vec![]),
             p2p_allow_peer_list: self
                 .p2p_allow_peer_list
                 .map(|ss| {
                     ss.iter()
                         .map(|s| {
-                            PeerAddr::from_hex(s).expect("invalid peer id in p2p allow peer list")
+                            PeerId::from_hex(s).expect("invalid peer id in p2p allow peer list")
                         })
                         .collect()
                 })
@@ -274,7 +272,7 @@ impl RawConfig {
                 .map(|ss| {
                     ss.iter()
                         .map(|s| {
-                            PeerAddr::from_hex(s).expect("invalid group id in p2p block peer list")
+                            PeerId::from_hex(s).expect("invalid group id in p2p block peer list")
                         })
                         .collect()
                 })
@@ -326,7 +324,7 @@ only_stable_data = false
 p2p_addr = "0.0.0.0:7364"
 
 ## P2P transport include: quic, tcp, udt, rtp, default is quic.
-p2p_default_transport = "tcp"
+p2p_default_transport = "quic"
 
 ## P2P bootstrap seed IPs.
 ## Example: p2p_blocklist = ["1.1.1.1:7364", "192.168.0.1:7364"]

@@ -1,7 +1,6 @@
-use std::net::SocketAddr;
 use tokio::sync::mpsc::Sender;
 
-use crate::primitive::{Broadcast, DeliveryType, PeerAddr, StreamType};
+use crate::primitive::{Broadcast, DeliveryType, Peer, PeerId, StreamType};
 use crate::rpc::RpcParam;
 pub use chamomile_types::message::{StateRequest, StateResponse};
 
@@ -12,8 +11,8 @@ use crate::group::GroupId;
 #[derive(Debug)]
 pub enum SendType {
     /// when need stable connect to a peer, send to TDN from outside.
-    /// params: `delivery_id`, `peer_id`, `option_domain`, `option_socket_addr` and peer `join_data`.
-    Connect(u64, PeerAddr, Option<String>, Option<SocketAddr>, Vec<u8>),
+    /// params: `delivery_id`, `peer` and `join_data`.
+    Connect(u64, Peer, Vec<u8>),
     /// when peer request for stable, outside decide connect or not.
     /// params: `delivery_id`, `peer_id`, `is_connect`, `is_force_close`, `result_data`.
     /// if `is_connect` is true, it will add to allow directly list.
@@ -21,14 +20,14 @@ pub enum SendType {
     /// if `is_connect` is false, but `is_force_close` if true, we
     /// will use this peer to build our DHT for better connection.
     /// if false, we will force close it.
-    Result(u64, PeerAddr, bool, bool, Vec<u8>),
+    Result(u64, Peer, bool, bool, Vec<u8>),
     /// when outside want to close a connectioned peer. use it force close.
     /// params: `peer_id`.
-    Disconnect(PeerAddr),
+    Disconnect(PeerId),
     /// when need send a data to a peer, only need know the peer_id,
     /// the TDN will help you send data to there.
     /// params: `delivery_id`, `peer_id`, `data_bytes`.
-    Event(u64, PeerAddr, Vec<u8>),
+    Event(u64, PeerId, Vec<u8>),
     /// Apply for build a stream between nodes.
     /// params: `u32` stream symbol, and `StreamType`.
     Stream(u32, StreamType, Vec<u8>),
@@ -38,20 +37,20 @@ pub enum SendType {
 #[derive(Debug)]
 pub enum RecvType {
     /// when peer what a stable connection, send from TDN to outside.
-    /// params: `peer_id`, and peer `connect_info`.
-    Connect(PeerAddr, Vec<u8>),
+    /// params: `peer`, and peer `connect_info`.
+    Connect(Peer, Vec<u8>),
     /// when peer a stable connect result.
-    /// params: `peer_id`, `is_ok` and `result_data`.
-    Result(PeerAddr, bool, Vec<u8>),
+    /// params: `peer`, `is_ok` and `result_data`.
+    Result(Peer, bool, Vec<u8>),
     /// when peer agree a connect, but network is closed,
     /// create a result connect to it.
-    ResultConnect(PeerAddr, Vec<u8>),
+    ResultConnect(Peer, Vec<u8>),
     /// when a stable connected peer leave, send from TDN to outside.
     /// params: `peer_id`.
-    Leave(PeerAddr),
+    Leave(PeerId),
     /// when received a data from a trusted peer, send to outside.
     /// params: `peer_id` and `data_bytes`.
-    Event(PeerAddr, Vec<u8>),
+    Event(PeerId, Vec<u8>),
     /// Apply for build a stream between nodes.
     /// params: `u32` stream symbol, and `StreamType`.
     Stream(u32, StreamType, Vec<u8>),
@@ -61,15 +60,15 @@ pub enum RecvType {
 }
 
 /// channel message send to chamomile network.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum NetworkType {
     /// when outside want to add a peer to bootstrap and DHT.
     /// if connected, TDN will add it to boostrap and DHT.
-    /// params: `socket_addr`.
-    Connect(SocketAddr),
+    /// params: `peer`.
+    Connect(Peer),
     /// when outside donnot want to remove peer. use it to force close.
-    /// params: `socket_addr`.
-    DisConnect(SocketAddr),
+    /// params: `Peer(socket)`.
+    DisConnect(Peer),
     /// when need broadcast a data to all network, TDN support some
     /// common algorithm, use it, donnot worry.
     /// params: `broadcast_type` and `data_bytes`
@@ -117,7 +116,7 @@ pub enum ReceiveMessage {
 
 /// channel message send to TDN for single version.
 #[cfg(feature = "single")]
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum SendMessage {
     /// Group: GroupMessage.
     Group(SendType),
@@ -129,7 +128,7 @@ pub enum SendMessage {
 
 /// channel message receive from TDN for single version.
 #[cfg(feature = "single")]
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(RecvType),

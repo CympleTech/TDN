@@ -1,10 +1,24 @@
 use chamomile_types::message::DeliveryType as P2pDeliveryType;
+use chamomile_types::Peer as ChamomilePeer;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+/// Type: PeerId
+pub use chamomile_types::types::{PeerId, TransportType};
+
+/// Type: P2P common Broadcast
+pub use chamomile_types::types::Broadcast;
+
+/// Type: P2P stream type.
+pub use chamomile_types::message::StreamType;
+
+/// Type: P2P transport stream type.
+pub use chamomile_types::types::TransportStream;
 
 /// P2P default binding addr.
 pub const P2P_ADDR: &str = "0.0.0.0:7364";
 
 /// P2P default transport: QUIC.
-pub const P2P_TRANSPORT: &str = "quic";
+pub const P2P_TRANSPORT: TransportType = TransportType::QUIC;
 
 /// RPC default binding addr.
 pub const RPC_ADDR: &str = "127.0.0.1:8000";
@@ -16,17 +30,69 @@ pub const DEFAULT_SECRET: [u8; 32] = [0u8; 32];
 
 pub const DEFAULT_STORAGE_DIR_NAME: &str = ".tdn";
 
-/// Type: PeerAddr
-pub type PeerAddr = chamomile_types::types::PeerId;
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Peer {
+    pub id: PeerId,
+    pub socket: SocketAddr,
+    pub transport: TransportType,
+    pub httpurl: String,
+    pub is_pub: bool,
+}
 
-/// Type: P2P common Broadcast
-pub use chamomile_types::types::Broadcast;
+impl Peer {
+    pub fn socket(socket: SocketAddr) -> Peer {
+        Self {
+            id: PeerId::default(),
+            socket: socket,
+            transport: P2P_TRANSPORT,
+            httpurl: String::new(),
+            is_pub: true,
+        }
+    }
 
-/// Type: P2P stream type.
-pub use chamomile_types::message::StreamType;
+    pub fn socket_transport(socket: SocketAddr, trans: &str) -> Peer {
+        Self {
+            id: PeerId::default(),
+            socket: socket,
+            transport: TransportType::from_str(trans),
+            httpurl: String::new(),
+            is_pub: true,
+        }
+    }
 
-/// Type: P2P transport stream type.
-pub use chamomile_types::types::TransportStream;
+    pub fn peer(peer_id: PeerId) -> Peer {
+        Self {
+            id: peer_id,
+            socket: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0),
+            transport: P2P_TRANSPORT,
+            httpurl: String::new(),
+            is_pub: true,
+        }
+    }
+}
+
+impl From<ChamomilePeer> for Peer {
+    fn from(cp: ChamomilePeer) -> Peer {
+        Peer {
+            id: cp.id,
+            socket: cp.socket,
+            transport: cp.transport,
+            is_pub: cp.is_pub,
+            httpurl: String::new(),
+        }
+    }
+}
+
+impl Into<ChamomilePeer> for Peer {
+    fn into(self) -> ChamomilePeer {
+        ChamomilePeer {
+            id: self.id,
+            socket: self.socket,
+            transport: self.transport,
+            is_pub: self.is_pub,
+        }
+    }
+}
 
 pub type Result<T> = anyhow::Result<T>;
 

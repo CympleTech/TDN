@@ -2,7 +2,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 use crate::message::RecvType;
-use crate::primitive::{HandleResult, PeerAddr, Result};
+use crate::primitive::{HandleResult, PeerId, Result};
 
 pub const GROUP_LENGTH: usize = 32;
 
@@ -59,8 +59,8 @@ impl Debug for GroupId {
     }
 }
 
-impl Into<PeerAddr> for GroupId {
-    fn into(self) -> PeerAddr {
+impl Into<PeerId> for GroupId {
+    fn into(self) -> PeerId {
         chamomile_types::types::PeerId(self.0)
     }
 }
@@ -72,7 +72,7 @@ pub trait Group {
     fn id(&self) -> &GroupId;
 
     /// guard if the peer is valid.
-    fn guard(&self, addr: &PeerAddr) -> bool;
+    fn guard(&self, addr: &PeerId) -> bool;
 
     /// when receive group message, handle it, and return HandleResult.
     fn handle(&mut self, msg: RecvType) -> Result<HandleResult>;

@@ -50,12 +50,10 @@ pub use tdn_types as types;
 // public struct
 pub mod prelude {
     pub use super::config::Config;
-
     pub use tdn_types::group::{GroupId, GROUP_LENGTH};
     pub use tdn_types::message::{NetworkType, RecvType, SendType, StateRequest, StateResponse};
-
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
-    pub use tdn_types::primitive::{Broadcast, HandleResult, PeerAddr, Result};
+    pub use tdn_types::primitive::{Broadcast, HandleResult, Peer, PeerId, Result};
 
     use chamomile::prelude::{
         start as chamomile_start, ReceiveMessage as ChamomileReceiveMessage,
@@ -87,34 +85,34 @@ pub mod prelude {
 
     /// start a service, use config.toml file.
     /// send a Sender<Message>, and return the peer_id, and service Sender<Message>.
-    pub async fn start() -> Result<(PeerAddr, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
+    pub async fn start() -> Result<(PeerId, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
         let config = Config::load().await;
 
-        let peer_addr = start_main(recv_send, send_recv, config).await?;
+        let peer_id = start_main(recv_send, send_recv, config).await?;
 
-        Ok((peer_addr, send_send, recv_recv))
+        Ok((peer_id, send_send, recv_recv))
     }
 
     /// start a service with config.
     pub async fn start_with_config(
         config: Config,
-    ) -> Result<(PeerAddr, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
+    ) -> Result<(PeerId, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
-        let peer_addr = start_main(recv_send, send_recv, config).await?;
+        let peer_id = start_main(recv_send, send_recv, config).await?;
 
-        Ok((peer_addr, send_send, recv_recv))
+        Ok((peer_id, send_send, recv_recv))
     }
 
     async fn start_main(
         out_send: Sender<ReceiveMessage>,
         mut self_recv: Receiver<SendMessage>,
         config: Config,
-    ) -> Result<PeerAddr> {
+    ) -> Result<PeerId> {
         let (_secret, group_ids, p2p_config, rpc_config) = config.split();
 
         // start chamomile network & inner rpc.
@@ -202,16 +200,16 @@ pub mod prelude {
                                 .map_err(|e| error!("Chamomile channel: {:?}", e))
                                 .expect("Chamomile channel closed");
                         }
-                        NetworkType::Connect(addr) => {
+                        NetworkType::Connect(peer) => {
                             p2p_send
-                                .send(ChamomileSendMessage::Connect(addr))
+                                .send(ChamomileSendMessage::Connect(peer.into()))
                                 .await
                                 .map_err(|e| error!("Chamomile channel: {:?}", e))
                                 .expect("Chamomile channel closed");
                         }
-                        NetworkType::DisConnect(addr) => {
+                        NetworkType::DisConnect(peer) => {
                             p2p_send
-                                .send(ChamomileSendMessage::DisConnect(addr))
+                                .send(ChamomileSendMessage::DisConnect(peer.into()))
                                 .await
                                 .map_err(|e| error!("Chamomile channel: {:?}", e))
                                 .expect("Chamomile channel closed");
@@ -264,7 +262,7 @@ pub mod prelude {
 
             while let Some(message) = p2p_recv.recv().await {
                 match message {
-                    ChamomileReceiveMessage::StableConnect(peer_addr, mut data) => {
+                    ChamomileReceiveMessage::StableConnect(peer, mut data) => {
                         if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
@@ -282,45 +280,51 @@ pub mod prelude {
 
                         if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
-                            let _ = group_handle_connect(&fgid, &out_send, peer_addr, data).await;
+                            let _ = group_handle_connect(&fgid, &out_send, peer.into(), data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ =
-                                layer_handle_connect(fgid, tgid, &out_send, peer_addr, data).await;
-                        }
-                    }
-                    ChamomileReceiveMessage::ResultConnect(peer_addr, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
-                            continue;
-                        }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
-
-                        let group_lock = my_groups.read().await;
-                        if group_lock.len() == 0 {
-                            continue;
-                        }
-
-                        if fgid == tgid && group_lock.contains(&fgid) {
-                            drop(group_lock);
-                            let _ = group_handle_result_connect(&fgid, &out_send, peer_addr, data)
+                            let _ = layer_handle_connect(fgid, tgid, &out_send, peer.into(), data)
                                 .await;
+                        }
+                    }
+                    ChamomileReceiveMessage::ResultConnect(peer, mut data) => {
+                        if data.len() < GROUP_LENGTH * 2 {
+                            continue;
+                        }
+                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
+                        let fgid = GroupId(fgid_bytes);
+                        let tgid = GroupId(tgid_bytes);
+
+                        let group_lock = my_groups.read().await;
+                        if group_lock.len() == 0 {
+                            continue;
+                        }
+
+                        if fgid == tgid && group_lock.contains(&fgid) {
+                            drop(group_lock);
+                            let _ =
+                                group_handle_result_connect(&fgid, &out_send, peer.into(), data)
+                                    .await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ =
-                                layer_handle_result_connect(fgid, tgid, &out_send, peer_addr, data)
-                                    .await;
+                            let _ = layer_handle_result_connect(
+                                fgid,
+                                tgid,
+                                &out_send,
+                                peer.into(),
+                                data,
+                            )
+                            .await;
                         }
                     }
-                    ChamomileReceiveMessage::StableResult(peer_addr, is_ok, mut data) => {
+                    ChamomileReceiveMessage::StableResult(peer, is_ok, mut data) => {
                         if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
@@ -339,30 +343,36 @@ pub mod prelude {
                         let is_me = group_lock.contains(&fgid);
                         if fgid == tgid && is_me {
                             drop(group_lock);
-                            let _ =
-                                group_handle_result(&fgid, &out_send, peer_addr, is_ok, data).await;
+                            let _ = group_handle_result(&fgid, &out_send, peer.into(), is_ok, data)
+                                .await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
                             {
                                 let (ff, tt) = if is_me { (tgid, fgid) } else { (fgid, tgid) };
-                                let _ =
-                                    layer_handle_result(ff, tt, &out_send, peer_addr, is_ok, data)
-                                        .await;
+                                let _ = layer_handle_result(
+                                    ff,
+                                    tt,
+                                    &out_send,
+                                    peer.into(),
+                                    is_ok,
+                                    data,
+                                )
+                                .await;
                             }
                         }
                     }
-                    ChamomileReceiveMessage::StableLeave(peer_addr) => {
+                    ChamomileReceiveMessage::StableLeave(peer_id) => {
                         let group_lock = my_groups.read().await;
                         for gid in group_lock.iter() {
-                            let _ = group_handle_leave(&gid, &out_send, peer_addr).await;
+                            let _ = group_handle_leave(&gid, &out_send, peer_id).await;
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_leave(*gid, &out_send, peer_addr).await;
+                            let _ = layer_handle_leave(*gid, &out_send, peer_id).await;
                         }
                         drop(group_lock);
                     }
-                    ChamomileReceiveMessage::Data(peer_addr, mut data) => {
+                    ChamomileReceiveMessage::Data(peer_id, mut data) => {
                         if data.len() < GROUP_LENGTH * 2 {
                             continue;
                         }
@@ -380,12 +390,12 @@ pub mod prelude {
 
                         if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
-                            let _ = group_handle_data(&fgid, &out_send, peer_addr, data).await;
+                            let _ = group_handle_data(&fgid, &out_send, peer_id, data).await;
                         } else {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_data(fgid, tgid, &out_send, peer_addr, data).await;
+                            let _ = layer_handle_data(fgid, tgid, &out_send, peer_id, data).await;
                         }
                     }
                     ChamomileReceiveMessage::Stream(id, stream, mut data) => {

@@ -2,7 +2,7 @@ use chamomile::prelude::SendMessage;
 use tdn_types::{
     group::GroupId,
     message::{ReceiveMessage, RecvType, SendType},
-    primitive::{DeliveryType, PeerAddr, Result, StreamType},
+    primitive::{DeliveryType, Peer, PeerId, Result, StreamType},
 };
 use tokio::sync::mpsc::{error::SendError, Sender};
 
@@ -16,30 +16,30 @@ pub(crate) async fn group_handle_send(
     let mut bytes = gid.0.to_vec();
     bytes.extend(&gid.0); // double it, meaning from/to is same group.
     match msg {
-        SendType::Connect(tid, peer_addr, _domain, addr, data) => {
+        SendType::Connect(tid, peer, data) => {
             bytes.extend(data);
             p2p_send
-                .send(SendMessage::StableConnect(tid, peer_addr, addr, bytes))
+                .send(SendMessage::StableConnect(tid, peer.into(), bytes))
                 .await
         }
-        SendType::Disconnect(peer_addr) => {
-            p2p_send
-                .send(SendMessage::StableDisconnect(peer_addr))
-                .await
+        SendType::Disconnect(peer_id) => {
+            p2p_send.send(SendMessage::StableDisconnect(peer_id)).await
         }
-        SendType::Result(tid, peer_addr, is_ok, is_force, data) => {
+        SendType::Result(tid, peer, is_ok, is_force, data) => {
             bytes.extend(data);
             p2p_send
                 .send(SendMessage::StableResult(
-                    tid, peer_addr, is_ok, is_force, bytes,
+                    tid,
+                    peer.into(),
+                    is_ok,
+                    is_force,
+                    bytes,
                 ))
                 .await
         }
-        SendType::Event(tid, peer_addr, data) => {
+        SendType::Event(tid, peer_id, data) => {
             bytes.extend(data);
-            p2p_send
-                .send(SendMessage::Data(tid, peer_addr, bytes))
-                .await
+            p2p_send.send(SendMessage::Data(tid, peer_id, bytes)).await
         }
         SendType::Stream(id, stream, data) => {
             bytes.extend(data);
@@ -52,10 +52,10 @@ pub(crate) async fn group_handle_send(
 pub(crate) async fn group_handle_connect(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
-    peer_addr: PeerAddr,
+    peer: Peer,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = RecvType::Connect(peer_addr, data);
+    let gmsg = RecvType::Connect(peer, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -75,10 +75,10 @@ pub(crate) async fn group_handle_connect(
 pub(crate) async fn group_handle_result_connect(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
-    peer_addr: PeerAddr,
+    peer: Peer,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = RecvType::ResultConnect(peer_addr, data);
+    let gmsg = RecvType::ResultConnect(peer, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -98,11 +98,11 @@ pub(crate) async fn group_handle_result_connect(
 pub(crate) async fn group_handle_result(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
-    peer_addr: PeerAddr,
+    peer: Peer,
     is_ok: bool,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = RecvType::Result(peer_addr, is_ok, data);
+    let gmsg = RecvType::Result(peer, is_ok, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -122,9 +122,9 @@ pub(crate) async fn group_handle_result(
 pub(crate) async fn group_handle_leave(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
-    peer_addr: PeerAddr,
+    peer_id: PeerId,
 ) -> Result<()> {
-    let gmsg = RecvType::Leave(peer_addr);
+    let gmsg = RecvType::Leave(peer_id);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
@@ -144,10 +144,10 @@ pub(crate) async fn group_handle_leave(
 pub(crate) async fn group_handle_data(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
-    peer_addr: PeerAddr,
+    peer_id: PeerId,
     data: Vec<u8>,
 ) -> Result<()> {
-    let gmsg = RecvType::Event(peer_addr, data);
+    let gmsg = RecvType::Event(peer_id, data);
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);
