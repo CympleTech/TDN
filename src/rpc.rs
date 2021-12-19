@@ -63,7 +63,7 @@ async fn listen(
     mut self_recv: Receiver<RpcMessage>,
 ) -> Result<()> {
     tokio::spawn(async move {
-        let mut connections: HashMap<u64, Sender<RpcMessage>> = HashMap::new();
+        let mut connections: HashMap<u64, (Sender<RpcMessage>, bool)> = HashMap::new();
 
         loop {
             let res = select! {
@@ -76,19 +76,21 @@ async fn listen(
                     let RpcSendMessage(id, params, is_ws) = msg;
                     if is_ws {
                         if id == 0 {
-                            // default send to all.
-                            for (_, s) in &connections {
-                                let _ = s.send(RpcMessage::Response(params.clone())).await;
+                            // default send to all ws.
+                            for (_, (s, iw)) in &connections {
+                                if *iw {
+                                    let _ = s.send(RpcMessage::Response(params.clone())).await;
+                                }
                             }
                         } else {
-                            if let Some(s) = connections.get(&id) {
+                            if let Some((s, _)) = connections.get(&id) {
                                 let _ = s.send(RpcMessage::Response(params)).await;
                             }
                         }
                     } else {
                         let s = connections.remove(&id);
                         if s.is_some() {
-                            let _ = s.unwrap().send(RpcMessage::Response(params)).await;
+                            let _ = s.unwrap().0.send(RpcMessage::Response(params)).await;
                         }
                     }
                 }
@@ -97,14 +99,14 @@ async fn listen(
                         RpcMessage::Request(id, params, sender) => {
                             let is_ws = sender.is_none();
                             if !is_ws {
-                                connections.insert(id, sender.unwrap());
+                                connections.insert(id, (sender.unwrap(), false));
                             }
                             send.send(ReceiveMessage::Rpc(id, params, is_ws))
                                 .await
                                 .expect("Rpc to Outside channel closed");
                         }
                         RpcMessage::Open(id, sender) => {
-                            connections.insert(id, sender);
+                            connections.insert(id, (sender, true));
                         }
                         RpcMessage::Close(id) => {
                             connections.remove(&id);

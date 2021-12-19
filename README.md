@@ -1,4 +1,4 @@
-[![crate](https://img.shields.io/badge/crates.io-v0.6.0-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.6.0-blue.svg)](https://docs.rs/tdn)
+[![crate](https://img.shields.io/badge/crates.io-v0.6.1-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.6.1-blue.svg)](https://docs.rs/tdn)
 
 # TDN - Trusted Distributed Network
 *Future network infrastructure framework for security and trusted distributed interactive.*
