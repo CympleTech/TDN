@@ -1,12 +1,12 @@
 [package]
 name = "tdn_types"
-version = "0.6.0"
-authors = ["Contact <contact@cypherlink.io>"]
+version = "0.6.1"
+authors = ["Dev <dev@cympletech.com>"]
 edition = "2021"
 readme = "README.md"
-description = "Trusted Distributed Network. (Another Blockchain infrastructure framework)."
-repository = "https://github.com/cypherlink/TDN"
-keywords = ["distributed", "blockchain", "infrastructure", "framework"]
+description = "Trusted Distributed Network types."
+repository = "https://github.com/cympletech/TDN"
+keywords = ["distributed", "blockchain", "web3"]
 license = "MIT/Apache-2.0"
 
 [features]

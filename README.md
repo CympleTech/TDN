@@ -1,4 +1,6 @@
-[![crate](https://img.shields.io/badge/crates.io-v0.6.1-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.6.1-blue.svg)](https://docs.rs/tdn)
+[![crate](https://img.shields.io/badge/crates.io-v0.6.2-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.6.2-blue.svg)](https://docs.rs/tdn)
+
+<h1 align="center"><img src="https://cympletech.com/screenshots/tdn_words_logo.png" alt="TDN"></h1>
 
 # TDN - Trusted Distributed Network
 *Future network infrastructure framework for security and trusted distributed interactive.*
@@ -29,23 +31,24 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - **full**. Support many groups, and multiple layers.
 
 ## Architecture
-![TDN with future](https://cypherlink.io/dist/images/TDN_future.jpg)
+![TDN with future](https://cympletech.com/screenshots/TDN_future.jpg)
 
-![TDN Groups And Layers](https://cypherlink.io/dist/images/TDN_groups_layers.jpg)
+![TDN Groups And Layers](https://cympletech.com/screenshots/TDN_groups_layers.jpg)
 
 ## Pluggable library
-- [tdn-did](https://github.com/cypherlink/tdn-did) zero-knowledge distributed identity for TDN.
-- [tdn-storage](https://github.com/cypherlink/tdn-storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
-- [tdn-permission](https://github.com/cypherlink/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
+- [tdn-did](https://github.com/cympletech/tdn-did) zero-knowledge distributed identity for TDN.
+- [tdn-storage](https://github.com/cympletech/tdn-storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
+- [tdn-permission](https://github.com/cympletech/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
 
 ## Projects used it
 - [ESSE](https://github.com/CympleTech/esse) - **full-type** - An open source encrypted peer-to-peer system. Own data, own privacy.
 - [group-chat](https://github.com/CympleTech/group-chat) - **multiple-type** - Group Chat for ESSE and TDN Ecological.
 
 ## For more information, please visit:
-- Discord: https://discord.gg/r8fKNXagMy
-- Twitter: https://twitter.com/cypherlink_io
-- E-mail: contact@cypherlink.io
+- Website: https://cympletech.com
+- Twitter: https://twitter.com/cympletech
+- Discord: https://discord.gg/UfFjp6Kaj4
+- E-mail: dev@cympletech.com
 
 ### Core QA
 1. **What is Layers & Groups?**
