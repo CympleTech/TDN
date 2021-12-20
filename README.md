@@ -2,9 +2,11 @@
 
 <h1 align="center"><img src="https://cympletech.com/screenshots/tdn_words_logo.png" alt="TDN"></h1>
 
-* TDN: Future network infrastructure framework for security and trusted distributed interactive.*
+*TDN: Let data transfer safely, make the network stable, secure, and highly available.*
 
-TDN is underlying network (including p2p, rpc, and other special transports) and application framework built on `Groups` and `Layers`, we built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
+As the network interconnection, TDN includes peer-to-peer, centralized gateway, proxy & relay service, LAN, RPC, Near, etc.
+
+As the framework of decentralized applications, TDN uses the `Layer` and `Group` models. We built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
 
 ## Example
 - install `nightly` rust.
