@@ -1,6 +1,6 @@
 [![crate](https://img.shields.io/badge/crates.io-v0.6.2-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.6.2-blue.svg)](https://docs.rs/tdn)
 
-<h1 align="center"><img src="https://cympletech.com/screenshots/tdn_words_logo.png" alt="TDN"></h1>
+<h1 align="center"><img src="https://cympletech.com/logo/tdn_words.png" alt="TDN"></h1>
 
 *TDN: Let data transfer safely, make the network stable, secure, and highly available.*
 
@@ -32,9 +32,9 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - **full**. Support many groups, and multiple layers.
 
 ## Architecture
-![TDN with future](https://cympletech.com/screenshots/TDN_future.jpg)
+![TDN with future](https://cympletech.com/images/TDN_future.jpg)
 
-![TDN Groups And Layers](https://cympletech.com/screenshots/TDN_groups_layers.jpg)
+![TDN Groups And Layers](https://cympletech.com/images/TDN_groups_layers.jpg)
 
 ## Pluggable library
 - [tdn-did](https://github.com/cympletech/tdn-did) zero-knowledge distributed identity for TDN.
