@@ -2,4 +2,5 @@
 members = [
     "tdn",
     "types",
+    "did",
 ]
