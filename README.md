@@ -9,10 +9,10 @@ As the network interconnection, TDN includes peer-to-peer, centralized gateway, 
 As the framework of decentralized applications, TDN uses the `Layer` and `Group` models. We built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
 
 ## Example
-- install `nightly` rust.
+- install `lastest` Rust and `cd ./tdn`
 - `cargo run --example simple` Congratulation, you are running a trusted distributed network :)
 
-[more sample](./examples)
+[more sample](./tdn/examples)
 
 ## Features
 - Support different data structures
@@ -49,7 +49,7 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - Website: https://cympletech.com
 - Twitter: https://twitter.com/cympletech
 - Discord: https://discord.gg/UfFjp6Kaj4
-- E-mail: dev@cympletech.com
+- E-mail: contact@cympletech.com
 
 ### Core QA
 1. **What is Layers & Groups?**
