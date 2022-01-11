@@ -3,4 +3,5 @@ Cargo.lock
 **/*.rs.bk
 foo
 .tdn
+/tdn/.tdn
 test_nodes

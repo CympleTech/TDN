@@ -37,8 +37,8 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 ![TDN Groups And Layers](https://cympletech.com/images/TDN_groups_layers.jpg)
 
 ## Pluggable library
-- [tdn-did](./tdn-did) decentralized identity.
-- [tdn-storage](https://github.com/cympletech/tdn-storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
+- [tdn-did](./did) decentralized identity.
+- [tdn-storage](./storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
 - [tdn-permission](https://github.com/cympletech/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
 
 ## Projects used it

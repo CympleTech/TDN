@@ -1,0 +1,25 @@
+[package]
+name = "tdn_storage"
+version = "0.6.2"
+authors = ["Dev <dev@cympletech.com>"]
+edition = "2021"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/cympletech/tdn"
+description = "A pluggable library for TDN, include local file, local db, distributed db, decentralized db."
+keywords = ["storage", "database", "distributed", "decentralized"]
+
+[features]
+default = ["local"]
+local = ["rusqlite"]
+distributed = []
+decentralized = []
+
+[dependencies]
+tokio = { version = "1", features = ["fs"] }
+serde = { version = "1.0", default-features = false }
+sled = { version = "0.34", optional = true }
+rusqlite = {version = "0.26", optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
+tdn_types = { version = "0.6", path = "../types", default-features = false }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
