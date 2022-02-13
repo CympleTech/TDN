@@ -135,7 +135,8 @@ pub mod prelude {
         rpc_start(config, out_send).await
     }
 
-    async fn start_main(
+    /// start a separate p2p service and unified tdn channel.
+    pub async fn start_main(
         group_ids: Vec<GroupId>,
         p2p_config: P2pConfig,
         out_send: Sender<ReceiveMessage>,
