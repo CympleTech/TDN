@@ -60,7 +60,7 @@ pub enum RecvType {
 }
 
 /// channel message send to chamomile network.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum NetworkType {
     /// when outside want to add a peer to bootstrap and DHT.
     /// if connected, TDN will add it to boostrap and DHT.
@@ -116,7 +116,7 @@ pub enum ReceiveMessage {
 
 /// channel message send to TDN for single version.
 #[cfg(feature = "single")]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum SendMessage {
     /// Group: GroupMessage.
     Group(SendType),
@@ -128,7 +128,7 @@ pub enum SendMessage {
 
 /// channel message receive from TDN for single version.
 #[cfg(feature = "single")]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(RecvType),

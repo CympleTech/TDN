@@ -9,7 +9,7 @@ use tokio::fs;
 
 use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
-    group::{GroupId, GROUP_BYTES_LENGTH},
+    group::GroupId,
     primitives::{Peer, PeerId, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, RPC_ADDR},
 };
 
@@ -39,9 +39,9 @@ impl Config {
         #[cfg(feature = "single")]
         let delivery_length = 0;
         #[cfg(feature = "multiple")]
-        let delivery_length = GROUP_BYTES_LENGTH;
+        let delivery_length = tdn_types::group::GROUP_BYTES_LENGTH;
         #[cfg(any(feature = "std", feature = "full"))]
-        let delivery_length = GROUP_BYTES_LENGTH * 2;
+        let delivery_length = tdn_types::group::GROUP_BYTES_LENGTH * 2;
 
         let Config {
             db_path,

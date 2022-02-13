@@ -254,12 +254,8 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         let mut new_results = HandleResult::new();
 
         #[cfg(any(feature = "multiple", feature = "full"))]
-        let group = if let Some(group_id) = param
-            .get("gid")
-            .and_then(|gid_v| gid_v.as_str())
-            .and_then(|group_hex| crate::group::GroupId::from_hex(group_hex).ok())
-        {
-            group_id
+        let group = if let Some(group_id) = param.get("gid").and_then(|gid_v| gid_v.as_u64()) {
+            group_id as crate::group::GroupId
         } else {
             new_results.rpcs.push(RpcError::InvalidRequest.json(id));
             return Ok(new_results);
@@ -305,7 +301,7 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                             res["method"] = method.into();
                             #[cfg(feature = "multiple")]
                             let _ = res.as_object_mut().map(|v| {
-                                v.insert("gid".into(), group.to_hex().into());
+                                v.insert("gid".into(), group.into());
                             });
                             new_results.rpcs.push(res);
                         }
@@ -344,7 +340,7 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                             res["method"] = method.into();
                             #[cfg(feature = "full")]
                             let _ = res.as_object_mut().map(|v| {
-                                v.insert("gid".into(), group.to_hex().into());
+                                v.insert("gid".into(), group.into());
                             });
                             new_results.rpcs.push(res);
                         }
@@ -382,7 +378,7 @@ pub fn rpc_response(
     json!({
         "jsonrpc": "2.0",
         "id": id,
-        "gid": group_id.to_hex(),
+        "gid": group_id,
         "method": method,
         "result": params
     })

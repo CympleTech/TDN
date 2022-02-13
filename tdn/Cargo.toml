@@ -12,7 +12,7 @@ license = "MIT/Apache-2.0"
 [features]
 default = ["std"]
 std = ["tdn_types/std"]           # standard : one group       , multiple layers.
-single = ["tdn_types/single"]     # signle   : one group       , no Layers.
+single = ["tdn_types/single"]     # single   : one group       , no Layers.
 multiple = ["tdn_types/multiple"] # multiple : multiple groups , no layers.
 full = ["tdn_types/full"]         # full     : multiple groups , multiple layers.
 
