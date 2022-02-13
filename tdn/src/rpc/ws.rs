@@ -8,7 +8,7 @@ use tokio::{
 };
 use tokio_tungstenite::{accept_async, tungstenite::protocol::Message as WsMessage};
 
-use tdn_types::{primitive::Result, rpc::parse_jsonrpc};
+use tdn_types::{primitives::Result, rpc::parse_jsonrpc};
 
 use futures_util::{SinkExt, StreamExt};
 

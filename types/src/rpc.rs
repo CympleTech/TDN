@@ -7,7 +7,7 @@ use std::sync::Arc;
 pub use serde_json::json;
 pub type RpcParam = Value;
 
-use crate::primitive::{HandleResult, Result};
+use crate::primitives::{HandleResult, Result};
 
 #[derive(Debug, Clone)]
 pub enum RpcError {
@@ -148,7 +148,7 @@ pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcE
 
 /// Helpe better handle rpc. Example.
 /// ``` rust
-/// use tdn_types::{primitive::HandleResult, rpc::{RpcParam, RpcHandler, json}};
+/// use tdn_types::{primitives::HandleResult, rpc::{RpcParam, RpcHandler, json}};
 /// use std::sync::Arc;
 ///
 /// struct State(u32); // Global State share in all rpc request.

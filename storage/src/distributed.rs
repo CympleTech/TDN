@@ -4,7 +4,7 @@ use std::{
     io::{Error, ErrorKind, Result},
     path::PathBuf,
 };
-use tdn_types::primitive::DEFAULT_STORAGE_DIR;
+use tdn_types::primitives::DEFAULT_STORAGE_DIR;
 use tdn_types::storage::Storage;
 
 fn new_error(s: &str) -> Error {

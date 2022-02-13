@@ -9,8 +9,8 @@ use tokio::fs;
 
 use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
-    group::{GroupId, GROUP_LENGTH},
-    primitive::{Peer, PeerId, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, RPC_ADDR},
+    group::{GroupId, GROUP_BYTES_LENGTH},
+    primitives::{Peer, PeerId, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, RPC_ADDR},
 };
 
 use crate::rpc::RpcConfig;
@@ -39,9 +39,9 @@ impl Config {
         #[cfg(feature = "single")]
         let delivery_length = 0;
         #[cfg(feature = "multiple")]
-        let delivery_length = GROUP_LENGTH;
+        let delivery_length = GROUP_BYTES_LENGTH;
         #[cfg(any(feature = "std", feature = "full"))]
-        let delivery_length = GROUP_LENGTH * 2;
+        let delivery_length = GROUP_BYTES_LENGTH * 2;
 
         let Config {
             db_path,
@@ -193,7 +193,7 @@ pub struct RawUpper {
 pub struct RawConfig {
     pub db_path: Option<PathBuf>,
     pub secret: String,
-    pub group_id: Option<String>,
+    pub group_id: Option<GroupId>,
     pub group_symbol: Option<String>,
     pub permission: Option<bool>,
     pub only_stable_data: Option<bool>,
@@ -215,36 +215,11 @@ impl RawConfig {
         Config {
             db_path: self.db_path,
             secret: *blake3::hash(self.secret.as_bytes()).as_bytes(),
-            group_ids: vec![self
-                .group_id
-                .map(|s| {
-                    if s.len() != GROUP_LENGTH * 2 {
-                        None
-                    } else {
-                        let mut value = [0u8; GROUP_LENGTH];
-                        let mut is_ok = true;
-
-                        for i in 0..GROUP_LENGTH {
-                            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16);
-                            if res.is_err() {
-                                is_ok = false;
-                                break;
-                            }
-                            value[i] = res.unwrap()
-                        }
-                        if is_ok {
-                            Some(GroupId(value))
-                        } else {
-                            None
-                        }
-                    }
-                })
-                .flatten()
-                .unwrap_or(
-                    self.group_symbol
-                        .map(|s| GroupId::from_symbol(s))
-                        .unwrap_or(GroupId::default()),
-                )],
+            group_ids: if let Some(g) = self.group_id {
+                vec![g]
+            } else {
+                vec![]
+            },
             permission: self.permission.unwrap_or(false),
             only_stable_data: self.only_stable_data.unwrap_or(false),
             p2p_peer: Peer::socket_transport(
@@ -292,9 +267,9 @@ async fn load_file_string(mut path: PathBuf) -> Result<String> {
 fn generate_config_string(secret: &str) -> String {
     format!(
         r#"## TDN Configure.
-## Group Hex ID, No "0x".
-## Example: group_id = "55fdd55633c578c7f2fb3e299f3d3bc88f8a9908df448f032c1b5d29db91e8c4"
-group_id = "0000000000000000000000000000000000000000000000000000000000000000"
+## Group Now is unique number.
+## Example: group_id = 0 # (0 is default group number, as your own dapp.)
+group_id = 0
 
 ## This will be random string, and you can change.
 ## if need use secret nonce or seed, it will be useful.

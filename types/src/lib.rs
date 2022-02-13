@@ -2,7 +2,7 @@
 
 pub mod group;
 pub mod message;
-pub mod primitive;
+pub mod primitives;
 pub mod rpc;
 pub mod storage;
 

@@ -1,5 +1,6 @@
-use crate::primitive::Result;
 use serde::{de::DeserializeOwned, Serialize};
+
+use crate::primitives::Result;
 
 pub trait Storage: 'static + Send + Sync {
     type Key: 'static + Send + Sync;

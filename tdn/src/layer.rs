@@ -2,7 +2,7 @@ use chamomile::prelude::SendMessage;
 use tdn_types::{
     group::GroupId,
     message::{ReceiveMessage, RecvType, SendType},
-    primitive::{DeliveryType, Peer, PeerId, Result, StreamType},
+    primitives::{DeliveryType, Peer, PeerId, Result, StreamType},
 };
 use tokio::sync::mpsc::{error::SendError, Sender};
 
@@ -14,8 +14,8 @@ pub(crate) async fn layer_handle_send(
     msg: SendType,
 ) -> std::result::Result<(), SendError<SendMessage>> {
     // fgid, tgid serialize data to msg data.
-    let mut bytes = fgid.0.to_vec();
-    bytes.extend(&tgid.0);
+    let mut bytes = fgid.to_be_bytes().to_vec();
+    bytes.extend(&tgid.to_be_bytes());
     match msg {
         SendType::Connect(tid, peer, data) => {
             bytes.extend(data);

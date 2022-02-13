@@ -2,8 +2,11 @@ use chamomile_types::message::DeliveryType as P2pDeliveryType;
 use chamomile_types::Peer as ChamomilePeer;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-/// Type: PeerId
-pub use chamomile_types::types::{PeerId, TransportType};
+/// Type: PeerId, PeerKey
+pub use chamomile_types::{
+    key::Key as PeerKey,
+    types::{PeerId, TransportType},
+};
 
 /// Type: P2P common Broadcast
 pub use chamomile_types::types::Broadcast;
@@ -21,7 +24,7 @@ pub const P2P_ADDR: &str = "0.0.0.0:7364";
 pub const P2P_TRANSPORT: TransportType = TransportType::QUIC;
 
 /// RPC default binding addr.
-pub const RPC_ADDR: &str = "127.0.0.1:8000";
+pub const RPC_ADDR: &str = "127.0.0.1:7365";
 
 /// Configure file name
 pub const CONFIG_FILE_NAME: &str = "config.toml";

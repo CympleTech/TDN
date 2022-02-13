@@ -1,69 +1,14 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::fmt::Debug;
 
 use crate::message::RecvType;
-use crate::primitive::{HandleResult, PeerId, Result};
+use crate::primitives::{HandleResult, PeerId, Result};
 
-pub const GROUP_LENGTH: usize = 32;
+/// Group Id bytes length.
+pub const GROUP_BYTES_LENGTH: usize = 4;
 
 /// Type: GroupId
-#[derive(Copy, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
-pub struct GroupId(pub [u8; GROUP_LENGTH]);
-
-impl GroupId {
-    pub fn short_show(&self) -> String {
-        let mut hex = String::new();
-        hex.extend(self.0.iter().map(|byte| format!("{:02x?}", byte)));
-        let mut new_hex = String::new();
-        new_hex.push_str("0x");
-        new_hex.push_str(&hex[0..4]);
-        new_hex.push_str("...");
-        new_hex.push_str(&hex[hex.len() - 5..]);
-        new_hex
-    }
-
-    pub fn from_symbol(s: impl ToString) -> GroupId {
-        let s = s.to_string();
-        let bytes = blake3::hash(s.as_bytes());
-        GroupId(*bytes.as_bytes())
-    }
-
-    pub fn from_hex(s: impl ToString) -> Result<GroupId> {
-        let s = s.to_string();
-        if s.len() != GROUP_LENGTH * 2 {
-            return Err(anyhow::anyhow!("Hex is invalid"));
-        }
-
-        let mut value = [0u8; GROUP_LENGTH];
-
-        for i in 0..(s.len() / 2) {
-            let res = u8::from_str_radix(&s[2 * i..2 * i + 2], 16)?;
-            value[i] = res;
-        }
-
-        Ok(GroupId(value))
-    }
-
-    pub fn to_hex(&self) -> String {
-        let mut hex = String::new();
-        hex.extend(self.0.iter().map(|byte| format!("{:02x?}", byte)));
-        hex
-    }
-}
-
-impl Debug for GroupId {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        let mut hex = String::new();
-        hex.extend(self.0.iter().map(|byte| format!("{:02x?}", byte)));
-        write!(f, "0x{}", hex)
-    }
-}
-
-impl Into<PeerId> for GroupId {
-    fn into(self) -> PeerId {
-        chamomile_types::types::PeerId(self.0)
-    }
-}
+pub type GroupId = u32;
 
 /// Helper: this is the interface of the Group in the network.
 /// Group id's data structure is defined by TDN,

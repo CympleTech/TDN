@@ -4,10 +4,7 @@ pub use ed25519_dalek::Keypair;
 
 use ed25519_dalek::{PublicKey, Signature, Signer, Verifier};
 use signature::Signature as _;
-use tdn_types::{
-    group::GroupId,
-    primitive::{PeerId, Result},
-};
+use tdn_types::primitives::{PeerId, Result};
 
 mod bip32;
 mod bip39;
@@ -46,20 +43,17 @@ pub fn generate_id(
     account: u32,
     index: u32,
     passphrase: Option<&str>,
-) -> Result<(GroupId, Keypair)> {
+) -> Result<Keypair> {
     let seed = Mnemonic::from_phrase_in(language, phrase)?.to_seed(passphrase.unwrap_or(""));
     let derive_path = format!("{}/{}'/0/{}", DERIVE_CHAIN, account, index);
     let account = bip32::Ed25519ExtendedPrivKey::derive(&seed, derive_path.as_str())?;
     let sk = account.secret_key;
     let pk: PublicKey = (&sk).into();
 
-    Ok((
-        GroupId(pk.to_bytes()),
-        Keypair {
-            public: pk,
-            secret: sk,
-        },
-    ))
+    Ok(Keypair {
+        public: pk,
+        secret: sk,
+    })
 }
 
 /// generate ETH secret_key by mnemonic codes, account, index.
@@ -103,12 +97,11 @@ impl Proof {
         Proof(kp.sign(&bytes).as_bytes().to_vec())
     }
 
-    pub fn verify(&self, gid: &GroupId, maddr: &PeerId, raddr: &PeerId) -> Result<()> {
+    pub fn verify(&self, pk: &PublicKey, maddr: &PeerId, raddr: &PeerId) -> Result<()> {
         if self.0.len() != PROOF_LENGTH {
             return Err(anyhow::anyhow!("proof length failure!"));
         }
         let sign = Signature::from_bytes(&self.0)?;
-        let pk = PublicKey::from_bytes(&gid.0)?;
 
         let mut bytes = vec![];
         bytes.extend(&maddr.0);
@@ -121,12 +114,11 @@ impl Proof {
         Proof(kp.sign(bytes).as_bytes().to_vec())
     }
 
-    pub fn verify_bytes(&self, gid: &GroupId, bytes: &[u8]) -> Result<()> {
+    pub fn verify_bytes(&self, pk: &PublicKey, bytes: &[u8]) -> Result<()> {
         if self.0.len() != PROOF_LENGTH {
             return Err(anyhow::anyhow!("proof length failure!"));
         }
         let sign = Signature::from_bytes(&self.0)?;
-        let pk = PublicKey::from_bytes(&gid.0)?;
         Ok(pk.verify(bytes, &sign)?)
     }
 

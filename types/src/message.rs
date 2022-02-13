@@ -1,6 +1,6 @@
 use tokio::sync::mpsc::Sender;
 
-use crate::primitive::{Broadcast, DeliveryType, Peer, PeerId, StreamType};
+use crate::primitives::{Broadcast, DeliveryType, Peer, PeerId, StreamType};
 use crate::rpc::RpcParam;
 pub use chamomile_types::message::{StateRequest, StateResponse};
 

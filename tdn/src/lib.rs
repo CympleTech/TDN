@@ -50,14 +50,14 @@ pub use tdn_types as types;
 // public struct
 pub mod prelude {
     pub use super::config::Config;
-    pub use tdn_types::group::{GroupId, GROUP_LENGTH};
+    pub use tdn_types::group::{GroupId, GROUP_BYTES_LENGTH};
     pub use tdn_types::message::{NetworkType, RecvType, SendType, StateRequest, StateResponse};
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
-    pub use tdn_types::primitive::{Broadcast, HandleResult, Peer, PeerId, Result};
+    pub use tdn_types::primitives::{Broadcast, HandleResult, Peer, PeerId, PeerKey, Result};
 
     use chamomile::prelude::{
-        start as chamomile_start, ReceiveMessage as ChamomileReceiveMessage,
-        SendMessage as ChamomileSendMessage,
+        start as chamomile_start, start_with_key as chamomile_start_with_key,
+        ReceiveMessage as ChamomileReceiveMessage, SendMessage as ChamomileSendMessage,
     };
     use std::sync::Arc;
     use tdn_types::message::RpcSendMessage;
@@ -91,7 +91,7 @@ pub mod prelude {
 
         let config = Config::load().await;
 
-        let peer_id = start_main(recv_send, send_recv, config).await?;
+        let peer_id = start_main(recv_send, send_recv, config, None).await?;
 
         Ok((peer_id, send_send, recv_recv))
     }
@@ -103,7 +103,20 @@ pub mod prelude {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
-        let peer_id = start_main(recv_send, send_recv, config).await?;
+        let peer_id = start_main(recv_send, send_recv, config, None).await?;
+
+        Ok((peer_id, send_send, recv_recv))
+    }
+
+    /// start a service with config and PeerKey.
+    pub async fn start_with_config_and_key(
+        config: Config,
+        key: PeerKey,
+    ) -> Result<(PeerId, Sender<SendMessage>, Receiver<ReceiveMessage>)> {
+        let (send_send, send_recv) = new_send_channel();
+        let (recv_send, recv_recv) = new_receive_channel();
+
+        let peer_id = start_main(recv_send, send_recv, config, Some(key)).await?;
 
         Ok((peer_id, send_send, recv_recv))
     }
@@ -112,14 +125,23 @@ pub mod prelude {
         out_send: Sender<ReceiveMessage>,
         mut self_recv: Receiver<SendMessage>,
         config: Config,
+        key: Option<PeerKey>,
     ) -> Result<PeerId> {
         let (_secret, group_ids, p2p_config, rpc_config) = config.split();
 
         // start chamomile network & inner rpc.
-        let (res1, res2) = join!(
-            chamomile_start(p2p_config),
-            rpc_start(rpc_config, out_send.clone()),
-        );
+        let (res1, res2) = if let Some(key) = key {
+            join!(
+                chamomile_start_with_key(p2p_config, key),
+                rpc_start(rpc_config, out_send.clone()),
+            )
+        } else {
+            join!(
+                chamomile_start(p2p_config),
+                rpc_start(rpc_config, out_send.clone()),
+            )
+        };
+
         let (peer_id, p2p_send, mut p2p_recv) = res1?;
         let rpc_sender = res2?;
 
@@ -191,7 +213,7 @@ pub mod prelude {
                                 drop(groups_lock);
                                 continue;
                             }
-                            bytes.extend(&groups_lock[0].0);
+                            bytes.extend(&groups_lock[0].to_be_bytes());
                             drop(groups_lock);
                             bytes.extend(data);
                             p2p_send
@@ -263,15 +285,15 @@ pub mod prelude {
             while let Some(message) = p2p_recv.recv().await {
                 match message {
                     ChamomileReceiveMessage::StableConnect(peer, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
+                        if data.len() < GROUP_BYTES_LENGTH * 2 {
                             continue;
                         }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        let fgid = GroupId::from_be_bytes(fgid_bytes);
+                        let tgid = GroupId::from_be_bytes(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
@@ -290,15 +312,15 @@ pub mod prelude {
                         }
                     }
                     ChamomileReceiveMessage::ResultConnect(peer, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
+                        if data.len() < GROUP_BYTES_LENGTH * 2 {
                             continue;
                         }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        let fgid = GroupId::from_be_bytes(fgid_bytes);
+                        let tgid = GroupId::from_be_bytes(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
@@ -325,15 +347,15 @@ pub mod prelude {
                         }
                     }
                     ChamomileReceiveMessage::StableResult(peer, is_ok, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
+                        if data.len() < GROUP_BYTES_LENGTH * 2 {
                             continue;
                         }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        let fgid = GroupId::from_be_bytes(fgid_bytes);
+                        let tgid = GroupId::from_be_bytes(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
@@ -373,15 +395,15 @@ pub mod prelude {
                         drop(group_lock);
                     }
                     ChamomileReceiveMessage::Data(peer_id, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
+                        if data.len() < GROUP_BYTES_LENGTH * 2 {
                             continue;
                         }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        let fgid = GroupId::from_be_bytes(fgid_bytes);
+                        let tgid = GroupId::from_be_bytes(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
@@ -399,15 +421,15 @@ pub mod prelude {
                         }
                     }
                     ChamomileReceiveMessage::Stream(id, stream, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
+                        if data.len() < GROUP_BYTES_LENGTH * 2 {
                             continue;
                         }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        let fgid = GroupId::from_be_bytes(fgid_bytes);
+                        let tgid = GroupId::from_be_bytes(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {
@@ -426,15 +448,15 @@ pub mod prelude {
                         }
                     }
                     ChamomileReceiveMessage::Delivery(t, tid, is_ok, mut data) => {
-                        if data.len() < GROUP_LENGTH * 2 {
+                        if data.len() < GROUP_BYTES_LENGTH * 2 {
                             continue;
                         }
-                        let mut fgid_bytes = [0u8; GROUP_LENGTH];
-                        let mut tgid_bytes = [0u8; GROUP_LENGTH];
-                        fgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        tgid_bytes.copy_from_slice(data.drain(..GROUP_LENGTH).as_slice());
-                        let fgid = GroupId(fgid_bytes);
-                        let tgid = GroupId(tgid_bytes);
+                        let mut fgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        let mut tgid_bytes = [0u8; GROUP_BYTES_LENGTH];
+                        fgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        tgid_bytes.copy_from_slice(data.drain(..GROUP_BYTES_LENGTH).as_slice());
+                        let fgid = GroupId::from_be_bytes(fgid_bytes);
+                        let tgid = GroupId::from_be_bytes(tgid_bytes);
 
                         let group_lock = my_groups.read().await;
                         if group_lock.len() == 0 {

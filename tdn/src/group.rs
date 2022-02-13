@@ -2,7 +2,7 @@ use chamomile::prelude::SendMessage;
 use tdn_types::{
     group::GroupId,
     message::{ReceiveMessage, RecvType, SendType},
-    primitive::{DeliveryType, Peer, PeerId, Result, StreamType},
+    primitives::{DeliveryType, Peer, PeerId, Result, StreamType},
 };
 use tokio::sync::mpsc::{error::SendError, Sender};
 
@@ -13,8 +13,8 @@ pub(crate) async fn group_handle_send(
     msg: SendType,
 ) -> std::result::Result<(), SendError<SendMessage>> {
     // gid serialize data to msg data.
-    let mut bytes = gid.0.to_vec();
-    bytes.extend(&gid.0); // double it, meaning from/to is same group.
+    let mut bytes = gid.to_be_bytes().to_vec();
+    bytes.extend(&gid.to_be_bytes()); // double it, meaning from/to is same group.
     match msg {
         SendType::Connect(tid, peer, data) => {
             bytes.extend(data);

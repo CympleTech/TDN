@@ -12,7 +12,7 @@ use tokio::{
 
 use tdn_types::{
     message::{ReceiveMessage, RpcSendMessage},
-    primitive::Result,
+    primitives::Result,
     rpc::RpcParam,
 };
 

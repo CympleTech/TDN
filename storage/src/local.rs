@@ -1,6 +1,6 @@
 use rusqlite::{params, types::Value, Connection};
 use std::path::PathBuf;
-use tdn_types::primitive::Result;
+use tdn_types::primitives::Result;
 
 pub enum DsValue {
     Null,
