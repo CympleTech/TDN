@@ -5,7 +5,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 /// Type: PeerId, PeerKey
 pub use chamomile_types::{
     key::Key as PeerKey,
-    types::{PeerId, TransportType},
+    types::{PeerId, TransportType, PEER_ID_LENGTH},
 };
 
 /// Type: P2P common Broadcast
