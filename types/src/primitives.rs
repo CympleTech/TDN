@@ -4,7 +4,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 /// Type: PeerId, PeerKey
 pub use chamomile_types::{
-    key::Key as PeerKey,
+    key::{Key as PeerKey, PublicKey as PeerPublicKey},
     types::{PeerId, TransportType, PEER_ID_LENGTH},
 };
 
