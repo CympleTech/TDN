@@ -56,19 +56,18 @@ pub mod prelude {
     pub use tdn_types::primitives::{Broadcast, HandleResult, Peer, PeerId, PeerKey, Result};
 
     use chamomile::prelude::{
-        start as chamomile_start, start_with_key as chamomile_start_with_key,
+        start as chamomile_start, start_with_key as chamomile_start_with_key, Config as P2pConfig,
         ReceiveMessage as ChamomileReceiveMessage, SendMessage as ChamomileSendMessage,
     };
     use std::sync::Arc;
     use tdn_types::message::RpcSendMessage;
     use tokio::{
-        join,
         sync::mpsc::{self, Receiver, Sender},
         sync::RwLock,
     };
 
     use super::group::*;
-    use super::rpc::start as rpc_start;
+    use super::rpc::{start as rpc_start, RpcConfig};
 
     #[cfg(any(feature = "std", feature = "full"))]
     use super::layer::*;
@@ -91,7 +90,9 @@ pub mod prelude {
 
         let config = Config::load().await;
 
-        let peer_id = start_main(recv_send, send_recv, config, None).await?;
+        let (_secret, ids, p2p_config, rpc_config) = config.split();
+        let rpc_send = start_rpc(rpc_config, recv_send.clone()).await?;
+        let peer_id = start_main(ids, p2p_config, recv_send, send_recv, rpc_send, None).await?;
 
         Ok((peer_id, send_send, recv_recv))
     }
@@ -103,7 +104,9 @@ pub mod prelude {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
-        let peer_id = start_main(recv_send, send_recv, config, None).await?;
+        let (_secret, ids, p2p_config, rpc_config) = config.split();
+        let rpc_send = start_rpc(rpc_config, recv_send.clone()).await?;
+        let peer_id = start_main(ids, p2p_config, recv_send, send_recv, rpc_send, None).await?;
 
         Ok((peer_id, send_send, recv_recv))
     }
@@ -116,34 +119,38 @@ pub mod prelude {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
-        let peer_id = start_main(recv_send, send_recv, config, Some(key)).await?;
+        let (_secret, ids, p2p_config, rpc_config) = config.split();
+        let rpc_send = start_rpc(rpc_config, recv_send.clone()).await?;
+        let peer_id =
+            start_main(ids, p2p_config, recv_send, send_recv, rpc_send, Some(key)).await?;
 
         Ok((peer_id, send_send, recv_recv))
     }
 
+    /// start a separate rpc service.
+    pub async fn start_rpc(
+        config: RpcConfig,
+        out_send: Sender<ReceiveMessage>,
+    ) -> Result<Sender<RpcSendMessage>> {
+        rpc_start(config, out_send).await
+    }
+
     async fn start_main(
+        group_ids: Vec<GroupId>,
+        p2p_config: P2pConfig,
         out_send: Sender<ReceiveMessage>,
         mut self_recv: Receiver<SendMessage>,
-        config: Config,
+        rpc_send: Sender<RpcSendMessage>,
         key: Option<PeerKey>,
     ) -> Result<PeerId> {
-        let (_secret, group_ids, p2p_config, rpc_config) = config.split();
-
         // start chamomile network & inner rpc.
-        let (res1, res2) = if let Some(key) = key {
-            join!(
-                chamomile_start_with_key(p2p_config, key),
-                rpc_start(rpc_config, out_send.clone()),
-            )
+        let res1 = if let Some(key) = key {
+            chamomile_start_with_key(p2p_config, key).await
         } else {
-            join!(
-                chamomile_start(p2p_config),
-                rpc_start(rpc_config, out_send.clone()),
-            )
+            chamomile_start(p2p_config).await
         };
 
         let (peer_id, p2p_send, mut p2p_recv) = res1?;
-        let rpc_sender = res2?;
 
         debug!("chamomile & jsonrpc service started");
         let my_groups = Arc::new(RwLock::new(group_ids));
@@ -176,7 +183,7 @@ pub mod prelude {
                             .expect("Chamomile channel closed");
                     }
                     SendMessage::Rpc(uid, param, is_ws) => {
-                        rpc_sender
+                        rpc_send
                             .send(RpcSendMessage(uid, param, is_ws))
                             .await
                             .map_err(|e| error!("Rpc channel: {:?}", e))
