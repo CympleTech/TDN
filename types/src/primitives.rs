@@ -72,6 +72,60 @@ impl Peer {
             is_pub: true,
         }
     }
+
+    /// Enhanced multiaddr, you can import/export it.
+    /// example: "/p2p/ip4/127.0.0.1/tcp/1234/false/xxxxxx"
+    /// example: "/rpc/xxx/http://example.com"
+    pub fn to_string(&self) -> String {
+        if self.httpurl.len() > 0 {
+            format!("/rpc/{}/{}", self.id.to_hex(), self.httpurl)
+        } else {
+            let p2p = ChamomilePeer {
+                id: self.id,
+                socket: self.socket,
+                transport: self.transport,
+                is_pub: self.is_pub,
+            };
+            format!("/p2p/{}/{}", self.id.to_hex(), p2p.to_multiaddr_string())
+        }
+    }
+
+    pub fn from_string(s: &str) -> Result<Peer> {
+        let mut ss = s.split("/");
+        let _ = ss.next(); // ipv4 / ipv6
+
+        let protocol = ss.next().ok_or(new_io_error("peer string is invalid."))?;
+        let id = PeerId::from_hex(ss.next().ok_or(new_io_error("peer string is invalid."))?)?;
+
+        if protocol == "rpc" {
+            let mut peer = Peer::default();
+            peer.id = id;
+            peer.httpurl = ss
+                .next()
+                .ok_or(new_io_error("peer string is invalid."))?
+                .to_owned();
+            Ok(peer)
+        } else {
+            let p2p = ChamomilePeer::from_multiaddr_string(
+                ss.next().ok_or(new_io_error("peer string is invalid."))?,
+            )?;
+            let mut peer = Peer::from(p2p);
+            peer.id = id;
+            Ok(peer)
+        }
+    }
+}
+
+impl Default for Peer {
+    fn default() -> Peer {
+        Peer {
+            id: PeerId::default(),
+            socket: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0),
+            transport: P2P_TRANSPORT,
+            httpurl: String::new(),
+            is_pub: false,
+        }
+    }
 }
 
 impl From<ChamomilePeer> for Peer {
