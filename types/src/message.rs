@@ -46,8 +46,8 @@ pub enum RecvType {
     /// create a result connect to it.
     ResultConnect(Peer, Vec<u8>),
     /// when a stable connected peer leave, send from TDN to outside.
-    /// params: `peer_id`.
-    Leave(PeerId),
+    /// params: `peer`.
+    Leave(Peer),
     /// when received a data from a trusted peer, send to outside.
     /// params: `peer_id` and `data_bytes`.
     Event(PeerId, Vec<u8>),

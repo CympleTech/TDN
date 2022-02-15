@@ -122,9 +122,9 @@ pub(crate) async fn group_handle_result(
 pub(crate) async fn group_handle_leave(
     _gid: &GroupId,
     out_send: &Sender<ReceiveMessage>,
-    peer_id: PeerId,
+    peer: impl Into<Peer>,
 ) -> Result<()> {
-    let gmsg = RecvType::Leave(peer_id);
+    let gmsg = RecvType::Leave(peer.into());
 
     #[cfg(any(feature = "single", feature = "std"))]
     let msg = ReceiveMessage::Group(gmsg);

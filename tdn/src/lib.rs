@@ -393,12 +393,12 @@ pub mod prelude {
                             }
                         }
                     }
-                    ChamomileReceiveMessage::StableLeave(peer_id) => {
+                    ChamomileReceiveMessage::StableLeave(peer) => {
                         let group_lock = my_groups.read().await;
                         for gid in group_lock.iter() {
-                            let _ = group_handle_leave(&gid, &out_send, peer_id).await;
+                            let _ = group_handle_leave(&gid, &out_send, peer).await;
                             #[cfg(any(feature = "std", feature = "full"))]
-                            let _ = layer_handle_leave(*gid, &out_send, peer_id).await;
+                            let _ = layer_handle_leave(*gid, &out_send, peer).await;
                         }
                         drop(group_lock);
                     }
