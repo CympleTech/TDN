@@ -243,6 +243,13 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         }
     }
 
+    pub fn new_with_state(state: Arc<S>) -> RpcHandler<S> {
+        Self {
+            state: state,
+            fns: HashMap::new(),
+        }
+    }
+
     pub fn add_method(&mut self, name: &'static str, f: impl FutFn<S>) {
         self.fns.insert(name, Box::new(f));
     }
