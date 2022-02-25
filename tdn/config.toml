@@ -54,13 +54,13 @@ p2p_bootstrap = []
 ##          ]
 #p2p_block_peer_list = []
 
-## RPC listen address, default is 127.0.0.1:8000, uncomment below to change.
-## Example: rpc_addr = "127.0.0.1:8000"
-rpc_addr = "127.0.0.1:8000"
+## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
+## Example: rpc_addr = "127.0.0.1:7365"
+rpc_addr = "127.0.0.1:7365"
 
 ## WS listen address, default closed. if need, uncomment below to change.
-## Example: rpc_ws = "127.0.0.1:8080"
-rpc_ws = "127.0.0.1:8080"
+## Example: rpc_ws = "127.0.0.1:7366"
+rpc_ws = "127.0.0.1:7366"
 
 ## RPC Service index html body. if has, set path, if not, comment it.
 ## Example: rpc_index = "/var/www/html/index.html"

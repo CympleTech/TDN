@@ -50,13 +50,15 @@ pub use tdn_types as types;
 // public struct
 pub mod prelude {
     pub use super::config::Config;
+    pub use super::rpc::RpcConfig;
+    pub use chamomile::prelude::Config as P2pConfig;
     pub use tdn_types::group::{GroupId, GROUP_BYTES_LENGTH};
     pub use tdn_types::message::{NetworkType, RecvType, SendType, StateRequest, StateResponse};
     pub use tdn_types::message::{ReceiveMessage, SendMessage};
     pub use tdn_types::primitives::{Broadcast, HandleResult, Peer, PeerId, PeerKey, Result};
 
     use chamomile::prelude::{
-        start as chamomile_start, start_with_key as chamomile_start_with_key, Config as P2pConfig,
+        start as chamomile_start, start_with_key as chamomile_start_with_key,
         ReceiveMessage as ChamomileReceiveMessage, SendMessage as ChamomileSendMessage,
     };
     use std::sync::Arc;
@@ -67,7 +69,7 @@ pub mod prelude {
     };
 
     use super::group::*;
-    use super::rpc::{start as rpc_start, RpcConfig};
+    use super::rpc::start as rpc_start;
 
     #[cfg(any(feature = "std", feature = "full"))]
     use super::layer::*;
