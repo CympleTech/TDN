@@ -260,6 +260,11 @@ pub mod prelude {
                                 .map_err(|e| error!("Chamomile channel: {:?}", e))
                                 .expect("Chamomile channel closed");
                         }
+                        NetworkType::NetworkStop => {
+                            warn!("Start stop chamomile...");
+                            let _ = p2p_send.send(ChamomileSendMessage::NetworkStop).await;
+                            break;
+                        }
                         #[cfg(any(feature = "multiple", feature = "full"))]
                         NetworkType::AddGroup(gid) => {
                             let mut group_lock = my_groups_1.write().await;
@@ -501,6 +506,8 @@ pub mod prelude {
                     }
                 }
             }
+
+            warn!("Chamomile network is stopped");
         });
 
         Ok(peer_id)

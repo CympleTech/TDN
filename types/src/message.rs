@@ -78,6 +78,8 @@ pub enum NetworkType {
     NetworkState(StateRequest, Sender<StateResponse>),
     /// When receive `ReceiveMessage::NetworkLost`, want to reboot network, it can use.
     NetworkReboot,
+    /// Stop & close p2p network.
+    NetworkStop,
     /// add group to TDN control. multiple group use.
     #[cfg(any(feature = "multiple", feature = "full"))]
     AddGroup(GroupId),

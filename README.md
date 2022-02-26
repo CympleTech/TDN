@@ -75,5 +75,7 @@ This project is licensed under either of
    http://www.apache.org/licenses/LICENSE-2.0)
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or
    http://opensource.org/licenses/MIT)
+ * Anti-War license ([LICENSE-AW](LICENSE-AW) or
+   https://github.com/sunhuachuang/AW-License)
 
 at your option.
