@@ -33,8 +33,8 @@ async fn main() {
                 RecvType::Result(..) => {
                     //
                 }
-                RecvType::Leave(peer_id) => {
-                    println!("receive group peer {} leave", peer_id.short_show());
+                RecvType::Leave(peer) => {
+                    println!("receive group peer {} leave", peer.id.short_show());
                 }
                 RecvType::Event(peer_id, _data) => {
                     println!("receive group event from {}", peer_id.short_show());
@@ -43,11 +43,7 @@ async fn main() {
             },
             ReceiveMessage::Layer(gid, msg) => match msg {
                 RecvType::Connect(peer, _data) => {
-                    println!(
-                        "Layer Join: {}, Addr: {}.",
-                        gid.short_show(),
-                        peer.id.short_show()
-                    );
+                    println!("Layer Join: {}, Addr: {}.", gid, peer.id.short_show());
                 }
                 RecvType::Result(..) => {
                     //

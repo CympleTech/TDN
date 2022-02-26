@@ -194,7 +194,6 @@ pub struct RawConfig {
     pub db_path: Option<PathBuf>,
     pub secret: String,
     pub group_id: Option<GroupId>,
-    pub group_symbol: Option<String>,
     pub permission: Option<bool>,
     pub only_stable_data: Option<bool>,
 
@@ -279,11 +278,6 @@ secret = "{}"
 ## Default is `$HOME`,  `./` when dev.
 ## Example: db_path = "./"
 #db_path = "../"
-
-## Group Symbol Name.
-## If also have group_id and group_symbol, config will use group_id.
-## Example: group_symbol = "CypherLink"
-group_symbol = "CypherLink"
 
 ## App Permission.
 ## If set true, it is permissioned, and only stable connection;
