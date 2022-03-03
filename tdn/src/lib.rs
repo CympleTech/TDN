@@ -253,8 +253,7 @@ pub mod prelude {
                             continue;
                         }
 
-                        let is_me = group_lock.contains(&fgid);
-                        if fgid == tgid && is_me {
+                        if fgid == tgid && group_lock.contains(&fgid) {
                             drop(group_lock);
                             let _ = group_handle_result(&fgid, &out_send, peer.into(), is_ok, data)
                                 .await;
@@ -262,18 +261,15 @@ pub mod prelude {
                             drop(group_lock);
                             // layer handle it.
                             #[cfg(any(feature = "std", feature = "full"))]
-                            {
-                                let (ff, tt) = if is_me { (tgid, fgid) } else { (fgid, tgid) };
-                                let _ = layer_handle_result(
-                                    ff,
-                                    tt,
-                                    &out_send,
-                                    peer.into(),
-                                    is_ok,
-                                    data,
-                                )
-                                .await;
-                            }
+                            let _ = layer_handle_result(
+                                fgid,
+                                tgid,
+                                &out_send,
+                                peer.into(),
+                                is_ok,
+                                data,
+                            )
+                            .await;
                         }
                     }
                     ChamomileReceiveMessage::StableLeave(peer) => {
