@@ -109,7 +109,7 @@ pub enum ReceiveMessage {
     /// Group: GroupMessage.
     Group(RecvType),
     /// Layer: LayerMessage. Take care of `Leave`.
-    Layer(GroupId, RecvType),
+    Layer(GroupId, GroupId, RecvType),
     /// RPC: connection uid, request params, is websocket.
     Rpc(u64, RpcParam, bool),
     /// when network lost all DHT network and direct stables. will tell outside.

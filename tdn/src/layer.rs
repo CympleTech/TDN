@@ -52,17 +52,13 @@ pub(crate) async fn layer_handle_send(
 #[inline]
 pub(crate) async fn layer_handle_connect(
     fgid: GroupId,
-    _tgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer: Peer,
     data: Vec<u8>,
 ) -> Result<()> {
     let gmsg = RecvType::Connect(peer, data);
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
     out_send
         .send(msg)
@@ -76,17 +72,13 @@ pub(crate) async fn layer_handle_connect(
 #[inline]
 pub(crate) async fn layer_handle_result_connect(
     fgid: GroupId,
-    _tgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer: Peer,
     data: Vec<u8>,
 ) -> Result<()> {
     let gmsg = RecvType::ResultConnect(peer, data);
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
     out_send
         .send(msg)
@@ -100,18 +92,14 @@ pub(crate) async fn layer_handle_result_connect(
 #[inline]
 pub(crate) async fn layer_handle_result(
     fgid: GroupId,
-    _tgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer: Peer,
     is_ok: bool,
     data: Vec<u8>,
 ) -> Result<()> {
     let gmsg = RecvType::Result(peer, is_ok, data);
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
     out_send
         .send(msg)
@@ -129,10 +117,6 @@ pub(crate) async fn layer_handle_leave(
     peer: impl Into<Peer>,
 ) -> Result<()> {
     let gmsg = RecvType::Leave(peer.into());
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
     let msg = ReceiveMessage::Layer(fgid, fgid, gmsg);
 
     out_send
@@ -147,17 +131,13 @@ pub(crate) async fn layer_handle_leave(
 #[inline]
 pub(crate) async fn layer_handle_data(
     fgid: GroupId,
-    _tgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     peer_id: PeerId,
     data: Vec<u8>,
 ) -> Result<()> {
     let gmsg = RecvType::Event(peer_id, data);
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
     out_send
         .send(msg)
@@ -171,18 +151,14 @@ pub(crate) async fn layer_handle_data(
 #[inline]
 pub(crate) async fn layer_handle_stream(
     fgid: GroupId,
-    _tgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     uid: u32,
     stream_type: StreamType,
     data: Vec<u8>,
 ) -> Result<()> {
     let gmsg = RecvType::Stream(uid, stream_type, data);
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
     out_send
         .send(msg)
@@ -196,18 +172,14 @@ pub(crate) async fn layer_handle_stream(
 #[inline]
 pub(crate) async fn layer_handle_delivery(
     fgid: GroupId,
-    _tgid: GroupId,
+    tgid: GroupId,
     out_send: &Sender<ReceiveMessage>,
     delivery_type: DeliveryType,
     tid: u64,
     is_sended: bool,
 ) -> Result<()> {
     let gmsg = RecvType::Delivery(delivery_type, tid, is_sended);
-
-    #[cfg(any(feature = "single", feature = "std"))]
-    let msg = ReceiveMessage::Layer(fgid, gmsg);
-    #[cfg(any(feature = "multiple", feature = "full"))]
-    let msg = ReceiveMessage::Layer(fgid, _tgid, gmsg);
+    let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
     out_send
         .send(msg)
