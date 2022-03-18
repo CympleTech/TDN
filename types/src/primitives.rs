@@ -74,11 +74,11 @@ impl Peer {
     }
 
     /// Enhanced multiaddr, you can import/export it.
-    /// example: "/p2p/ip4/127.0.0.1/tcp/1234/false/xxxxxx"
-    /// example: "/rpc/xxx/http://example.com"
+    /// example: "p2p::xxx::/ip4/127.0.0.1/tcp/1234"
+    /// example: "rpc::xxx::http://example.com"
     pub fn to_string(&self) -> String {
         if self.httpurl.len() > 0 {
-            format!("/rpc/{}/{}", self.id.to_hex(), self.httpurl)
+            format!("rpc::{}::{}", self.id.to_hex(), self.httpurl)
         } else {
             let p2p = ChamomilePeer {
                 id: self.id,
@@ -86,13 +86,12 @@ impl Peer {
                 transport: self.transport,
                 is_pub: self.is_pub,
             };
-            format!("/p2p/{}/{}", self.id.to_hex(), p2p.to_multiaddr_string())
+            format!("p2p::{}::{}", self.id.to_hex(), p2p.to_multiaddr_string())
         }
     }
 
     pub fn from_string(s: &str) -> Result<Peer> {
-        let mut ss = s.split("/");
-        let _ = ss.next(); // ipv4 / ipv6
+        let mut ss = s.split("::");
 
         let protocol = ss.next().ok_or(new_io_error("peer string is invalid."))?;
         let id = PeerId::from_hex(ss.next().ok_or(new_io_error("peer string is invalid."))?)?;
