@@ -5,7 +5,7 @@ use tdn::prelude::*;
 async fn main() {
     // use crate root directory's config.toml
     let dir_path = PathBuf::from(".");
-    let config = Config::load_with_path(dir_path).await;
+    let config = Config::load(dir_path).await;
 
     let (peer_addr, _send, mut out_recv) = start_with_config(config).await.unwrap();
     println!("Example: peer id: {}", peer_addr.short_show());

@@ -147,7 +147,7 @@ pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcE
 }
 
 /// Helpe better handle rpc. Example.
-/// ``` rust
+/// ``` ignore
 /// use tdn_types::{primitives::HandleResult, rpc::{RpcParam, RpcHandler, json}};
 /// use std::sync::Arc;
 ///

@@ -52,16 +52,20 @@ pub mod prelude {
     pub use super::config::Config;
     pub use super::rpc::RpcConfig;
     pub use chamomile::prelude::Config as P2pConfig;
-    pub use tdn_types::group::{GroupId, GROUP_BYTES_LENGTH};
-    pub use tdn_types::message::{NetworkType, RecvType, SendType, StateRequest, StateResponse};
-    pub use tdn_types::message::{ReceiveMessage, SendMessage};
-    pub use tdn_types::primitives::{Broadcast, HandleResult, Peer, PeerId, PeerKey, Result};
+    pub use tdn_types::{
+        group::{GroupId, GROUP_BYTES_LENGTH},
+        message::{
+            NetworkType, ReceiveMessage, RecvType, SendMessage, SendType, StateRequest,
+            StateResponse,
+        },
+        primitives::{Broadcast, HandleResult, Peer, PeerId, PeerKey, Result},
+    };
 
     use chamomile::prelude::{
         start as chamomile_start, start_with_key as chamomile_start_with_key,
         ReceiveMessage as ChamomileReceiveMessage, SendMessage as ChamomileSendMessage,
     };
-    use std::sync::Arc;
+    use std::{path::PathBuf, sync::Arc};
     use tdn_types::message::RpcSendMessage;
     use tokio::{
         sync::mpsc::{self, Receiver, Sender},
@@ -90,7 +94,7 @@ pub mod prelude {
         let (send_send, send_recv) = new_send_channel();
         let (recv_send, recv_recv) = new_receive_channel();
 
-        let config = Config::load().await;
+        let config = Config::load(PathBuf::from("./")).await;
 
         let (_secret, ids, p2p_config, rpc_config) = config.split();
         let rpc_send = start_rpc(rpc_config, recv_send.clone()).await?;

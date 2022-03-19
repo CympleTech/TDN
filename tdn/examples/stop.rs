@@ -1,9 +1,9 @@
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 use tdn::prelude::*;
 
 #[tokio::main]
 async fn main() {
-    let config = Config::load().await;
+    let config = Config::load(PathBuf::from("./")).await;
     let (_secret, ids, p2p_config, _rpc_config) = config.split();
     let (send_send, send_recv) = new_send_channel();
     let (recv_send, mut recv_recv) = new_receive_channel();

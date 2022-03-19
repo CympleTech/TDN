@@ -41,9 +41,9 @@ async fn main() {
                 }
                 _ => {}
             },
-            ReceiveMessage::Layer(gid, msg) => match msg {
+            ReceiveMessage::Layer(fgid, _tgid, msg) => match msg {
                 RecvType::Connect(peer, _data) => {
-                    println!("Layer Join: {}, Addr: {}.", gid, peer.id.short_show());
+                    println!("Layer Join: {}, Addr: {}.", fgid, peer.id.short_show());
                 }
                 RecvType::Result(..) => {
                     //
