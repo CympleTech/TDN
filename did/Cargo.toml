@@ -1,6 +1,6 @@
 [package]
 name = "tdn_did"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Dev <dev@cympletech.com>"]
 edition = "2021"
 readme = "README.md"
@@ -17,7 +17,7 @@ anyhow = "1.0"
 zeroize = "1.3"
 curve25519-dalek = "3"
 ed25519-dalek = "1.0"
-tdn_types = { version = "0.7", path = "../types", default-features = false }
+tdn_types = { version = "0.8", path = "../types", default-features = false }
 
 # mnemonic (BIP-39)
 hmac = { version = "0.12", default-features = false }

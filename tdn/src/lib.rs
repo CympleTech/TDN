@@ -380,6 +380,27 @@ pub mod prelude {
                             .map_err(|e| error!("Outside channel: {:?}", e))
                             .expect("Outside channel closed");
                     }
+                    ChamomileReceiveMessage::OwnConnect(peer) => {
+                        out_send
+                            .send(ReceiveMessage::Own(RecvType::Connect(peer.into(), vec![])))
+                            .await
+                            .map_err(|e| error!("Outside channel: {:?}", e))
+                            .expect("Outside channel closed");
+                    }
+                    ChamomileReceiveMessage::OwnLeave(peer) => {
+                        out_send
+                            .send(ReceiveMessage::Own(RecvType::Leave(peer.into())))
+                            .await
+                            .map_err(|e| error!("Outside channel: {:?}", e))
+                            .expect("Outside channel closed");
+                    }
+                    ChamomileReceiveMessage::OwnEvent(aid, data) => {
+                        out_send
+                            .send(ReceiveMessage::Own(RecvType::Event(aid, data)))
+                            .await
+                            .map_err(|e| error!("Outside channel: {:?}", e))
+                            .expect("Outside channel closed");
+                    }
                 }
             }
 
@@ -390,6 +411,35 @@ pub mod prelude {
         tokio::spawn(async move {
             while let Some(message) = self_recv.recv().await {
                 match message {
+                    SendMessage::Own(msg) => match msg {
+                        SendType::Connect(tid, peer, data) => {
+                            p2p_send
+                                .send(ChamomileSendMessage::StableConnect(tid, peer.into(), data))
+                                .await
+                                .map_err(|e| error!("Chamomile channel: {:?}", e))
+                                .expect("Chamomile channel closed");
+                        }
+                        SendType::Event(_, _, data) => {
+                            p2p_send
+                                .send(ChamomileSendMessage::OwnEvent(data))
+                                .await
+                                .map_err(|e| error!("Chamomile channel: {:?}", e))
+                                .expect("Chamomile channel closed");
+                        }
+                        SendType::Stream(id, stream, data) => {
+                            p2p_send
+                                .send(ChamomileSendMessage::Stream(id, stream, data))
+                                .await
+                                .map_err(|e| error!("Chamomile channel: {:?}", e))
+                                .expect("Chamomile channel closed");
+                        }
+                        SendType::Disconnect(..) => {
+                            warn!("Own message has no DisConnect");
+                        }
+                        SendType::Result(..) => {
+                            warn!("Own message has no Result");
+                        }
+                    },
                     #[cfg(any(feature = "single", feature = "std"))]
                     SendMessage::Group(msg) => {
                         let groups_lock = my_groups_1.read().await;

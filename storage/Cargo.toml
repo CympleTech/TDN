@@ -1,6 +1,6 @@
 [package]
 name = "tdn_storage"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Dev <dev@cympletech.com>"]
 edition = "2021"
 license = "MIT/Apache-2.0"
@@ -19,7 +19,7 @@ tokio = { version = "1", features = ["fs"] }
 serde = { version = "1.0", default-features = false }
 sled = { version = "0.34", optional = true }
 rusqlite = {version = "0.26", optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
-tdn_types = { version = "0.7", path = "../types", default-features = false }
+tdn_types = { version = "0.8", path = "../types", default-features = false }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

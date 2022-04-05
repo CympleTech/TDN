@@ -169,7 +169,7 @@ pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcE
 /// // when match Message
 /// match msg {
 ///     Message::Rpc(uid, params) => Message::Rpc(uid, params) => {
-///         if let Ok(HandleResult {mut rpcs, groups, layers}) = rpc_handler.handle(params).await {
+///         if let Ok(HandleResult {owns, mut rpcs, groups, layers}) = rpc_handler.handle(params).await {
 ///             loop {
 ///                 if rpcs.len() != 0 {
 ///                     let msg = rpcs.remove(0);
@@ -317,11 +317,13 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                     #[cfg(any(feature = "full", feature = "std"))]
                     match res {
                         Ok(HandleResult {
+                            owns,
                             rpcs,
                             groups,
                             layers,
                             networks,
                         }) => {
+                            new_results.owns = owns;
                             new_results.groups = groups;
                             new_results.layers = layers;
                             new_results.networks = networks;

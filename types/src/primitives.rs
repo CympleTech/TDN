@@ -85,6 +85,7 @@ impl Peer {
                 socket: self.socket,
                 transport: self.transport,
                 is_pub: self.is_pub,
+                assist: self.id,
             };
             format!("p2p::{}::{}", self.id.to_hex(), p2p.to_multiaddr_string())
         }
@@ -146,6 +147,7 @@ impl Into<ChamomilePeer> for Peer {
             socket: self.socket,
             transport: self.transport,
             is_pub: self.is_pub,
+            assist: self.id,
         }
     }
 }
@@ -213,6 +215,8 @@ use crate::rpc::RpcParam;
 
 /// Helper: this is the group/layer/rpc handle result in the network.
 pub struct HandleResult {
+    /// P2P network with same PeerId.
+    pub owns: Vec<SendType>,
     /// rpc tasks: [(method, params)].
     pub rpcs: Vec<RpcParam>,
     /// group tasks: [GroupSendMessage]
@@ -234,6 +238,24 @@ pub struct HandleResult {
 impl<'a> HandleResult {
     pub fn new() -> Self {
         HandleResult {
+            owns: vec![],
+            rpcs: vec![],
+            #[cfg(any(
+                feature = "single",
+                feature = "std",
+                feature = "multiple",
+                feature = "full",
+            ))]
+            groups: vec![],
+            #[cfg(any(feature = "full", feature = "std"))]
+            layers: vec![],
+            networks: vec![],
+        }
+    }
+
+    pub fn own(m: SendType) -> Self {
+        HandleResult {
+            owns: vec![m],
             rpcs: vec![],
             #[cfg(any(
                 feature = "single",
@@ -250,6 +272,7 @@ impl<'a> HandleResult {
 
     pub fn rpc(p: RpcParam) -> Self {
         HandleResult {
+            owns: vec![],
             rpcs: vec![p],
             #[cfg(any(
                 feature = "single",
@@ -267,6 +290,7 @@ impl<'a> HandleResult {
     #[cfg(any(feature = "single", feature = "std"))]
     pub fn group(m: SendType) -> Self {
         HandleResult {
+            owns: vec![],
             rpcs: vec![],
             groups: vec![m],
             #[cfg(feature = "std")]
@@ -278,6 +302,7 @@ impl<'a> HandleResult {
     #[cfg(any(feature = "multiple", feature = "full"))]
     pub fn group(gid: GroupId, m: SendType) -> Self {
         HandleResult {
+            owns: vec![],
             rpcs: vec![],
             groups: vec![(gid, m)],
             #[cfg(feature = "full")]
@@ -289,6 +314,7 @@ impl<'a> HandleResult {
     #[cfg(feature = "std")]
     pub fn layer(gid: GroupId, m: SendType) -> Self {
         HandleResult {
+            owns: vec![],
             rpcs: vec![],
             groups: vec![],
             layers: vec![(gid, m)],
@@ -299,6 +325,7 @@ impl<'a> HandleResult {
     #[cfg(feature = "full")]
     pub fn layer(fgid: GroupId, tgid: GroupId, m: SendType) -> Self {
         HandleResult {
+            owns: vec![],
             rpcs: vec![],
             groups: vec![],
             layers: vec![(fgid, tgid, m)],
@@ -308,6 +335,7 @@ impl<'a> HandleResult {
 
     pub fn network(m: NetworkType) -> Self {
         HandleResult {
+            owns: vec![],
             rpcs: vec![],
             #[cfg(any(
                 feature = "single",
