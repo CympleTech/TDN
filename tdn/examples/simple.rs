@@ -26,6 +26,20 @@ async fn main() {
 
     while let Some(message) = out_recv.recv().await {
         match message {
+            ReceiveMessage::Own(msg) => match msg {
+                RecvType::Connect(peer, _data) => {
+                    println!("receive own peer {} join", peer.id.short_show());
+                }
+                RecvType::Leave(peer) => {
+                    println!("receive own peer {} leave", peer.id.short_show());
+                }
+                RecvType::Event(peer_id, _data) => {
+                    println!("receive own event from {}", peer_id.short_show());
+                }
+                _ => {
+                    println!("nerver here!")
+                }
+            },
             ReceiveMessage::Group(msg) => match msg {
                 RecvType::Connect(peer, _data) => {
                     println!("receive group peer {} join", peer.id.short_show());
@@ -53,6 +67,7 @@ async fn main() {
             ReceiveMessage::Rpc(uid, params, is_ws) => {
                 if let Ok(HandleResult {
                     mut rpcs,
+                    owns: _,
                     groups: _,
                     layers: _,
                     networks: _,

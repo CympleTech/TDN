@@ -268,6 +268,21 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
             return Ok(new_results);
         };
 
+        if method == "rpcs" {
+            let methods: Vec<&str> = self.fns.keys().map(|v| *v).collect();
+            let params = json!(methods);
+
+            #[cfg(any(feature = "single", feature = "std"))]
+            new_results.rpcs.push(rpc_response(id, method, params));
+
+            #[cfg(any(feature = "multiple", feature = "full"))]
+            new_results
+                .rpcs
+                .push(rpc_response(id, method, params, group));
+
+            return Ok(new_results);
+        }
+
         if let RpcParam::Array(params) = param["params"].take() {
             match self.fns.get(method) {
                 Some(f) => {
