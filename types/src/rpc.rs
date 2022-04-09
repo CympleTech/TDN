@@ -269,7 +269,8 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
         };
 
         if method == "rpcs" {
-            let methods: Vec<&str> = self.fns.keys().map(|v| *v).collect();
+            let mut methods: Vec<&str> = self.fns.keys().map(|v| *v).collect();
+            methods.sort();
             let params = json!(methods);
 
             #[cfg(any(feature = "single", feature = "std"))]
