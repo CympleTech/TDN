@@ -32,7 +32,7 @@
 panic!("feature conflict, only one feature at one time.");
 
 #[macro_use]
-extern crate log;
+extern crate tracing;
 
 mod config;
 mod group;

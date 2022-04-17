@@ -14,9 +14,10 @@ default = ["rand", "secp256k1"]
 
 [dependencies]
 anyhow = "1.0"
-zeroize = "1.3"
 curve25519-dalek = "3"
 ed25519-dalek = "1.0"
+zeroize = "1.3"
+
 tdn_types = { version = "0.8", path = "../types", default-features = false }
 
 # mnemonic (BIP-39)
