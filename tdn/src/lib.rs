@@ -381,15 +381,21 @@ pub mod prelude {
                             .expect("Outside channel closed");
                     }
                     ChamomileReceiveMessage::OwnConnect(peer) => {
+                        let assist_id = peer.assist;
+                        let mut new_peer: Peer = peer.into();
+                        new_peer.id = assist_id;
                         out_send
-                            .send(ReceiveMessage::Own(RecvType::Connect(peer.into(), vec![])))
+                            .send(ReceiveMessage::Own(RecvType::Connect(new_peer, vec![])))
                             .await
                             .map_err(|e| error!("Outside channel: {:?}", e))
                             .expect("Outside channel closed");
                     }
                     ChamomileReceiveMessage::OwnLeave(peer) => {
+                        let assist_id = peer.assist;
+                        let mut new_peer: Peer = peer.into();
+                        new_peer.id = assist_id;
                         out_send
-                            .send(ReceiveMessage::Own(RecvType::Leave(peer.into())))
+                            .send(ReceiveMessage::Own(RecvType::Leave(new_peer)))
                             .await
                             .map_err(|e| error!("Outside channel: {:?}", e))
                             .expect("Outside channel closed");
