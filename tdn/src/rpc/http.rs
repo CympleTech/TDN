@@ -1,4 +1,7 @@
-use rand::prelude::*;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -92,7 +95,8 @@ async fn http_connection(
     addr: SocketAddr,
 ) -> Result<()> {
     debug!("DEBUG: HTTP connection established: {}", addr);
-    let id: u64 = rand::thread_rng().gen();
+    let mut rng = ChaChaRng::from_entropy();
+    let id: u64 = rng.next_u64();
     let (s_send, mut s_recv) = rpc_channel();
 
     let mut buf = vec![];

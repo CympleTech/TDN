@@ -1,4 +1,7 @@
-use rand::prelude::*;
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use tokio::{
@@ -36,7 +39,9 @@ async fn ws_connection(
         .await
         .map_err(|_e| Error::new(ErrorKind::Other, "Accept WebSocket Failure!"))?;
     debug!("DEBUG: WebSocket connection established: {}", addr);
-    let id: u64 = rand::thread_rng().gen();
+
+    let mut rng = ChaChaRng::from_entropy();
+    let id: u64 = rng.next_u64();
     let (s_send, mut s_recv) = rpc_channel();
     send.send(RpcMessage::Open(id, s_send))
         .await

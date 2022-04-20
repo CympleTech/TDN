@@ -26,7 +26,7 @@ const ETH_CHAIN: &'static str = "m/44'/60'";
 const BTC_CHAIN: &'static str = "m/44'/0'";
 
 /// generate mnemonic codes by language & words number.
-#[cfg(feature = "rand")]
+#[cfg(feature = "rand_chacha")]
 pub fn generate_mnemonic(language: Language, count: Count) -> String {
     Mnemonic::generate_in(language, count).phrase().to_string()
 }

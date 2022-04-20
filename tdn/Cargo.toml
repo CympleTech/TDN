@@ -22,7 +22,7 @@ chamomile = "0.9"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 httparse = "1.6"
 mime = "0.3"
-rand = "0.7"
+rand_chacha = "0.3"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 toml = "0.5"
 tokio-tungstenite = "0.16"

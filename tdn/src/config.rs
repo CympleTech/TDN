@@ -1,5 +1,7 @@
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaChaRng,
+};
 use serde::de::DeserializeOwned as SeDeserializeOwned;
 use serde::ser::Serialize as SeSerialize;
 use serde::{Deserialize, Serialize};
@@ -138,10 +140,10 @@ impl Config {
             }
         }
 
-        let secret: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(20) // 20-length random words.
-            .collect();
+        let mut rng = ChaChaRng::from_entropy();
+        let mut key = [0u8; 20];
+        rng.fill_bytes(&mut key);
+        let secret = String::from_utf8(key.to_vec()).unwrap_or("".to_owned());
         config.secret = *blake3::hash(secret.as_bytes()).as_bytes();
 
         // write to config.toml.
