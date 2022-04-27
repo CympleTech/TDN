@@ -1,15 +1,16 @@
 //! Some of the code is from the [bip0039](https://github.com/koushiro/bip0039).
 
 use core::{fmt, mem, ops::Range, str};
+use hmac::Hmac;
+use sha2::{Digest, Sha256, Sha512};
+use std::borrow::Cow;
+use zeroize::Zeroize;
+
+#[cfg(feature = "rand_chacha")]
 use rand_chacha::{
     rand_core::{RngCore, SeedableRng},
     ChaChaRng,
 };
-use std::borrow::Cow;
-
-use hmac::Hmac;
-use sha2::{Digest, Sha256, Sha512};
-use zeroize::Zeroize;
 
 use crate::error::Error;
 use crate::language::Language;
