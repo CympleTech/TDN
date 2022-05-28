@@ -127,10 +127,6 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - [tdn-storage](./storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
 - [tdn-permission](https://github.com/cympletech/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
 
-## Projects used it
-- [ESSE](https://github.com/CympleTech/esse) - **full-type** - An open source encrypted peer-to-peer system. Own data, own privacy.
-- [group-chat](https://github.com/CympleTech/group-chat) - **multiple-type** - Group Chat for ESSE and TDN Ecological.
-
 ## For more information, please visit:
 - Website: https://cympletech.com
 - Twitter: https://twitter.com/cympletech
@@ -161,7 +157,5 @@ This project is licensed under either of
    http://www.apache.org/licenses/LICENSE-2.0)
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or
    http://opensource.org/licenses/MIT)
- * Anti-War license ([LICENSE-AW](LICENSE-AW) or
-   https://github.com/sunhuachuang/AW-License)
 
 at your option.
