@@ -24,7 +24,7 @@ pub const P2P_ADDR: &str = "0.0.0.0:7364";
 pub const P2P_TRANSPORT: TransportType = TransportType::QUIC;
 
 /// RPC default binding addr.
-pub const RPC_ADDR: &str = "127.0.0.1:7365";
+pub const RPC_HTTP: &str = "127.0.0.1:7365";
 
 /// Configure file name
 pub const CONFIG_FILE_NAME: &str = "config.toml";

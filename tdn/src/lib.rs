@@ -50,7 +50,9 @@ pub use tdn_types as types;
 // public struct
 pub mod prelude {
     pub use super::config::Config;
-    pub use super::rpc::RpcConfig;
+    pub use super::rpc::{
+        channel_rpc_channel, ChannelAddr, ChannelMessage, ChannelRpcSender, RpcConfig, RpcMessage,
+    };
     pub use chamomile::prelude::Config as P2pConfig;
     pub use tdn_types::{
         group::{GroupId, GROUP_BYTES_LENGTH},

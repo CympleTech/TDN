@@ -15,10 +15,10 @@ use tokio::{
 use chamomile::prelude::Config as P2pConfig;
 use tdn_types::{
     group::GroupId,
-    primitives::{Peer, PeerId, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, RPC_ADDR},
+    primitives::{Peer, PeerId, Result, CONFIG_FILE_NAME, DEFAULT_SECRET, P2P_ADDR, RPC_HTTP},
 };
 
-use crate::rpc::RpcConfig;
+use crate::rpc::{ChannelAddr, RpcConfig};
 
 /// load config from config file.
 pub struct Config {
@@ -34,8 +34,9 @@ pub struct Config {
     pub p2p_allow_peer_list: Vec<PeerId>,
     pub p2p_block_peer_list: Vec<PeerId>,
 
-    pub rpc_addr: SocketAddr,
+    pub rpc_http: Option<SocketAddr>,
     pub rpc_ws: Option<SocketAddr>,
+    pub rpc_channel: Option<ChannelAddr>,
     pub rpc_index: Option<PathBuf>,
 }
 
@@ -61,8 +62,9 @@ impl Config {
             p2p_allow_peer_list,
             p2p_block_peer_list,
 
-            rpc_addr,
+            rpc_http,
             rpc_ws,
+            rpc_channel,
             rpc_index,
         } = self;
 
@@ -83,8 +85,9 @@ impl Config {
         };
 
         let rpc_config = RpcConfig {
-            addr: rpc_addr,
+            http: rpc_http,
             ws: rpc_ws,
+            channel: rpc_channel,
             index: rpc_index,
         };
 
@@ -93,7 +96,7 @@ impl Config {
 }
 
 impl Config {
-    pub fn with_addr(p2p_addr: SocketAddr, rpc_addr: SocketAddr) -> Self {
+    pub fn with_addr(p2p_addr: SocketAddr, rpc_http: SocketAddr) -> Self {
         Config {
             db_path: None,
             secret: DEFAULT_SECRET,
@@ -106,14 +109,15 @@ impl Config {
             p2p_allow_peer_list: vec![],
             p2p_block_peer_list: vec![],
 
-            rpc_addr: rpc_addr,
+            rpc_http: Some(rpc_http),
             rpc_ws: None,
+            rpc_channel: None,
             rpc_index: None,
         }
     }
 
     pub fn default() -> Self {
-        Config::with_addr(P2P_ADDR.parse().unwrap(), RPC_ADDR.parse().unwrap())
+        Config::with_addr(P2P_ADDR.parse().unwrap(), RPC_HTTP.parse().unwrap())
     }
 
     pub async fn load(path: PathBuf) -> Self {
@@ -190,7 +194,7 @@ pub struct RawConfig {
     pub p2p_allow_peer_list: Option<Vec<String>>,
     pub p2p_block_peer_list: Option<Vec<String>>,
 
-    pub rpc_addr: Option<SocketAddr>,
+    pub rpc_http: Option<SocketAddr>,
     pub rpc_ws: Option<SocketAddr>,
     pub rpc_index: Option<PathBuf>,
 }
@@ -237,8 +241,9 @@ impl RawConfig {
                         .collect()
                 })
                 .unwrap_or(vec![]),
-            rpc_addr: self.rpc_addr.unwrap_or(RPC_ADDR.parse().unwrap()),
+            rpc_http: Some(self.rpc_http.unwrap_or(RPC_HTTP.parse().unwrap())),
             rpc_ws: self.rpc_ws,
+            rpc_channel: None,
             rpc_index: self.rpc_index,
         }
     }
@@ -378,13 +383,22 @@ p2p_block_peer_list = [{}]
             .join(", ")
     );
 
-    let rpc_addr_str = format!(
-        r#"## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
-## Example: rpc_addr = "127.0.0.1:7365"
-rpc_addr = "{}"
+    let rpc_http_str = match &config.rpc_http {
+        Some(addr) => format!(
+            r#"## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
+## Example: rpc_http = "127.0.0.1:7365"
+rpc_http = "{}"
 "#,
-        config.rpc_addr
-    );
+            addr
+        ),
+        None => format!(
+            r#"## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
+## Example: rpc_http = "127.0.0.1:7365"
+#rpc_http = "{}"
+"#,
+            RPC_HTTP
+        ),
+    };
 
     let rpc_ws_str = match &config.rpc_ws {
         Some(addr) => format!(
@@ -446,7 +460,7 @@ rpc_index = {:?}
         p2p_block_str,
         p2p_allow_peer_str,
         p2p_block_peer_str,
-        rpc_addr_str,
+        rpc_http_str,
         rpc_ws_str,
         rpc_index_str
     )
@@ -473,7 +487,7 @@ mod tests {
         let _ = rt.block_on(async {
             let mut config = Config::default();
             config.db_path = Some(path.clone());
-            config.rpc_addr = "127.0.0.1:8000".parse().unwrap();
+            config.rpc_http = Some("127.0.0.1:8000".parse().unwrap());
             config.p2p_allowlist = vec![
                 Peer::socket("1.1.1.1:7364".parse().unwrap()),
                 Peer::socket("2.2.2.2:7364".parse().unwrap()),
@@ -490,7 +504,7 @@ mod tests {
             let config = Config::load_save(path.clone(), config).await.unwrap();
             let new_config = Config::load_save(path.clone(), config).await.unwrap();
             assert_eq!(new_config.db_path, Some(path.clone()));
-            assert_eq!(new_config.rpc_addr, "127.0.0.1:8000".parse().unwrap());
+            assert_eq!(new_config.rpc_http, Some("127.0.0.1:8000".parse().unwrap()));
             assert_eq!(
                 new_config.p2p_allowlist[0],
                 Peer::socket("1.1.1.1:7364".parse().unwrap())
