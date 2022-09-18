@@ -48,11 +48,11 @@ p2p_bootstrap = []
 ##          ]
 #p2p_block_peer_list = []
 
-## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
-## Example: rpc_addr = "127.0.0.1:7365"
-rpc_addr = "127.0.0.1:7365"
+## RPC HTTP listen address, default is 127.0.0.1:7365, uncomment below to change.
+## Example: rpc_http = "127.0.0.1:7365"
+rpc_http = "127.0.0.1:7365"
 
-## WS listen address, default closed. if need, uncomment below to change.
+## RPC WS listen address, default closed. if need, uncomment below to change.
 ## Example: rpc_ws = "127.0.0.1:7366"
 rpc_ws = "127.0.0.1:7366"
 

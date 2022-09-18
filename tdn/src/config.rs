@@ -385,14 +385,14 @@ p2p_block_peer_list = [{}]
 
     let rpc_http_str = match &config.rpc_http {
         Some(addr) => format!(
-            r#"## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
+            r#"## RPC HTTP listen address, default is 127.0.0.1:7365, uncomment below to change.
 ## Example: rpc_http = "127.0.0.1:7365"
 rpc_http = "{}"
 "#,
             addr
         ),
         None => format!(
-            r#"## RPC listen address, default is 127.0.0.1:7365, uncomment below to change.
+            r#"## RPC WS listen address, default closed. if need, uncomment below to change.
 ## Example: rpc_http = "127.0.0.1:7365"
 #rpc_http = "{}"
 "#,
