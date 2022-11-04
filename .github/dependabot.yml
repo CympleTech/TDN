@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    target-branch: "main"
+    schedule:
+      interval: "daily"
