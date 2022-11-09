@@ -97,10 +97,9 @@ impl Secp256k1ExtendedPrivKey {
         let result = hmac.finalize().into_bytes();
         let (secret_key, chain_code) = result.split_at(32);
 
-        let mut secret_key =
-            Secp256k1SecretKey::from_slice(&secret_key).map_err(Error::Secp256k1)?;
-        secret_key
-            .add_assign(self.secret_key.as_ref())
+        let secret_key = Secp256k1SecretKey::from_slice(&secret_key)
+            .map_err(Error::Secp256k1)?
+            .add_tweak(&self.secret_key.into())
             .map_err(Error::Secp256k1)?;
 
         Ok(Secp256k1ExtendedPrivKey {
