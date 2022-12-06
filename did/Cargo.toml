@@ -29,6 +29,8 @@ rand_chacha = { version = "0.3", optional = true }
 
 tdn_types = { version = "0.8", path = "../types", default-features = false }
 
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
+
 [dependencies.ed25519-dalek]
 git = "https://github.com/cympletech/ed25519-dalek"
 default-features = false

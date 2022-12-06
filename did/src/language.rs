@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 mod chinese_simplified;
 mod chinese_traditional;
 mod czech;
@@ -13,7 +15,7 @@ mod spanish;
 ///
 /// The English language is always available, other languages are enabled using
 /// the compilation features.
-#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Language {
     /// The English language.
     English,

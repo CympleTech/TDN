@@ -2,6 +2,7 @@
 
 use core::{fmt, mem, ops::Range, str};
 use hmac::Hmac;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 use std::borrow::Cow;
 use zeroize::Zeroize;
@@ -166,7 +167,7 @@ impl Count {
 /// For example, a 12 word mnemonic phrase is essentially a friendly representation of
 /// a 128-bit key, while a 24 word mnemonic phrase is essentially a 256-bit key.
 ///
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Mnemonic {
     lang: Language,
     phrase: String,
