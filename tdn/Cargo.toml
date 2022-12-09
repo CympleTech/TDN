@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.8.0"
+version = "0.10.0"
 authors = ["Dev <dev@cympletech.com>"]
 edition = "2021"
 readme = "README.md"
@@ -29,7 +29,7 @@ tokio-tungstenite = "0.17"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 
-tdn_types = { version = "0.8", path = "../types", default-features = false }
+tdn_types = { version = "0.10", path = "../types", default-features = false }
 
 [dev-dependencies]
 #tdn_permission = "0.2"
