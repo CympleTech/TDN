@@ -296,10 +296,12 @@ impl<S: 'static + Send + Sync> RpcHandler<S> {
                     #[cfg(any(feature = "single", feature = "multiple"))]
                     match res {
                         Ok(HandleResult {
+                            owns,
                             rpcs,
                             groups,
                             networks,
                         }) => {
+                            new_results.owns = owns;
                             new_results.groups = groups;
                             new_results.networks = networks;
 
