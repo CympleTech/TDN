@@ -410,3 +410,38 @@ pub fn rpc_response(
         "result": params
     })
 }
+
+#[cfg(any(feature = "single", feature = "std"))]
+pub fn rpc_request(id: u64, method: &str, params: Vec<RpcParam>) -> RpcParam {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "method": method,
+        "params": params
+    })
+}
+
+#[cfg(any(feature = "multiple", feature = "full"))]
+pub fn rpc_request(
+    id: u64,
+    method: &str,
+    params: Vec<RpcParam>,
+    group_id: crate::group::GroupId,
+) -> RpcParam {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "gid": group_id,
+        "method": method,
+        "params": params
+    })
+}
+
+/// parse the result from jsonrpc response
+pub fn parse_response(mut value: RpcParam) -> std::result::Result<Value, Value> {
+    if value.get("result").is_some() {
+        Ok(value["result"].take())
+    } else {
+        Err(value["error"].take())
+    }
+}
