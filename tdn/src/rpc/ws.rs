@@ -43,9 +43,7 @@ async fn ws_connection(
     let mut rng = ChaChaRng::from_entropy();
     let id: u64 = rng.next_u64();
     let (s_send, mut s_recv) = rpc_channel();
-    send.send(RpcMessage::Open(id, s_send))
-        .await
-        .expect("Ws to Rpc channel closed");
+    send.send(RpcMessage::Open(id, s_send)).await?;
 
     let (mut writer, mut reader) = ws_stream.split();
 
@@ -74,9 +72,7 @@ async fn ws_connection(
                 let msg = msg.to_text().unwrap();
                 match parse_jsonrpc(msg.to_owned()) {
                     Ok(rpc_param) => {
-                        send.send(RpcMessage::Request(id, rpc_param, None))
-                            .await
-                            .expect("Ws to Rpc channel closed");
+                        send.send(RpcMessage::Request(id, rpc_param, None)).await?;
                     }
                     Err((err, id)) => {
                         let s = WsMessage::from(err.json(id).to_string());
@@ -88,8 +84,6 @@ async fn ws_connection(
         }
     }
 
-    send.send(RpcMessage::Close(id))
-        .await
-        .expect("Ws to Rpc channel closed");
+    send.send(RpcMessage::Close(id)).await?;
     Ok(())
 }

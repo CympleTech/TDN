@@ -23,9 +23,7 @@ pub(super) async fn channel_listen(
     let mut rng = ChaChaRng::from_entropy();
     let id: u64 = rng.next_u64();
     let (s_send, mut s_recv) = rpc_channel();
-    send.send(RpcMessage::Open(id, s_send))
-        .await
-        .expect("Channel to Rpc channel closed");
+    send.send(RpcMessage::Open(id, s_send)).await?;
 
     loop {
         let res = select! {
@@ -44,22 +42,16 @@ pub(super) async fn channel_listen(
             Some(FutureResult::Stream(msg)) => match msg {
                 ChannelMessage::Sync(msg, tx) => {
                     let id: u64 = rng.next_u64();
-                    send.send(RpcMessage::Request(id, msg, Some(tx)))
-                        .await
-                        .expect("Channel to Rpc channel closed");
+                    send.send(RpcMessage::Request(id, msg, Some(tx))).await?;
                 }
                 ChannelMessage::Async(msg) => {
-                    send.send(RpcMessage::Request(id, msg, None))
-                        .await
-                        .expect("Channel to Rpc channel closed");
+                    send.send(RpcMessage::Request(id, msg, None)).await?;
                 }
             },
             None => break,
         }
     }
 
-    send.send(RpcMessage::Close(id))
-        .await
-        .expect("Channel to Rpc channel closed");
+    send.send(RpcMessage::Close(id)).await?;
     Ok(())
 }

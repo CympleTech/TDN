@@ -123,7 +123,6 @@ mod test {
         let test3 = "hello, world";
         let res = hash_to_group_id(test3.as_bytes());
         assert_eq!(908348025392027244, res);
-        println!("{}", res);
 
         let test4 = "hello, world!";
         let res = hash_to_group_id(test4.as_bytes());
