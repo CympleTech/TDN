@@ -42,11 +42,6 @@ pub struct Config {
 
 impl Config {
     pub fn split(self) -> ([u8; 32], Vec<GroupId>, P2pConfig, RpcConfig) {
-        #[cfg(feature = "single")]
-        let delivery_length = 0;
-        #[cfg(feature = "multiple")]
-        let delivery_length = tdn_types::group::GROUP_BYTES_LENGTH;
-        #[cfg(any(feature = "std", feature = "full"))]
         let delivery_length = tdn_types::group::GROUP_BYTES_LENGTH * 2;
 
         let Config {
@@ -79,9 +74,9 @@ impl Config {
             blocklist: p2p_blocklist,
             allow_peer_list: p2p_allow_peer_list,
             block_peer_list: p2p_block_peer_list,
-            permission: permission,
-            only_stable_data: only_stable_data,
-            delivery_length: delivery_length,
+            permission,
+            only_stable_data,
+            delivery_length,
         };
 
         let rpc_config = RpcConfig {
