@@ -6,7 +6,7 @@ members = [
     "storage",
 ]
 
-# DEBUG patch.
-[patch.crates-io]
-chamomile = { git = "https://github.com/cympletech/chamomile" }
-chamomile_types = { git = "https://github.com/cympletech/chamomile" }
+# # DEBUG patch.
+# [patch.crates-io]
+# chamomile = { git = "https://github.com/cympletech/chamomile" }
+# chamomile_types = { git = "https://github.com/cympletech/chamomile" }

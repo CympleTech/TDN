@@ -1,4 +1,4 @@
-[![crate](https://img.shields.io/badge/crates.io-v0.6.2-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.6.2-blue.svg)](https://docs.rs/tdn)
+[![crate](https://img.shields.io/badge/crates.io-v0.10.0-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.10.0-blue.svg)](https://docs.rs/tdn)
 
 <h1 align="center"><img src="https://cympletech.com/logo/tdn_words.png" alt="TDN"></h1>
 
