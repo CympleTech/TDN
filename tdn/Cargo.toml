@@ -24,7 +24,7 @@ httparse = "1.6"
 mime = "0.3"
 rand_chacha = "0.3"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
-toml = "0.5"
+toml = "0.6"
 tokio-tungstenite = "0.18"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
