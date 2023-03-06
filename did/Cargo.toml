@@ -22,7 +22,7 @@ serde = { version = "1.0", default-features = false, features = ["alloc", "deriv
 
 # mnemonic (BIP-39)
 hmac = { version = "0.12", default-features = false }
-pbkdf2 = { version = "0.11", default-features = false }
+pbkdf2 = { version = "0.12", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 unicode-normalization = { version = "0.1", default-features = false }
 
