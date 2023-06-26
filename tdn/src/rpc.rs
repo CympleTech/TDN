@@ -5,6 +5,7 @@ mod ws;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::{
     net::TcpListener,
     select,
@@ -12,11 +13,12 @@ use tokio::{
         mpsc::{self, Receiver, Sender},
         oneshot,
     },
+    time::timeout,
 };
 
 use tdn_types::{
     message::{ReceiveMessage, RpcSendMessage},
-    primitives::Result,
+    primitives::{new_io_error, Result},
     rpc::RpcParam,
 };
 
@@ -70,16 +72,18 @@ impl ChannelRpcSender {
         let _ = self.0.send(ChannelMessage::Async(msg)).await;
     }
 
-    pub async fn sync_send(&self, msg: RpcParam) -> Result<RpcParam> {
+    pub async fn sync_send(&self, msg: RpcParam, timeout_millis: u64) -> Result<RpcParam> {
         let (tx, rx) = oneshot::channel();
         let _ = self.0.send(ChannelMessage::Sync(msg, tx)).await;
-        let msg = rx
-            .await
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-        match msg {
-            RpcMessage::Response(param) => Ok(param),
-            _ => Ok(Default::default()),
+        if let Ok(msg) = timeout(Duration::from_millis(timeout_millis), rx).await {
+            let msg = msg.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            match msg {
+                RpcMessage::Response(param) => Ok(param),
+                _ => Ok(Default::default()),
+            }
+        } else {
+            Err(new_io_error("Timeout").into())
         }
     }
 }
