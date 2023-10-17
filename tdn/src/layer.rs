@@ -63,8 +63,7 @@ pub(crate) async fn layer_handle_connect(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }
@@ -83,8 +82,7 @@ pub(crate) async fn layer_handle_result_connect(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }
@@ -104,8 +102,7 @@ pub(crate) async fn layer_handle_result(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }
@@ -122,8 +119,7 @@ pub(crate) async fn layer_handle_leave(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }
@@ -142,8 +138,7 @@ pub(crate) async fn layer_handle_data(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }
@@ -163,8 +158,7 @@ pub(crate) async fn layer_handle_stream(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }
@@ -184,8 +178,7 @@ pub(crate) async fn layer_handle_delivery(
     out_send
         .send(msg)
         .await
-        .map_err(|e| error!("Outside channel: {:?}", e))
-        .expect("Outside channel closed");
+        .map_err(|e| error!("Outside channel: {:?}", e));
 
     Ok(())
 }

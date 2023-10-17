@@ -379,8 +379,7 @@ pub mod prelude {
                         out_send
                             .send(ReceiveMessage::NetworkLost)
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e))
-                            .expect("Outside channel closed");
+                            .map_err(|e| error!("Outside channel: {:?}", e));
                     }
                     ChamomileReceiveMessage::OwnConnect(peer) => {
                         let assist_id = peer.assist;
@@ -389,8 +388,7 @@ pub mod prelude {
                         out_send
                             .send(ReceiveMessage::Own(RecvType::Connect(new_peer, vec![])))
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e))
-                            .expect("Outside channel closed");
+                            .map_err(|e| error!("Outside channel: {:?}", e));
                     }
                     ChamomileReceiveMessage::OwnLeave(peer) => {
                         let assist_id = peer.assist;
@@ -399,15 +397,13 @@ pub mod prelude {
                         out_send
                             .send(ReceiveMessage::Own(RecvType::Leave(new_peer)))
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e))
-                            .expect("Outside channel closed");
+                            .map_err(|e| error!("Outside channel: {:?}", e));
                     }
                     ChamomileReceiveMessage::OwnEvent(aid, data) => {
                         out_send
                             .send(ReceiveMessage::Own(RecvType::Event(aid, data)))
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e))
-                            .expect("Outside channel closed");
+                            .map_err(|e| error!("Outside channel: {:?}", e));
                     }
                 }
             }
