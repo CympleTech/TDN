@@ -9,7 +9,7 @@ As the network interconnection, TDN includes peer-to-peer, centralized gateway, 
 As the framework of decentralized applications, TDN uses the `Layer` and `Group` models. We built this framework because we feel that the blockchain is very limited. If you want a more open and free distributed application development technology, and Pluggable, lightweight application framework, TDN can satisfy you.
 
 ## Example
-```
+```rust
 use std::sync::Arc;
 use tdn::prelude::*;
 use tdn::types::rpc::{json, RpcError, RpcHandler, RpcParam};
