@@ -41,4 +41,4 @@ optional = true
 [dev-dependencies]
 bs58 = "0.5"
 hex = "0.4"
-ethsign = "0.8"
+ethsign = "0.9"
