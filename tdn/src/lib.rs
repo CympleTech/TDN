@@ -82,12 +82,12 @@ pub mod prelude {
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_send_channel() -> (Sender<SendMessage>, Receiver<SendMessage>) {
-        mpsc::channel(128)
+        mpsc::channel(1024)
     }
 
     /// new a channel, send message to TDN Message. default capacity is 1024.
     pub fn new_receive_channel() -> (Sender<ReceiveMessage>, Receiver<ReceiveMessage>) {
-        mpsc::channel(128)
+        mpsc::channel(1024)
     }
 
     /// start a service, use config.toml file.
