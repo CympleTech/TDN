@@ -72,6 +72,10 @@ impl ChannelRpcSender {
         let _ = self.0.send(ChannelMessage::Async(msg)).await;
     }
 
+    pub async fn send_timeout(&self, msg: RpcParam, timeout_millis: u64) {
+        let _ = self.0.send_timeout(ChannelMessage::Async(msg), Duration::from_millis(timeout_millis)).await;
+    }
+
     pub async fn sync_send(&self, msg: RpcParam, timeout_millis: u64) -> Result<RpcParam> {
         let (tx, rx) = oneshot::channel();
         let _ = self.0.send(ChannelMessage::Sync(msg, tx)).await;
