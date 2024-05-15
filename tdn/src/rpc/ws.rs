@@ -70,6 +70,12 @@ async fn ws_connection(
             }
             Some(FutureResult::Stream(msg)) => {
                 let msg = msg.to_text().unwrap();
+                if msg == "ping" {
+                    let s = WsMessage::from("pong".to_owned());
+                    let _ = writer.send(s).await;
+                    continue;
+                }
+
                 match parse_jsonrpc(msg.to_owned()) {
                     Ok(rpc_param) => {
                         send.send(RpcMessage::Request(id, rpc_param, None)).await?;

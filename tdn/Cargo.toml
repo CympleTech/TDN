@@ -1,6 +1,6 @@
 [package]
 name = "tdn"
-version = "0.10.5"
+version = "0.10.6"
 authors = ["Dev <dev@cympletech.com>"]
 edition = "2021"
 readme = "../README.md"
